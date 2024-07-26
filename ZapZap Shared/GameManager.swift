@@ -45,5 +45,6 @@ class GameManager {
 
     func notifyInput(at point: CGPoint) {
         self.lastInput = CGPoint(x: point.x, y: point.y)
+        print("got some input at ", self.lastInput.x, self.lastInput.y)
     }
 }

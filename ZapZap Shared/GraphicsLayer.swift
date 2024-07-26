@@ -8,25 +8,54 @@
 import Foundation
 import MetalKit
 
+import Metal
+
+class VertexDescriptor {
+    static let shared: MTLVertexDescriptor = {
+        let vertexDescriptor = MTLVertexDescriptor()
+        vertexDescriptor.attributes[0].format = .float3
+        vertexDescriptor.attributes[0].offset = 0
+        vertexDescriptor.attributes[0].bufferIndex = 0
+        vertexDescriptor.attributes[1].format = .float2
+        vertexDescriptor.attributes[1].offset = MemoryLayout<Float>.stride * 3
+        vertexDescriptor.attributes[1].bufferIndex = 0
+        vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.stride * 5
+        vertexDescriptor.layouts[0].stepFunction = .perVertex
+        return vertexDescriptor
+    }()
+}
+
+
 class GraphicsLayer {
     var device: MTLDevice
     var pipelineState: MTLRenderPipelineState?
-    var vertexBuffer: MTLBuffer?
     var texture: MTLTexture?
-    var vertexCount: Int = 0
+    var meshes: [Mesh] = []
     
     init(device: MTLDevice) {
         self.device = device
+        print("GraphicsLayer init: will create pipeline")
+        setupPipeline(vertexFunctionName: "vertex_main", fragmentFunctionName: "sprite_fragment_main")
     }
     
     func setupPipeline(vertexFunctionName: String, fragmentFunctionName: String, pixelFormat: MTLPixelFormat = .rgba16Float) {
-        guard let library = device.makeDefaultLibrary(),
-              let vertexFunction = library.makeFunction(name: vertexFunctionName),
-              let fragmentFunction = library.makeFunction(name: fragmentFunctionName) else {
+        guard let library = device.makeDefaultLibrary() else {
+            print("Failed to create default library")
+            return
+        }
+        
+        guard let vertexFunction = library.makeFunction(name: vertexFunctionName) else {
+            print("Failed to create vertex function: \(vertexFunctionName)")
+            return
+        }
+        
+        guard let fragmentFunction = library.makeFunction(name: fragmentFunctionName) else {
+            print("Failed to create fragment function: \(fragmentFunctionName)")
             return
         }
         
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
+        pipelineDescriptor.vertexDescriptor = VertexDescriptor.shared
         pipelineDescriptor.vertexFunction = vertexFunction
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat
@@ -40,6 +69,7 @@ class GraphicsLayer {
         
         do {
             pipelineState = try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+            print("Created pipeline state for simple alpha blending")
         } catch let error {
             print("Failed to create pipeline state: \(error)")
         }
@@ -48,18 +78,25 @@ class GraphicsLayer {
     func render(encoder: MTLRenderCommandEncoder) {
         guard let pipelineState = pipelineState else { return }
         encoder.setRenderPipelineState(pipelineState)
-        if let vertexBuffer = vertexBuffer {
-            encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        }
         if let texture = texture {
             encoder.setFragmentTexture(texture, index: 0)
+            print("GraphicsLayer render: set texture")
         }
-        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount)
-    }
-    
-    func setVertexBuffer(vertices: [Float]) {
-        vertexCount = vertices.count / 5
-        vertexBuffer = device.makeBuffer(bytes: vertices, length: MemoryLayout<Float>.size * vertices.count, options: [])
+        
+        for mesh in meshes {
+            if let vertexBuffer = mesh.vertexBuffer {
+                encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+                print("GraphicsLayer render: set vertex buffer")
+            }
+            
+            if let indexBuffer = mesh.indexBuffer, mesh.indexCount > 0 {
+                encoder.drawIndexedPrimitives(type: mesh.primitiveType, indexCount: mesh.indexCount, indexType: .uint16, indexBuffer: indexBuffer, indexBufferOffset: 0)
+                print("GraphicsLayer render: draw indexed primitives")
+            } else {
+                encoder.drawPrimitives(type: mesh.primitiveType, vertexStart: 0, vertexCount: mesh.vertexCount)
+                print("GraphicsLayer render: draw primitives")
+            }
+        }
     }
     
     func loadTexture(imageName: String) {
@@ -72,19 +109,30 @@ class GraphicsLayer {
 }
 
 class EffectsLayer: GraphicsLayer {
-    
     override init(device: MTLDevice) {
         super.init(device: device)
+        print("EffectsLayer init: will create pipeline")
+        setupAdditivePipeline(vertexFunctionName: "vertex_main", fragmentFunctionName: "additive_fragment_main")
     }
     
-    func setupAdditivePipeline(vertexFunctionName: String, fragmentFunctionName: String, pixelFormat: MTLPixelFormat = .bgra8Unorm) {
-        guard let library = device.makeDefaultLibrary(),
-              let vertexFunction = library.makeFunction(name: vertexFunctionName),
-              let fragmentFunction = library.makeFunction(name: fragmentFunctionName) else {
+    func setupAdditivePipeline(vertexFunctionName: String, fragmentFunctionName: String, pixelFormat: MTLPixelFormat = .rgba16Float) {
+        guard let library = device.makeDefaultLibrary() else {
+            print("Failed to create default library for effects layer")
+            return
+        }
+        
+        guard let vertexFunction = library.makeFunction(name: vertexFunctionName) else {
+            print("Failed to create vertex function: \(vertexFunctionName) for effects layer")
+            return
+        }
+        
+        guard let fragmentFunction = library.makeFunction(name: fragmentFunctionName) else {
+            print("Failed to create fragment function: \(fragmentFunctionName) for effects layer")
             return
         }
         
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
+        pipelineDescriptor.vertexDescriptor = VertexDescriptor.shared
         pipelineDescriptor.vertexFunction = vertexFunction
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat
@@ -98,6 +146,7 @@ class EffectsLayer: GraphicsLayer {
         
         do {
             pipelineState = try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+            print("Created pipeline state for additive EDR effects")
         } catch let error {
             print("Failed to create additive pipeline state: \(error)")
         }

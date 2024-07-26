@@ -1,55 +1,30 @@
-//
-//  Shaders.metal
-//  ZapZap Shared
-//
-//  Created by apple on 19.07.2024.
-//
-
-// File for Metal kernel and shader functions
-
 #include <metal_stdlib>
 #include <simd/simd.h>
 
-// Including header shared between this Metal shader code and Swift/C code executing Metal API commands
-#import "ShaderTypes.h"
-
 using namespace metal;
 
-typedef struct
-{
-    float3 position [[attribute(VertexAttributePosition)]];
-    float2 texCoord [[attribute(VertexAttributeTexcoord)]];
+typedef struct {
+    float3 position [[attribute(0)]];
+    float2 texCoord [[attribute(1)]];
 } Vertex;
 
-typedef struct
-{
+typedef struct {
     float4 position [[position]];
     float2 texCoord;
 } ColorInOut;
 
-vertex ColorInOut vertexShader(Vertex in [[stage_in]],
-                               constant Uniforms & uniforms [[ buffer(BufferIndexUniforms) ]])
-{
-    ColorInOut out;
+typedef struct {
+    float4x4 projectionMatrix;
+    float4x4 modelViewMatrix;
+} Uniforms;
 
+vertex ColorInOut vertex_main(Vertex in [[stage_in]],
+                              constant Uniforms &uniforms [[buffer(2)]]) {
+    ColorInOut out;
     float4 position = float4(in.position, 1.0);
     out.position = uniforms.projectionMatrix * uniforms.modelViewMatrix * position;
     out.texCoord = in.texCoord;
-
     return out;
-}
-
-fragment float4 fragmentShader(ColorInOut in [[stage_in]],
-                               constant Uniforms & uniforms [[ buffer(BufferIndexUniforms) ]],
-                               texture2d<half> colorMap     [[ texture(TextureIndexColor) ]])
-{
-    constexpr sampler colorSampler(mip_filter::linear,
-                                   mag_filter::linear,
-                                   min_filter::linear);
-
-    half4 colorSample   = colorMap.sample(colorSampler, in.texCoord.xy);
-
-    return float4(colorSample);
 }
 
 fragment float4 sprite_fragment_main(ColorInOut in [[stage_in]],
@@ -65,6 +40,5 @@ fragment float4 additive_fragment_main(ColorInOut in [[stage_in]],
                                        texture2d<float> colorTexture [[texture(0)]]) {
     constexpr sampler textureSampler (mag_filter::linear, min_filter::linear);
     float4 color = colorTexture.sample(textureSampler, in.texCoord);
-    // Apply any additional processing needed for your effect here.
     return color * 8.0; // increase brightness for additive blending
 }
