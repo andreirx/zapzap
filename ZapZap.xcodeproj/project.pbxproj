@@ -90,7 +90,6 @@
 		18BEF3512C4A824A00A4D753 /* ZapZap Shared */ = {
 			isa = PBXGroup;
 			children = (
-				18BEF3522C4A824A00A4D753 /* Shaders.metal */,
 				18BEF3532C4A824A00A4D753 /* Renderer.swift */,
 				18BEF3852C4A9C9500A4D753 /* GraphicsLayer.swift */,
 				18BEF3882C4F7BA400A4D753 /* GameBoardLogic.swift */,
@@ -99,6 +98,7 @@
 				18BEF3912C5396F400A4D753 /* Meshes.swift */,
 				18BEF3942C5415AD00A4D753 /* Math.swift */,
 				18BEF3542C4A824A00A4D753 /* ShaderTypes.h */,
+				18BEF3522C4A824A00A4D753 /* Shaders.metal */,
 				18BEF3552C4A824B00A4D753 /* Assets.xcassets */,
 			);
 			path = "ZapZap Shared";

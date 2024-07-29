@@ -26,6 +26,7 @@ class VertexDescriptor {
 }
 
 
+
 class GraphicsLayer {
     var device: MTLDevice
     var pipelineState: MTLRenderPipelineState?
@@ -80,22 +81,14 @@ class GraphicsLayer {
         encoder.setRenderPipelineState(pipelineState)
         if let texture = texture {
             encoder.setFragmentTexture(texture, index: 0)
-            print("GraphicsLayer render: set texture")
         }
         
-        for mesh in meshes {
-            if let vertexBuffer = mesh.vertexBuffer {
-                encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-                print("GraphicsLayer render: set vertex buffer")
-            }
+        for (index, mesh) in meshes.enumerated() {
+            mesh.rotation += 0.0001 * Float(index)
+            mesh.position.x += 0.1 * Float(Int.random(in: -9...9))
+            mesh.position.y += 0.1 * Float(Int.random(in: -9...9))
             
-            if let indexBuffer = mesh.indexBuffer, mesh.indexCount > 0 {
-                encoder.drawIndexedPrimitives(type: mesh.primitiveType, indexCount: mesh.indexCount, indexType: .uint16, indexBuffer: indexBuffer, indexBufferOffset: 0)
-                print("GraphicsLayer render: draw indexed primitives")
-            } else {
-                encoder.drawPrimitives(type: mesh.primitiveType, vertexStart: 0, vertexCount: mesh.vertexCount)
-                print("GraphicsLayer render: draw primitives")
-            }
+            mesh.draw(encoder: encoder)
         }
     }
     

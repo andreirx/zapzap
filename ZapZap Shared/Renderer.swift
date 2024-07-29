@@ -12,7 +12,7 @@ import MetalKit
 import simd
 
 // The 256 byte aligned size of our uniform structure
-let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
+let alignedUniformsSize = (MemoryLayout<matrix_float4x4>.size + 0xFF) & -0x100
 
 let maxBuffersInFlight = 3
 let MaxOutstandingFrameCount = 3
@@ -30,11 +30,11 @@ class Renderer: NSObject, MTKViewDelegate {
     var effectsLayer: EffectsLayer!
     
     private var constantBuffer: MTLBuffer!
-    private let constantsSize: Int
-    private let constantsStride: Int
+    static let constantsSize: Int = MemoryLayout<matrix_float4x4>.size
+    static let constantsStride: Int = align(constantsSize, upTo: 256)
     private var currentConstantBufferOffset: Int
     var projectionMatrix: matrix_float4x4 = matrix_float4x4()
-    var modelViewMatrix: matrix_float4x4 = matrix_float4x4()
+    var modelMatrix: matrix_float4x4 = matrix_float4x4()
 
     let inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
     private var frameIndex: Int = 0
@@ -59,11 +59,11 @@ class Renderer: NSObject, MTKViewDelegate {
         samplerDescriptor.tAddressMode = .repeat
         self.samplerState = device.makeSamplerState(descriptor: samplerDescriptor)
 
-        self.constantsSize = MemoryLayout<Uniforms>.size
-        self.constantsStride = align(self.constantsSize, upTo: 256)
+//        self.constantsSize = MemoryLayout<Uniforms>.size
+//        self.constantsStride = align(self.constantsSize, upTo: 256)
         self.currentConstantBufferOffset = 0
         self.frameIndex = 0
-        let constantBufferSize = self.constantsStride * maxBuffersInFlight
+        let constantBufferSize = Renderer.constantsStride * maxBuffersInFlight
         self.constantBuffer = device.makeBuffer(length: constantBufferSize, options: .storageModeShared)
         self.constantBuffer.label = "Dynamic Constant Buffer"
         print("Renderer init created constant buffer")
@@ -85,13 +85,30 @@ class Renderer: NSObject, MTKViewDelegate {
             return nil
         }
         
-        let quadMesh1 = QuadMesh(device: device, size: 100000, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
-        let quadMesh2 = QuadMesh(device: device, size: 60000, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
-        let quadMesh3 = QuadMesh(device: device, size: 30000, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
-        
-        baseLayer.meshes.append(quadMesh1)
+        let quadMesh1 = QuadMesh(device: device, size: 900, topLeftUV: SIMD2<Float>(3.0 / 16.0, 0), bottomRightUV: SIMD2<Float>(4.0 / 16.0, 1.0/8.0))
+        let quadMesh11 = QuadMesh(device: device, size: 900, topLeftUV: SIMD2<Float>(6.0/16.0, 0), bottomRightUV: SIMD2<Float>(7.0/16.0, 1.0/8.0))
+        let quadMesh12 = QuadMesh(device: device, size: 900, topLeftUV: SIMD2<Float>(9.0/16.0, 0), bottomRightUV: SIMD2<Float>(10.0/16.0, 1.0/8.0))
+        let quadMesh2 = QuadMesh(device: device, size: 600, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
+        let quadMesh3 = QuadMesh(device: device, size: 300, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
+
+//        baseLayer.meshes.append(quadMesh1)
+//        baseLayer.meshes.append(quadMesh11)
+//        baseLayer.meshes.append(quadMesh12)
         objectsLayer.meshes.append(quadMesh2)
         effectsLayer.meshes.append(quadMesh3)
+    }
+    
+    func addTilesFromGameManager() {
+        // Add tile quads to the base layer
+        // they were created in gameManager
+        for i in 0..<gameMgr.tileQuads.count {
+            for j in 0..<gameMgr.tileQuads[i].count {
+                if let quad = gameMgr.tileQuads[i][j] {
+                    baseLayer.meshes.append(quad)
+                    print("added tile (", i, ", ", j, ")")
+                }
+            }
+        }
     }
     
     class func loadTexture(device: MTLDevice, textureName: String) throws -> MTLTexture {
@@ -103,30 +120,53 @@ class Renderer: NSObject, MTKViewDelegate {
         return try textureLoader.newTexture(name: textureName, scaleFactor: 1.0, bundle: nil, options: textureLoaderOptions)
     }
     
-    private func updateConstants() {
-        let aspectRatio = Float(view.drawableSize.width / view.drawableSize.height)
-        let canvasWidth: Float = (aspectRatio < 1) ? 500 : 500 * aspectRatio
-        let canvasHeight = (aspectRatio < 1) ? canvasWidth / aspectRatio : canvasWidth / aspectRatio
-        let projectionMatrix = simd_float4x4(orthographicProjectionWithLeft: -canvasWidth / 2,
-                                             top: canvasHeight / 2,
-                                             right: canvasWidth / 2,
-                                             bottom: -canvasHeight / 2,
+    private func updateConstants() -> Int {
+//        let t = Float(frameIndex) / 60.0
+//        let rotationMatrix = simd_float4x4(rotateZ: t)
+        // viewport aspect ratio
+        let screenAspectRatio = Float(view.drawableSize.width / view.drawableSize.height)
+        // model space width and height needed to fit to the viewport
+        let needW = Float(220 + 80)
+        let needH = Float(200 + 80)
+        let modelAspectRatio = needW / needH
+        // pixels to model space units ratios - will fit to the smallest one
+        let horizRatio = Float(view.drawableSize.width) / needW
+        let vertRatio = Float(view.drawableSize.height) / needH
+        // let's think this throug
+        // - if horizRatio and vertRatio were EQUAL -> it means the viewport is perfectly fit to display them as it is
+        // - if horizRatio is the SMALLER one, it means horizontally it's the correct screen to model ratio
+        var canvasWidth: Float
+        var canvasHeight: Float
+        if (horizRatio < vertRatio) {
+            canvasWidth = needW
+            canvasHeight = needH * modelAspectRatio / screenAspectRatio
+        } else {
+            canvasWidth = needW * screenAspectRatio / modelAspectRatio
+            canvasHeight = needH
+        }
+
+        let projectionMatrix = simd_float4x4(orthographicProjectionWithLeft: -canvasWidth,
+                                             top: -canvasHeight,
+                                             right: canvasWidth,
+                                             bottom: canvasHeight,
                                              near: 0.0,
                                              far: 1.0)
-
         var transformMatrix = projectionMatrix
 
-        currentConstantBufferOffset = (frameIndex % MaxOutstandingFrameCount) * constantsStride
+        currentConstantBufferOffset = (frameIndex % MaxOutstandingFrameCount) * Renderer.constantsStride
         let constants = constantBuffer.contents().advanced(by: currentConstantBufferOffset)
-        constants.copyMemory(from: &transformMatrix, byteCount: constantsSize)
-        print("update constants copied memory from transform matrix")
+        constants.copyMemory(from: &transformMatrix, byteCount: Renderer.constantsSize)
+
+        // Return the offset where the modelMatrix should be copied
+        return currentConstantBufferOffset + MemoryLayout<matrix_float4x4>.size
     }
     
     func draw(in view: MTKView) {
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
         
-        currentConstantBufferOffset = (frameIndex % maxBuffersInFlight) * constantsStride
-        updateConstants()
+        currentConstantBufferOffset = (frameIndex % maxBuffersInFlight) * Renderer.constantsStride
+        let modelMatrixOffset = updateConstants()
+//        updateConstants()
         
         guard let commandBuffer = commandQueue.makeCommandBuffer(),
               let renderPassDescriptor = view.currentRenderPassDescriptor,
@@ -137,25 +177,24 @@ class Renderer: NSObject, MTKViewDelegate {
         
         renderEncoder.label = "Primary Render Encoder"
         renderEncoder.pushDebugGroup("Draw Layers")
-        renderEncoder.setVertexBuffer(constantBuffer, offset: currentConstantBufferOffset, index: 2)
-        print("render encoder set constants")
+//        renderEncoder.setVertexBuffer(constantBuffer, offset: currentConstantBufferOffset, index: 2)
 
         if let samplerState = samplerState {
             renderEncoder.setFragmentSamplerState(samplerState, index: 0)
-            print("render encoder set sampler state")
         }
         
         renderEncoder.setFrontFacing(.counterClockwise)
-        print("render encoder set front facing")
+        let constants = constantBuffer.contents().advanced(by: currentConstantBufferOffset)
+        renderEncoder.setVertexBuffer(constantBuffer, offset: currentConstantBufferOffset, index: 2)
 
         baseLayer.render(encoder: renderEncoder)
         objectsLayer.render(encoder: renderEncoder)
         textLayer.render(encoder: renderEncoder)
         effectsLayer.render(encoder: renderEncoder)
-        
+
         renderEncoder.popDebugGroup()
         renderEncoder.endEncoding()
-        
+
         if let drawable = view.currentDrawable {
             commandBuffer.present(drawable)
         }
@@ -170,9 +209,9 @@ class Renderer: NSObject, MTKViewDelegate {
     
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         let aspect = Float(size.width) / Float(size.height)
-        projectionMatrix = matrix_perspective_right_hand(fovyRadians: radians_from_degrees(65), aspectRatio: aspect, nearZ: 0.1, farZ: 100.0)
-        modelViewMatrix = matrix4x4_translation(0, 0, -2)
-        print("view size has changed: ", size.width, size.height, " and aspect: ", aspect)
+        projectionMatrix = matrix_perspective_right_hand(fovyRadians: radians_from_degrees(0), aspectRatio: aspect, nearZ: 0.1, farZ: 100.0)
+        modelMatrix = matrix4x4_translation(0, 0, -1)
+//        print("view size has changed: ", size.width, size.height, " and aspect: ", aspect)
     }
 }
 
@@ -185,15 +224,6 @@ func matrix_perspective_right_hand(fovyRadians fovy: Float, aspectRatio: Float, 
         SIMD4<Float>(0, ys, 0, 0),
         SIMD4<Float>(0, 0, zs, -1),
         SIMD4<Float>(0, 0, zs * nearZ, 0)
-    ))
-}
-
-func matrix4x4_translation(_ x: Float, _ y: Float, _ z: Float) -> matrix_float4x4 {
-    return matrix_float4x4(columns: (
-        SIMD4<Float>(1, 0, 0, 0),
-        SIMD4<Float>(0, 1, 0, 0),
-        SIMD4<Float>(0, 0, 1, 0),
-        SIMD4<Float>(x, y, z, 1)
     ))
 }
 

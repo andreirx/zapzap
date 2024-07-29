@@ -39,11 +39,14 @@ typedef NS_ENUM(EnumBackingType, TextureIndex)
     TextureIndexColor    = 0,
 };
 
-typedef struct
-{
+typedef struct {
     matrix_float4x4 projectionMatrix;
-    matrix_float4x4 modelViewMatrix;
-} Uniforms;
+} UniformScene;
+
+typedef struct {
+    matrix_float4x4 modelMatrix;
+} UniformModel;
+
 
 #endif /* ShaderTypes_h */
 
