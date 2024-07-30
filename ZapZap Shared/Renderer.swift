@@ -24,7 +24,7 @@ class Renderer: NSObject, MTKViewDelegate {
     let view: MTKView
     var samplerState: MTLSamplerState?
     
-    var baseLayer: GraphicsLayer!
+    var baseLayer: GameBoardLayer? // this one won't be ready at creation time, will have to add it later after getting a GameManager
     var objectsLayer: GraphicsLayer!
     var textLayer: GraphicsLayer!
     var effectsLayer: EffectsLayer!
@@ -71,43 +71,39 @@ class Renderer: NSObject, MTKViewDelegate {
         super.init()
         self.view.delegate = self
 
-        baseLayer = GraphicsLayer(device: device)
+        // must have the tilequads already initialized in gameManager before creating the renderer!
+        
         objectsLayer = GraphicsLayer(device: device)
         textLayer = GraphicsLayer(device: device)
         effectsLayer = EffectsLayer(device: device)
         
         do {
-            baseLayer.texture = try Renderer.loadTexture(device: device, textureName: "base_tiles")
             objectsLayer.texture = try Renderer.loadTexture(device: device, textureName: "arrows")
+            print ("created objects layer texture")
             effectsLayer.texture = try Renderer.loadTexture(device: device, textureName: "arrows")
+            print ("created effects layer texture")
         } catch {
             print("Unable to load texture. Error info: \(error)")
             return nil
         }
         
-        let quadMesh1 = QuadMesh(device: device, size: 900, topLeftUV: SIMD2<Float>(3.0 / 16.0, 0), bottomRightUV: SIMD2<Float>(4.0 / 16.0, 1.0/8.0))
-        let quadMesh11 = QuadMesh(device: device, size: 900, topLeftUV: SIMD2<Float>(6.0/16.0, 0), bottomRightUV: SIMD2<Float>(7.0/16.0, 1.0/8.0))
-        let quadMesh12 = QuadMesh(device: device, size: 900, topLeftUV: SIMD2<Float>(9.0/16.0, 0), bottomRightUV: SIMD2<Float>(10.0/16.0, 1.0/8.0))
-        let quadMesh2 = QuadMesh(device: device, size: 600, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
-        let quadMesh3 = QuadMesh(device: device, size: 300, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
+//        let quadMesh2 = QuadMesh(device: device, size: 600, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
+//        let quadMesh3 = QuadMesh(device: device, size: 300, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
 
-//        baseLayer.meshes.append(quadMesh1)
-//        baseLayer.meshes.append(quadMesh11)
-//        baseLayer.meshes.append(quadMesh12)
-        objectsLayer.meshes.append(quadMesh2)
-        effectsLayer.meshes.append(quadMesh3)
+//        objectsLayer.meshes.append(quadMesh2)
+//        effectsLayer.meshes.append(quadMesh3)
     }
     
-    func addTilesFromGameManager() {
-        // Add tile quads to the base layer
-        // they were created in gameManager
-        for i in 0..<gameMgr.tileQuads.count {
-            for j in 0..<gameMgr.tileQuads[i].count {
-                if let quad = gameMgr.tileQuads[i][j] {
-                    baseLayer.meshes.append(quad)
-                }
-            }
+    func createBaseLayer(fromGameManager: GameManager) {
+        gameMgr = fromGameManager
+        baseLayer = GameBoardLayer(device: device, gameManager: fromGameManager)
+        do {
+            baseLayer!.texture = try Renderer.loadTexture(device: device, textureName: "base_tiles")
+            print ("created base layer texture")
+        } catch {
+            print("Unable to load base layer texture. Error info: \(error)")
         }
+
     }
     
     class func loadTexture(device: MTLDevice, textureName: String) throws -> MTLTexture {
@@ -143,9 +139,9 @@ class Renderer: NSObject, MTKViewDelegate {
         }
 
         let projectionMatrix = simd_float4x4(orthographicProjectionWithLeft: -canvasWidth,
-                                             top: canvasHeight,
+                                             top: -canvasHeight,
                                              right: canvasWidth,
-                                             bottom: -canvasHeight,
+                                             bottom: canvasHeight,
                                              near: 0.0,
                                              far: 1.0)
         var transformMatrix = projectionMatrix
@@ -181,7 +177,7 @@ class Renderer: NSObject, MTKViewDelegate {
         let constants = constantBuffer.contents().advanced(by: currentConstantBufferOffset)
         renderEncoder.setVertexBuffer(constantBuffer, offset: currentConstantBufferOffset, index: 2)
 
-        baseLayer.render(encoder: renderEncoder)
+        baseLayer!.render(encoder: renderEncoder)
         objectsLayer.render(encoder: renderEncoder)
         textLayer.render(encoder: renderEncoder)
         effectsLayer.render(encoder: renderEncoder)

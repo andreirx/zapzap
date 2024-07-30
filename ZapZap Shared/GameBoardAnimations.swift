@@ -9,16 +9,16 @@ import Foundation
 
 class AnimationManager {
     var animations: [Animation] = []
-    var gameBoard: GameBoard
+    weak var gameManager: GameManager? // Use weak reference to avoid retain cycles
     
-    init(gameBoard: GameBoard) {
-        self.gameBoard = gameBoard
+    init(gameManager: GameManager) {
+        self.gameManager = gameManager
     }
     
     func addAnimation(_ animation: Animation) {
         animations.append(animation)
         let tilePosition = animation.tilePosition
-        gameBoard.connectMarkings[tilePosition.x][tilePosition.y] = .animating
+        gameManager?.gameBoard?.connectMarkings[tilePosition.x][tilePosition.y] = .animating
     }
     
     func updateAnimations() {
@@ -30,7 +30,7 @@ class AnimationManager {
         animations.removeAll { animation in
             if animation.isFinished {
                 let tilePosition = animation.tilePosition
-                gameBoard.connectMarkings[tilePosition.x][tilePosition.y] = .none
+                gameManager?.gameBoard?.connectMarkings[tilePosition.x][tilePosition.y] = .none
             }
             return animation.isFinished
         }
@@ -44,23 +44,38 @@ protocol Animation {
 }
 
 class RotateAnimation: Animation {
-    private let tile: Tile
+    private let quad: QuadMesh
     private let duration: TimeInterval
     private var elapsedTime: TimeInterval = 0
-    private let startConnections: UInt8
-    private let endConnections: UInt8
+    private let startRotation: Float
+    private let endRotation: Float
     let tilePosition: (x: Int, y: Int)
+    
+    private var tempQuad: QuadMesh?
+    private weak var objectsLayer: GraphicsLayer?
     
     var isFinished: Bool {
         return elapsedTime >= duration
     }
     
-    init(tile: Tile, duration: TimeInterval, tilePosition: (x: Int, y: Int)) {
-        self.tile = tile
+    init(quad: QuadMesh, duration: TimeInterval, tilePosition: (x: Int, y: Int), objectsLayer: GraphicsLayer) {
+        self.quad = quad
         self.duration = duration
         self.tilePosition = tilePosition
-        self.startConnections = tile.connections
-        self.endConnections = startConnections.rotate()
+        self.endRotation = quad.rotation
+        self.startRotation = quad.rotation + .pi / 2
+        self.objectsLayer = objectsLayer
+        // we start from -90 degrees because the tile actually got rotated 90 degrees
+        // which is to say its texture now shows it rotated
+        // so we start rotating from -90 as if it was the old tile
+        // and rotate into its correct position
+        
+        // Create a temporary object and add it to the objectsLayer
+        let tempQuad = QuadMesh(device: quad.mtlDevice, size: 100.0, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(0.25, 0.25))
+        tempQuad.position = quad.position
+        tempQuad.rotation = quad.rotation
+        objectsLayer.meshes.append(tempQuad)
+        self.tempQuad = tempQuad
     }
     
     func update() {
@@ -69,17 +84,20 @@ class RotateAnimation: Animation {
         elapsedTime += 1 / 60.0 // Assuming 60 FPS update rate
         let progress = min(elapsedTime / duration, 1.0)
         
-        // Interpolate connections (simple example)
-        if progress == 1.0 {
-            tile.connections = endConnections
-        }
-    }
-}
+        // Interpolate rotation
+        let newRotation = startRotation + (endRotation - startRotation) * Float(progress)
+        quad.rotation = newRotation
+        tempQuad?.rotation = newRotation
 
-extension UInt8 {
-    func rotate() -> UInt8 {
-        var rVal = self << 1
-        rVal = (rVal & 0x0F) | (rVal >> 4)
-        return rVal & 0x0F
+        // Update the connections at the end of the animation
+        if progress >= 1.0 {
+            quad.rotation = endRotation
+            tempQuad?.rotation = endRotation
+            
+            // Remove the temporary object from the objectsLayer
+            if let tempQuad = tempQuad {
+                objectsLayer?.meshes.removeAll { $0 === tempQuad }
+            }
+        }
     }
 }

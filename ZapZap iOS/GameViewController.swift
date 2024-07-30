@@ -48,10 +48,9 @@ class GameViewController: UIViewController {
         }
 
         renderer = newRenderer
-        renderer = newRenderer
         gameManager.renderer = newRenderer
         gameManager.createTiles()
-        renderer.addTilesFromGameManager()
+        renderer.createBaseLayer(fromGameManager: gameManager)
         renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
         mtkView.delegate = renderer
     }
@@ -61,7 +60,7 @@ class GameViewController: UIViewController {
         if let touch = touches.first {
             let scaleFactor = view.contentScaleFactor
             let touchLocation = CGPoint(x: touch.location(in: view).x * scaleFactor,
-                                        y: renderer.view.drawableSize.height - touch.location(in: view).y * scaleFactor)
+                                        y: touch.location(in: view).y * scaleFactor)
             gameManager.notifyInput(at: touchLocation)
         }
     }

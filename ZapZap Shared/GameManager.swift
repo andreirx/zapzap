@@ -45,61 +45,80 @@ class GameManager {
 
     init() {
         gameBoard = GameBoard(width: boardWidth, height: boardHeight)
-        animationManager = AnimationManager(gameBoard: gameBoard!)
         self.lastInput = nil
 
         // Initialize tileQuads array with nil values
         self.tileQuads = Array(repeating: Array(repeating: nil, count: boardWidth + 2), count: boardHeight)
 
+        // create the animationManager
+        animationManager = AnimationManager(gameManager: self)
+
         // Create and configure the tiles
         createTiles()
     }
+    
+    func getTextureX(gridConnections: Int) -> Float {
+        let textureUnitX: Float = 1.0 / 16.0
+        return grid_codep[gridConnections] * textureUnitX
+    }
+    
+    func createNewTileQuad(i: Int, j: Int) -> QuadMesh? {
+        guard let gameBoard = gameBoard else { return nil }
+        guard let renderer = renderer else { return nil }
+        if i < 0 || i >= boardWidth + 2 || j < 0 || j >= boardHeight {
+            return nil
+        }
+        
+        let textureUnitX: Float = 1.0 / 16.0
+        let textureUnitY: Float = 1.0 / 8.0
+
+        let textureX: Float
+        let textureY: Float
+        if i == 0 {
+            textureX = 12.0 / 16.0
+            textureY = 3.0 * textureUnitY
+        } else if i == boardWidth + 1 {
+            textureX = 14.0 / 16.0
+            textureY = 3.0 * textureUnitY
+        } else {
+            let gridIndex = Int(gameBoard.connections[i - 1][j]!.connections)
+            textureX = getTextureX(gridConnections: gridIndex)
+            textureY = 1.0 * textureUnitY
+            print ("created new quad mesh based on gbc ", Int(gameBoard.connections[i - 1][j]!.connections), "at ", i, j)
+        }
+
+        let topLeftUV = SIMD2<Float>(textureX, textureY)
+        let bottomRightUV = SIMD2<Float>(textureX + textureUnitX, textureY + textureUnitY)
+
+        let quad = QuadMesh(device: renderer.device, size: tileSize, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV)
+        quad.position = SIMD2<Float>(Float(i) * tileSize + tileSize / 2.0 - Float(boardWidth + 2) / 2.0 * tileSize,
+                                     Float(j) * tileSize + tileSize / 2.0 - Float(boardHeight) / 2.0 * tileSize)
+        quad.rotation = 0.0
+        quad.scale = 1.0
+        
+        return quad
+    }
 
     func createTiles() {
-        guard let gameBoard = gameBoard else { print("NO GAME BOARD? return");return }
-        guard let renderer = renderer else { print("NO RENDERER? return");return }
+        guard let gameBoard = gameBoard else { return }
+        guard let renderer = renderer else { return }
 
         let textureUnitX: Float = 1.0 / 16.0
         let textureUnitY: Float = 1.0 / 8.0
 
         for i in 0..<boardWidth + 2 {
             for j in 0..<boardHeight {
-                let textureX: Float
-                let textureY: Float
-                if i == 0 {
-                    textureX = 12.0 / 16.0
-                    textureY = 3.0 * textureUnitY
-                } else if i == boardWidth + 1 {
-                    textureX = 14.0 / 16.0
-                    textureY = 3.0 * textureUnitY
-                } else {
-                    let gridIndex = Int(gameBoard.connections[i - 1][j]!.connections)
-                    textureX = grid_codep[gridIndex] * textureUnitX
-                    textureY = 1.0 * textureUnitY
-                }
-
-                let topLeftUV = SIMD2<Float>(textureX, textureY)
-                let bottomRightUV = SIMD2<Float>(textureX + textureUnitX, textureY + textureUnitY)
-
-                let quad = QuadMesh(device: renderer.device, size: tileSize, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV)
-                quad.position = SIMD2<Float>(Float(i) * tileSize + tileSize / 2.0 - Float(boardWidth + 2) / 2.0 * tileSize,
-                                             Float(j) * tileSize + tileSize / 2.0 - Float(boardHeight) / 2.0 * tileSize)
-                quad.rotation = 0.0
-                quad.scale = 1.0
-
-                tileQuads[j][i] = quad
+                tileQuads[j][i] = createNewTileQuad(i: i, j: j)
             }
         }
     }
 
     func update() {
         guard let renderer = renderer else { print("NO RENDERER? return");return }
-        // move those animations
-        animationManager?.updateAnimations()
-        // check whether any of them are blocking
         // ...
         // check for input
         if self.lastInput != nil {
+            // converting from screen coordinates to game coordinates
             let screenW = Float(renderer.view.drawableSize.width)
             let screenH = Float(renderer.view.drawableSize.height)
             let horizRatio = screenW / needW
@@ -113,10 +132,27 @@ class GameManager {
                 gameX = (Float(self.lastInput!.x) - (screenW / 2.0)) / vertRatio
                 gameY = (Float(self.lastInput!.y) - (screenH / 2.0)) / vertRatio
             }
-            print("converting to game coordinates... (", gameX, ", ", gameY, ")")
-            tileQuads[0][0]?.position = SIMD2<Float>(gameX, gameY)
+            // and then convert to tile coordinates to check if the user is interacting with the board
+            let quadX = Int(round((gameX + needW / 2.0) / tileSize) - 1)
+            let quadY = Int(round((gameY + needH / 2.0) / tileSize) - 1)
+            if quadX >= 0 && quadX < boardWidth + 2 && quadY >= 0 && quadY < boardWidth {
+                tileQuads[quadY][quadX]?.position = SIMD2<Float>(gameX, gameY)
+                if quadX >= 1 && quadX < boardWidth + 1 {
+                    print ("hit the board at ", quadX - 1, quadY)
+                    print ("gb connections was ", Int((gameBoard?.connections[quadX - 1][quadY]!.connections)!))
+                    gameBoard?.connections[quadX - 1][quadY]?.rotate()
+                    print ("gb connections is now ", Int((gameBoard?.connections[quadX - 1][quadY]!.connections)!))
+                    let newQuad = createNewTileQuad(i: quadX, j: quadY)
+                    tileQuads[quadY][quadX] = newQuad
+                    let animation = RotateAnimation(quad: newQuad!, duration: 0.5, tilePosition: (x: quadX - 1, y: quadY), objectsLayer: renderer.objectsLayer)
+                    animationManager?.addAnimation(animation)
+                }
+            }
             self.lastInput = nil
         }
+        // move those animations
+        animationManager?.updateAnimations()
+        // check whether any of them are blocking
         // Additional game update logic
         // ...
         // check connections

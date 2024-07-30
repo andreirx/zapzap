@@ -20,6 +20,7 @@ class Mesh {
     var indexCount: Int = 0
     var primitiveType: MTLPrimitiveType
     var perInstanceUniform: PerInstanceUniforms
+    var mtlDevice: MTLDevice
 
     var position: SIMD2<Float> = SIMD2<Float>(0, 0) {
         didSet { updateModelMatrix() }
@@ -32,6 +33,7 @@ class Mesh {
     }
         
     init(device: MTLDevice, vertices: [Float], indices: [UInt16]?, primitiveType: MTLPrimitiveType) {
+        self.mtlDevice = device
         self.primitiveType = primitiveType
         self.vertexBuffer = device.makeBuffer(bytes: vertices, length: MemoryLayout<Float>.size * vertices.count, options: [])
         self.vertexCount = vertices.count / 5
@@ -81,10 +83,10 @@ class QuadMesh: Mesh {
         let halfSize = size / 2.0
         let vertices: [Float] = [
             // Position          // Texture Coordinates
-            -halfSize, -halfSize, 0, topLeftUV.x, 1.0 - bottomRightUV.y,
-             halfSize, -halfSize, 0, bottomRightUV.x, 1.0 - bottomRightUV.y,
-             halfSize,  halfSize, 0, bottomRightUV.x, 1.0 - topLeftUV.y,
-            -halfSize,  halfSize, 0, topLeftUV.x, 1.0 - topLeftUV.y
+            -halfSize, -halfSize, 0, topLeftUV.x, 1.0 - topLeftUV.y,
+             halfSize, -halfSize, 0, bottomRightUV.x, 1.0 - topLeftUV.y,
+             halfSize,  halfSize, 0, bottomRightUV.x, 1.0 - bottomRightUV.y,
+            -halfSize,  halfSize, 0, topLeftUV.x, 1.0 - bottomRightUV.y
         ]
         let indices: [UInt16] = [0, 1, 2, 2, 3, 0]
         super.init(device: device, vertices: vertices, indices: indices, primitiveType: .triangle)

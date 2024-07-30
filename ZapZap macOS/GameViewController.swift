@@ -42,16 +42,20 @@ class GameViewController: NSViewController {
 
         // must initialize gamemanager somewhere
         gameManager = GameManager()
+        print ("created a GameManager")
 
         guard let newRenderer = Renderer(metalKitView: mtkView, gameManager: gameManager) else {
             print("Renderer cannot be initialized")
             return
         }
+        print ("created a Renderer")
 
         renderer = newRenderer
         gameManager.renderer = newRenderer
         gameManager.createTiles()
-        renderer.addTilesFromGameManager()
+        print ("created tiles")
+        renderer.createBaseLayer(fromGameManager: gameManager)
+//        renderer.addTilesFromGameManager()
         renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
         mtkView.delegate = renderer
     }
@@ -60,7 +64,7 @@ class GameViewController: NSViewController {
         super.mouseUp(with: event)
         let location = view.convert(event.locationInWindow, from: nil)
         let scaleFactor = view.window?.backingScaleFactor ?? 1.0
-        let convertedLocation = CGPoint(x: location.x * scaleFactor, y: location.y * scaleFactor)
+        let convertedLocation = CGPoint(x: location.x * scaleFactor, y: renderer.view.drawableSize.height - location.y * scaleFactor)
         gameManager.notifyInput(at: convertedLocation)
     }
 }

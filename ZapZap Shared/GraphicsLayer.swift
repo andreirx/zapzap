@@ -97,6 +97,30 @@ class GraphicsLayer {
     }
 }
 
+class GameBoardLayer: GraphicsLayer {
+    var gameMgr: GameManager
+    
+    init(device: MTLDevice, gameManager: GameManager) {
+        self.gameMgr = gameManager
+        super.init(device: device)
+    }
+    
+    override func render(encoder: MTLRenderCommandEncoder) {
+        guard let pipelineState = pipelineState else { return }
+        encoder.setRenderPipelineState(pipelineState)
+        if let texture = texture {
+            encoder.setFragmentTexture(texture, index: 0)
+        }
+        
+        for row in gameMgr.tileQuads {
+            for quad in row {
+                guard let mesh = quad else { continue }
+                mesh.draw(encoder: encoder)
+            }
+        }
+    }
+}
+
 class EffectsLayer: GraphicsLayer {
     override init(device: MTLDevice) {
         super.init(device: device)
