@@ -62,7 +62,7 @@ class GameBoard {
         self.height = height
         self.connections = Array(repeating: Array(repeating: nil, count: width), count: height)
         self.connectMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
-        self.resetTable(percentMissingLinks: 0)
+        self.resetTable(percentMissingLinks: 10)
     }
     
     func setTile(at x: Int, y: Int, tile: Tile) {

@@ -84,10 +84,6 @@ class GraphicsLayer {
         }
         
         for (index, mesh) in meshes.enumerated() {
-            mesh.rotation += 0.0001 * Float(index)
-            mesh.position.x += 0.1 * Float(Int.random(in: -9...9))
-            mesh.position.y += 0.1 * Float(Int.random(in: -9...9))
-            
             mesh.draw(encoder: encoder)
         }
     }

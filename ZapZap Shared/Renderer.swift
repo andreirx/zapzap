@@ -105,7 +105,6 @@ class Renderer: NSObject, MTKViewDelegate {
             for j in 0..<gameMgr.tileQuads[i].count {
                 if let quad = gameMgr.tileQuads[i][j] {
                     baseLayer.meshes.append(quad)
-                    print("added tile (", i, ", ", j, ")")
                 }
             }
         }
@@ -120,14 +119,12 @@ class Renderer: NSObject, MTKViewDelegate {
         return try textureLoader.newTexture(name: textureName, scaleFactor: 1.0, bundle: nil, options: textureLoaderOptions)
     }
     
-    private func updateConstants() -> Int {
-//        let t = Float(frameIndex) / 60.0
-//        let rotationMatrix = simd_float4x4(rotateZ: t)
+    private func updateConstants() {
         // viewport aspect ratio
         let screenAspectRatio = Float(view.drawableSize.width / view.drawableSize.height)
         // model space width and height needed to fit to the viewport
-        let needW = Float(220 + 80)
-        let needH = Float(200 + 80)
+        let needW = needW / 2.0
+        let needH = needH / 2.0
         let modelAspectRatio = needW / needH
         // pixels to model space units ratios - will fit to the smallest one
         let horizRatio = Float(view.drawableSize.width) / needW
@@ -146,9 +143,9 @@ class Renderer: NSObject, MTKViewDelegate {
         }
 
         let projectionMatrix = simd_float4x4(orthographicProjectionWithLeft: -canvasWidth,
-                                             top: -canvasHeight,
+                                             top: canvasHeight,
                                              right: canvasWidth,
-                                             bottom: canvasHeight,
+                                             bottom: -canvasHeight,
                                              near: 0.0,
                                              far: 1.0)
         var transformMatrix = projectionMatrix
@@ -156,17 +153,14 @@ class Renderer: NSObject, MTKViewDelegate {
         currentConstantBufferOffset = (frameIndex % MaxOutstandingFrameCount) * Renderer.constantsStride
         let constants = constantBuffer.contents().advanced(by: currentConstantBufferOffset)
         constants.copyMemory(from: &transformMatrix, byteCount: Renderer.constantsSize)
-
-        // Return the offset where the modelMatrix should be copied
-        return currentConstantBufferOffset + MemoryLayout<matrix_float4x4>.size
     }
     
     func draw(in view: MTKView) {
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
         
         currentConstantBufferOffset = (frameIndex % maxBuffersInFlight) * Renderer.constantsStride
-        let modelMatrixOffset = updateConstants()
-//        updateConstants()
+        updateConstants()
+        gameMgr.update()
         
         guard let commandBuffer = commandQueue.makeCommandBuffer(),
               let renderPassDescriptor = view.currentRenderPassDescriptor,
@@ -176,7 +170,7 @@ class Renderer: NSObject, MTKViewDelegate {
         }
         
         renderEncoder.label = "Primary Render Encoder"
-        renderEncoder.pushDebugGroup("Draw Layers")
+//        renderEncoder.pushDebugGroup("Draw Layers")
 //        renderEncoder.setVertexBuffer(constantBuffer, offset: currentConstantBufferOffset, index: 2)
 
         if let samplerState = samplerState {
@@ -192,7 +186,7 @@ class Renderer: NSObject, MTKViewDelegate {
         textLayer.render(encoder: renderEncoder)
         effectsLayer.render(encoder: renderEncoder)
 
-        renderEncoder.popDebugGroup()
+//        renderEncoder.popDebugGroup()
         renderEncoder.endEncoding()
 
         if let drawable = view.currentDrawable {

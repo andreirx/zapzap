@@ -81,10 +81,10 @@ class QuadMesh: Mesh {
         let halfSize = size / 2.0
         let vertices: [Float] = [
             // Position          // Texture Coordinates
-            -halfSize, -halfSize, 0, topLeftUV.x, 1.0 - topLeftUV.y,
-             halfSize, -halfSize, 0, bottomRightUV.x, 1.0 - topLeftUV.y,
-             halfSize,  halfSize, 0, bottomRightUV.x, 1.0 - bottomRightUV.y,
-            -halfSize,  halfSize, 0, topLeftUV.x, 1.0 - bottomRightUV.y
+            -halfSize, -halfSize, 0, topLeftUV.x, 1.0 - bottomRightUV.y,
+             halfSize, -halfSize, 0, bottomRightUV.x, 1.0 - bottomRightUV.y,
+             halfSize,  halfSize, 0, bottomRightUV.x, 1.0 - topLeftUV.y,
+            -halfSize,  halfSize, 0, topLeftUV.x, 1.0 - topLeftUV.y
         ]
         let indices: [UInt16] = [0, 1, 2, 2, 3, 0]
         super.init(device: device, vertices: vertices, indices: indices, primitiveType: .triangle)

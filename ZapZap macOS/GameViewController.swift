@@ -58,8 +58,9 @@ class GameViewController: NSViewController {
 
     override func mouseUp(with event: NSEvent) {
         super.mouseUp(with: event)
-        let location = event.locationInWindow
-        let convertedLocation = view.convert(location, from: nil)
+        let location = view.convert(event.locationInWindow, from: nil)
+        let scaleFactor = view.window?.backingScaleFactor ?? 1.0
+        let convertedLocation = CGPoint(x: location.x * scaleFactor, y: location.y * scaleFactor)
         gameManager.notifyInput(at: convertedLocation)
     }
 }

@@ -59,7 +59,9 @@ class GameViewController: UIViewController {
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesEnded(touches, with: event)
         if let touch = touches.first {
-            let touchLocation = touch.location(in: view)
+            let scaleFactor = view.contentScaleFactor
+            let touchLocation = CGPoint(x: touch.location(in: view).x * scaleFactor,
+                                        y: renderer.view.drawableSize.height - touch.location(in: view).y * scaleFactor)
             gameManager.notifyInput(at: touchLocation)
         }
     }
