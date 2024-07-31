@@ -87,6 +87,20 @@ class Renderer: NSObject, MTKViewDelegate {
             return nil
         }
         
+        // Add example SegmentStripMesh to effectsLayer
+        let points: [SIMD2<Float>] = [
+            SIMD2<Float>(0, 0),
+            SIMD2<Float>(40, 30),
+            SIMD2<Float>(70, 80),
+            SIMD2<Float>(100, 100),
+            SIMD2<Float>(140, 70),
+            SIMD2<Float>(170, 50),
+            SIMD2<Float>(200, 0),
+            SIMD2<Float>(250, 80),
+            SIMD2<Float>(300, 100)
+        ]
+        let segmentStrip = SegmentStripMesh(device: device, points: points, width: 20)
+        effectsLayer.meshes.append(segmentStrip)
 //        let quadMesh2 = QuadMesh(device: device, size: 600, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
 //        let quadMesh3 = QuadMesh(device: device, size: 300, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
 

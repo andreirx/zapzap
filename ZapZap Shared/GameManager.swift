@@ -44,7 +44,8 @@ class GameManager {
     ]
 
     init() {
-        gameBoard = GameBoard(width: boardWidth, height: boardHeight)
+        // TODO: fix the missing links do not leave it magic like this
+        gameBoard = GameBoard(width: boardWidth, height: boardHeight, missingLinks: 5)
         self.lastInput = nil
 
         // Initialize tileQuads array with nil values
@@ -144,7 +145,7 @@ class GameManager {
                     print ("gb connections is now ", Int((gameBoard?.connections[quadX - 1][quadY]!.connections)!))
                     let newQuad = createNewTileQuad(i: quadX, j: quadY)
                     tileQuads[quadY][quadX] = newQuad
-                    let animation = RotateAnimation(quad: newQuad!, duration: 0.5, tilePosition: (x: quadX - 1, y: quadY), objectsLayer: renderer.objectsLayer)
+                    let animation = RotateAnimation(quad: newQuad!, duration: 1, tilePosition: (x: quadX - 1, y: quadY), objectsLayer: renderer.objectsLayer, effectsLayer: renderer.effectsLayer)
                     animationManager?.addAnimation(animation)
                 }
             }

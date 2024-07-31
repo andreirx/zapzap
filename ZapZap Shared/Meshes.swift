@@ -93,11 +93,93 @@ class QuadMesh: Mesh {
     }
 }
 
-class IndexedMesh: Mesh {
-    init(device: MTLDevice, vertices: [Float], indices: [UInt16]) {
-        super.init(device: device, vertices: vertices, indices: indices, primitiveType: .triangle)
+
+class SegmentStripMesh: Mesh {
+    var points: [SIMD2<Float>]
+    var width: Float
+
+    private let textureUnit = Float(1.0 / 8.0)
+    
+    init(device: MTLDevice, points: [SIMD2<Float>], width: Float) {
+        self.points = points
+        self.width = width
+
+        var vertices: [Float] = []
+        var indices: [UInt16] = []
+
+        // Calculate additional start and end points
+        let firstPoint = points.first!
+        let secondPoint = points[1]
+        let lastPoint = points.last!
+        let secondLastPoint = points[points.count - 2]
+
+        let startDir = normalize(secondPoint - firstPoint)
+        let startPerp = SIMD2<Float>(-startDir.y, startDir.x) * width
+        let startPoint = firstPoint - startDir * width
+
+        let endDir = normalize(lastPoint - secondLastPoint)
+        let endPerp = SIMD2<Float>(-endDir.y, endDir.x) * width
+        let endPoint = lastPoint + endDir * width
+
+        // Add vertices for the additional start point
+        vertices.append(contentsOf: [(startPoint + startPerp).x, (startPoint + startPerp).y, 0, 4.0 * textureUnit, 4.0 * textureUnit])
+        vertices.append(contentsOf: [(startPoint - startPerp).x, (startPoint - startPerp).y, 0, 5.0 * textureUnit, 4.0 * textureUnit])
+        indices.append(UInt16(vertices.count / 5 - 2))
+        indices.append(UInt16(vertices.count / 5 - 1))
+
+        for i in 0..<points.count {
+            let currentPoint = points[i]
+
+            if i == 0 {
+                // First user point
+                let nextPoint = points[i + 1]
+                let dir = normalize(nextPoint - currentPoint)
+                let perp = SIMD2<Float>(-dir.y, dir.x) * width
+
+                let v0 = currentPoint + perp
+                let v1 = currentPoint - perp
+
+                vertices.append(contentsOf: [v0.x, v0.y, 0, 4.0 * textureUnit, 4.5 * textureUnit])
+                vertices.append(contentsOf: [v1.x, v1.y, 0, 5.0 * textureUnit, 4.5 * textureUnit])
+
+                indices.append(UInt16(vertices.count / 5 - 2))
+                indices.append(UInt16(vertices.count / 5 - 1))
+            } else {
+                // Subsequent user points
+                let previousPoint = points[i - 1]
+                let dir = normalize(currentPoint - previousPoint)
+                var perp = SIMD2<Float>(-dir.y, dir.x)
+
+                if i < points.count - 1 {
+                    let nextPoint = points[i + 1]
+                    let nextDir = normalize(nextPoint - currentPoint)
+                    let nextPerp = SIMD2<Float>(-nextDir.y, nextDir.x)
+                    perp = normalize(perp + nextPerp) * width
+                } else {
+                    perp *= width
+                }
+
+                let v0 = currentPoint + perp
+                let v1 = currentPoint - perp
+
+                vertices.append(contentsOf: [v0.x, v0.y, 0, 4.0 * textureUnit, 4.5 * textureUnit])
+                vertices.append(contentsOf: [v1.x, v1.y, 0, 5.0 * textureUnit, 4.5 * textureUnit])
+
+                indices.append(UInt16(vertices.count / 5 - 2))
+                indices.append(UInt16(vertices.count / 5 - 1))
+            }
+        }
+
+        // Add vertices for the additional end point
+        vertices.append(contentsOf: [(endPoint + endPerp).x, (endPoint + endPerp).y, 0, 4.0 * textureUnit, 5.0 * textureUnit])
+        vertices.append(contentsOf: [(endPoint - endPerp).x, (endPoint - endPerp).y, 0, 5.0 * textureUnit, 5.0 * textureUnit])
+        indices.append(UInt16(vertices.count / 5 - 2))
+        indices.append(UInt16(vertices.count / 5 - 1))
+
+        super.init(device: device, vertices: vertices, indices: indices, primitiveType: .triangleStrip)
     }
 }
+
 
 func matrix4x4_translation(_ x: Float, _ y: Float, _ z: Float) -> matrix_float4x4 {
     return matrix_float4x4(columns: (

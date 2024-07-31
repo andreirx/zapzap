@@ -53,18 +53,20 @@ class RotateAnimation: Animation {
     
     private var tempQuad: QuadMesh?
     private weak var objectsLayer: GraphicsLayer?
-    
+    private weak var effectsLayer: EffectsLayer?
+
     var isFinished: Bool {
         return elapsedTime >= duration
     }
     
-    init(quad: QuadMesh, duration: TimeInterval, tilePosition: (x: Int, y: Int), objectsLayer: GraphicsLayer) {
+    init(quad: QuadMesh, duration: TimeInterval, tilePosition: (x: Int, y: Int), objectsLayer: GraphicsLayer, effectsLayer: EffectsLayer) {
         self.quad = quad
         self.duration = duration
         self.tilePosition = tilePosition
         self.endRotation = quad.rotation
         self.startRotation = quad.rotation + .pi / 2
         self.objectsLayer = objectsLayer
+        self.effectsLayer = effectsLayer
         // we start from -90 degrees because the tile actually got rotated 90 degrees
         // which is to say its texture now shows it rotated
         // so we start rotating from -90 as if it was the old tile
@@ -74,7 +76,7 @@ class RotateAnimation: Animation {
         let tempQuad = QuadMesh(device: quad.mtlDevice, size: 100.0, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(0.25, 0.25))
         tempQuad.position = quad.position
         tempQuad.rotation = quad.rotation
-        objectsLayer.meshes.append(tempQuad)
+        effectsLayer.meshes.append(tempQuad)
         self.tempQuad = tempQuad
     }
     
@@ -96,7 +98,7 @@ class RotateAnimation: Animation {
             
             // Remove the temporary object from the objectsLayer
             if let tempQuad = tempQuad {
-                objectsLayer?.meshes.removeAll { $0 === tempQuad }
+                effectsLayer?.meshes.removeAll { $0 === tempQuad }
             }
         }
     }
