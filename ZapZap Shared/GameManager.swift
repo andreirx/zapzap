@@ -140,9 +140,7 @@ class GameManager {
                 tileQuads[quadY][quadX]?.position = SIMD2<Float>(gameX, gameY)
                 if quadX >= 1 && quadX < boardWidth + 1 {
                     print ("hit the board at ", quadX - 1, quadY)
-                    print ("gb connections was ", Int((gameBoard?.connections[quadX - 1][quadY]!.connections)!))
                     gameBoard?.connections[quadX - 1][quadY]?.rotate()
-                    print ("gb connections is now ", Int((gameBoard?.connections[quadX - 1][quadY]!.connections)!))
                     let newQuad = createNewTileQuad(i: quadX, j: quadY)
                     tileQuads[quadY][quadX] = newQuad
                     let animation = RotateAnimation(quad: newQuad!, duration: 1, tilePosition: (x: quadX - 1, y: quadY), objectsLayer: renderer.objectsLayer, effectsLayer: renderer.effectsLayer)

@@ -44,5 +44,5 @@ fragment float4 additive_fragment_main(ColorInOut in [[stage_in]],
                                        texture2d<float> colorTexture [[texture(0)]]) {
     constexpr sampler textureSampler (mag_filter::linear, min_filter::linear);
     float4 color = colorTexture.sample(textureSampler, in.texCoord);
-    return color * 8.0; // increase brightness for additive blending
+    return color * 4.0; // increase brightness for additive blending
 }

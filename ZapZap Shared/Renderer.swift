@@ -88,19 +88,19 @@ class Renderer: NSObject, MTKViewDelegate {
         }
         
         // Add example SegmentStripMesh to effectsLayer
-        let points: [SIMD2<Float>] = [
-            SIMD2<Float>(0, 0),
-            SIMD2<Float>(40, 30),
-            SIMD2<Float>(70, 80),
-            SIMD2<Float>(100, 100),
-            SIMD2<Float>(140, 70),
-            SIMD2<Float>(170, 50),
-            SIMD2<Float>(200, 0),
-            SIMD2<Float>(250, 80),
-            SIMD2<Float>(300, 100)
-        ]
-        let segmentStrip = SegmentStripMesh(device: device, points: points, width: 20)
+        let testArc = ElectricArc(startPoint: SIMD2<Float>(0, 0), endPoint: SIMD2<Float>(100, 100), powerOfTwo: 4)
+        let segmentStrip = SegmentStripMesh(device: device, points: testArc.points, width: 4, color: SegmentColor.orange)
+        let testArc1 = ElectricArc(startPoint: SIMD2<Float>(100, 100), endPoint: SIMD2<Float>(200, 0), powerOfTwo: 4)
+        let segmentStrip1 = SegmentStripMesh(device: device, points: testArc1.points, width: 4, color: SegmentColor.orange)
+        let testArc2 = ElectricArc(startPoint: SIMD2<Float>(200, 0), endPoint: SIMD2<Float>(300, 100), powerOfTwo: 4)
+        let segmentStrip2 = SegmentStripMesh(device: device, points: testArc2.points, width: 4, color: SegmentColor.orange)
+        let arcMesh1 = ElectricArcMesh(device: device, startPoint: SIMD2<Float>(-200, -100), endPoint: SIMD2<Float>(0, -100), powerOfTwo: 5, width: 8, color: SegmentColor.indigo)
+        let arcMesh2 = ElectricArcMesh(device: device, startPoint: SIMD2<Float>(-300, 100), endPoint: SIMD2<Float>(300, 100), powerOfTwo: 6, width: 16, color: SegmentColor.skyBlue)
         effectsLayer.meshes.append(segmentStrip)
+        effectsLayer.meshes.append(segmentStrip1)
+        effectsLayer.meshes.append(segmentStrip2)
+        effectsLayer.meshes.append(arcMesh1)
+        effectsLayer.meshes.append(arcMesh2)
 //        let quadMesh2 = QuadMesh(device: device, size: 600, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
 //        let quadMesh3 = QuadMesh(device: device, size: 300, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
 

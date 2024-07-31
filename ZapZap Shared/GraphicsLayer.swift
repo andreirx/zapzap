@@ -164,4 +164,20 @@ class EffectsLayer: GraphicsLayer {
             print("Failed to create additive pipeline state: \(error)")
         }
     }
+    
+    override func render(encoder: MTLRenderCommandEncoder) {
+        guard let pipelineState = pipelineState else { return }
+        encoder.setRenderPipelineState(pipelineState)
+        if let texture = texture {
+            encoder.setFragmentTexture(texture, index: 0)
+        }
+        
+        for (index, mesh) in meshes.enumerated() {
+            if let arcMesh = mesh as? ElectricArcMesh {
+                arcMesh.twitch(byFactor: 0.05)
+            }
+            mesh.draw(encoder: encoder)
+        }
+    }
+    
 }
