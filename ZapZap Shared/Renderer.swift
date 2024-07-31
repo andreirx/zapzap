@@ -86,26 +86,6 @@ class Renderer: NSObject, MTKViewDelegate {
             print("Unable to load texture. Error info: \(error)")
             return nil
         }
-        
-        // Add example SegmentStripMesh to effectsLayer
-        let testArc = ElectricArc(startPoint: SIMD2<Float>(0, 0), endPoint: SIMD2<Float>(100, 100), powerOfTwo: 4)
-        let segmentStrip = SegmentStripMesh(device: device, points: testArc.points, width: 4, color: SegmentColor.orange)
-        let testArc1 = ElectricArc(startPoint: SIMD2<Float>(100, 100), endPoint: SIMD2<Float>(200, 0), powerOfTwo: 4)
-        let segmentStrip1 = SegmentStripMesh(device: device, points: testArc1.points, width: 4, color: SegmentColor.orange)
-        let testArc2 = ElectricArc(startPoint: SIMD2<Float>(200, 0), endPoint: SIMD2<Float>(300, 100), powerOfTwo: 4)
-        let segmentStrip2 = SegmentStripMesh(device: device, points: testArc2.points, width: 4, color: SegmentColor.orange)
-        let arcMesh1 = ElectricArcMesh(device: device, startPoint: SIMD2<Float>(-200, -100), endPoint: SIMD2<Float>(0, -100), powerOfTwo: 5, width: 8, color: SegmentColor.indigo)
-        let arcMesh2 = ElectricArcMesh(device: device, startPoint: SIMD2<Float>(-300, 100), endPoint: SIMD2<Float>(300, 100), powerOfTwo: 6, width: 16, color: SegmentColor.skyBlue)
-        effectsLayer.meshes.append(segmentStrip)
-        effectsLayer.meshes.append(segmentStrip1)
-        effectsLayer.meshes.append(segmentStrip2)
-        effectsLayer.meshes.append(arcMesh1)
-        effectsLayer.meshes.append(arcMesh2)
-//        let quadMesh2 = QuadMesh(device: device, size: 600, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
-//        let quadMesh3 = QuadMesh(device: device, size: 300, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
-
-//        objectsLayer.meshes.append(quadMesh2)
-//        effectsLayer.meshes.append(quadMesh3)
     }
     
     func createBaseLayer(fromGameManager: GameManager) {
@@ -118,6 +98,13 @@ class Renderer: NSObject, MTKViewDelegate {
             print("Unable to load base layer texture. Error info: \(error)")
         }
 
+        // Call checkConnections and recreate connections
+        gameMgr.gameBoard?.checkConnections()
+
+        // remake all electric arcs according to their markers
+        gameMgr.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
+        gameMgr.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
+        gameMgr.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
     }
     
     class func loadTexture(device: MTLDevice, textureName: String) throws -> MTLTexture {

@@ -16,9 +16,22 @@ class AnimationManager {
     }
     
     func addAnimation(_ animation: Animation) {
+        guard let gameManager = gameManager else { return }
         animations.append(animation)
         let tilePosition = animation.tilePosition
-        gameManager?.gameBoard?.connectMarkings[tilePosition.x][tilePosition.y] = .animating
+
+        // Call checkConnections and recreate connections
+        gameManager.gameBoard?.checkConnections()
+        // except this one that is going to be rotating
+        gameManager.gameBoard?.connectMarkings[tilePosition.x][tilePosition.y] = .animating
+
+        // Remove all ElectricArcMesh instances from effectsLayer
+        gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
+
+        // remake all electric arcs according to their markers
+        gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
+        gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
+        gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
     }
     
     func updateAnimations() {
@@ -26,11 +39,22 @@ class AnimationManager {
             animation.update()
         }
         
+        guard let gameManager = gameManager else { return }
         // Remove finished animations and update connectMarkings
         animations.removeAll { animation in
             if animation.isFinished {
                 let tilePosition = animation.tilePosition
-                gameManager?.gameBoard?.connectMarkings[tilePosition.x][tilePosition.y] = .none
+                gameManager.gameBoard?.connectMarkings[tilePosition.x][tilePosition.y] = .none
+                // Call checkConnections and recreate connections
+                gameManager.gameBoard?.checkConnections()
+
+                // Remove all ElectricArcMesh instances from effectsLayer
+                gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
+
+                // remake all electric arcs according to their markers
+                gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
+                gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
+                gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
             }
             return animation.isFinished
         }

@@ -154,8 +154,64 @@ class GameManager {
         // check whether any of them are blocking
         // Additional game update logic
         // ...
-        // check connections
-        gameBoard?.checkConnections()
+        // check connections - NOT HERE NOT ANYMORE - only check when an animation starts or finishes
+        // gameBoard?.checkConnections()
+    }
+
+    func remakeElectricArcs(forMarker: Connection, withColor: SegmentColor, po2: Int, andWidth: Float) {
+        guard let gameBoard = gameBoard, let renderer = renderer else { return }
+
+        // Recreate arcs based on connections
+        for y in 0..<gameBoard.height {
+            // check leftmost connections with the pins
+            if forMarker == gameBoard.connectMarkings[0][y] {
+                if let tile = gameBoard.connections[0][y] {
+                    if tile.hasConnection(direction: .left) {
+                        let start = tileQuads[y][0]!.position
+                        let end = tileQuads[y][1]!.position
+                        let arc = ElectricArcMesh(device: renderer.device, startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
+                        renderer.effectsLayer.meshes.append(arc)
+                    }
+                }
+            }
+            // check rightmost connections with the pins
+            if forMarker == gameBoard.connectMarkings[gameBoard.width - 1][y] {
+                if let tile = gameBoard.connections[gameBoard.width - 1][y] {
+                    if tile.hasConnection(direction: .right) {
+                        let start = tileQuads[y][gameBoard.width]!.position
+                        let end = tileQuads[y][gameBoard.width + 1]!.position
+                        let arc = ElectricArcMesh(device: renderer.device, startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
+                        renderer.effectsLayer.meshes.append(arc)
+                    }
+                }
+            }
+            // check the rest of the table
+            for x in 0..<gameBoard.width {
+                if let tile = gameBoard.connections[x][y] {
+                    if forMarker == gameBoard.connectMarkings[x][y] {
+                        // For each connection direction, create an arc if connected
+                        // right-to-left
+                        if tile.hasConnection(direction: .right), x < gameBoard.width - 1 {
+                            if let rightTile = gameBoard.connections[x + 1][y], rightTile.hasConnection(direction: .left) {
+                                let start = tileQuads[y][x + 1]!.position
+                                let end = tileQuads[y][x + 2]!.position
+                                let arc = ElectricArcMesh(device: renderer.device, startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
+                                renderer.effectsLayer.meshes.append(arc)
+                            }
+                        }
+                        // top-to-bottom
+                        if tile.hasConnection(direction: .down), y < gameBoard.height - 1 {
+                            if let downTile = gameBoard.connections[x][y + 1], downTile.hasConnection(direction: .up) {
+                                let start = tileQuads[y][x + 1]!.position
+                                let end = tileQuads[y + 1][x + 1]!.position
+                                let arc = ElectricArcMesh(device: renderer.device, startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
+                                renderer.effectsLayer.meshes.append(arc)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     func notifyInput(at point: CGPoint) {

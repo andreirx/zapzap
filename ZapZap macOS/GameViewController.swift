@@ -55,7 +55,7 @@ class GameViewController: NSViewController {
         gameManager.createTiles()
         print ("created tiles")
         renderer.createBaseLayer(fromGameManager: gameManager)
-//        renderer.addTilesFromGameManager()
+
         renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
         mtkView.delegate = renderer
     }

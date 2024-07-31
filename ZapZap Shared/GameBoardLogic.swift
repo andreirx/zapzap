@@ -118,7 +118,10 @@ class GameBoard {
         // reset all info
         for j in 0..<height {
             for i in 0..<width {
-                connectMarkings[i][j] = .none
+                if connectMarkings[i][j] != .animating
+                {
+                    connectMarkings[i][j] = .none
+                }
             }
         }
         
