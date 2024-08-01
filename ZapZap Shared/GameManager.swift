@@ -14,8 +14,8 @@ import Cocoa
 import Foundation
 import simd
 
-let boardWidth = 10
-let boardHeight = 10
+let boardWidth = 12
+let boardHeight = 12
 let tileSize: Float = 50.0
 
 let needW = Float(boardWidth + 3) * tileSize

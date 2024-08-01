@@ -77,6 +77,15 @@ class Renderer: NSObject, MTKViewDelegate {
         textLayer = GraphicsLayer(device: device)
         effectsLayer = EffectsLayer(device: device)
         
+        // Example of adding a text quad
+        let text = "Hello, World!"
+        let font = Font.systemFont(ofSize: 64)
+        let color = Color.cyan
+        let textSize = CGSize(width: 512, height: 64)
+        
+        let textQuad = TextQuadMesh(device: device, text: text, font: font, color: color, size: textSize)
+        textLayer.meshes.append(textQuad)
+        
         do {
             objectsLayer.texture = try Renderer.loadTexture(device: device, textureName: "arrows")
             print ("created objects layer texture")
@@ -180,8 +189,8 @@ class Renderer: NSObject, MTKViewDelegate {
 
         baseLayer!.render(encoder: renderEncoder)
         objectsLayer.render(encoder: renderEncoder)
-        textLayer.render(encoder: renderEncoder)
         effectsLayer.render(encoder: renderEncoder)
+        textLayer.render(encoder: renderEncoder)
 
 //        renderEncoder.popDebugGroup()
         renderEncoder.endEncoding()
