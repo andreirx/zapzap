@@ -508,6 +508,14 @@ class TextQuadMesh: Mesh {
         
         return texture
     }
+    
+    func updateText(device: MTLDevice, text: String, font: Font, color: Color, size: CGSize) {
+        let textImage = TextQuadMesh.createTextImage(text: text, font: font, color: color, size: size)
+        guard let newTexture = TextQuadMesh.createTextureFromImage(device: device, image: textImage) else {
+            fatalError("Failed to create texture from text image")
+        }
+        self.texture = newTexture
+    }
 }
 
 #if os(iOS)

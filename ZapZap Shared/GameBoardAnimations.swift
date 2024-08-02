@@ -55,6 +55,11 @@ class AnimationManager {
                 gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
                 gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
                 gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+
+                // clean up if particle animation
+                if let particleAnimation = animation as? ParticleAnimation {
+                    particleAnimation.cleanup()
+                }
             }
             return animation.isFinished
         }
@@ -125,5 +130,37 @@ class RotateAnimation: Animation {
                 effectsLayer?.meshes.removeAll { $0 === tempQuad }
             }
         }
+    }
+}
+
+
+class ParticleAnimation: Animation {
+    private var duration: TimeInterval
+    private var elapsedTime: TimeInterval = 0
+
+    var isFinished: Bool {
+        return elapsedTime >= duration
+    }
+
+    let tilePosition: (x: Int, y: Int)
+    private weak var effectsLayer: EffectsLayer?
+
+    init(speedLimit: Float, width: Float, color: SegmentColor, count: Int, duration: TimeInterval, tilePosition: (x: Int, y: Int), effectsLayer: EffectsLayer) {
+        self.duration = duration
+        self.tilePosition = tilePosition
+        self.effectsLayer = effectsLayer
+        let position = SIMD2<Float>(Float(tilePosition.x + 2) * tileSize - needW / 2.0,
+                                    Float(tilePosition.y + 1) * tileSize - needH / 2.0)
+        effectsLayer.generateParticles(position: position, speedLimit: speedLimit, width: width, color: color, count: count)
+    }
+
+    func update() {
+        guard !isFinished else { return }
+        elapsedTime += 1 / 60.0 // Assuming 60 FPS update rate
+    }
+
+    func cleanup() {
+        // Remove all particles from effectsLayer
+        effectsLayer?.removeAllParticles()
     }
 }

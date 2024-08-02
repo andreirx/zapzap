@@ -77,15 +77,6 @@ class Renderer: NSObject, MTKViewDelegate {
         textLayer = GraphicsLayer(device: device)
         effectsLayer = EffectsLayer(device: device)
         
-        // Example of adding a text quad
-        let text = "Hello, World!"
-        let font = Font.systemFont(ofSize: 64)
-        let color = Color.cyan
-        let textSize = CGSize(width: 512, height: 64)
-        
-        let textQuad = TextQuadMesh(device: device, text: text, font: font, color: color, size: textSize)
-        textLayer.meshes.append(textQuad)
-        
         do {
             objectsLayer.texture = try Renderer.loadTexture(device: device, textureName: "arrows")
             print ("created objects layer texture")
@@ -106,6 +97,10 @@ class Renderer: NSObject, MTKViewDelegate {
         } catch {
             print("Unable to load base layer texture. Error info: \(error)")
         }
+
+        // Example of adding a text quad
+        textLayer.meshes.append(gameMgr.scoreLeftMesh!)
+        textLayer.meshes.append(gameMgr.scoreRightMesh!)
 
         // Call checkConnections and recreate connections
         gameMgr.gameBoard?.checkConnections()

@@ -26,6 +26,11 @@ class VertexDescriptor {
 }
 
 
+// // // // // // // // // // // // // // // // // // // // //
+//
+// GraphicsLayer - class with a texture that holds multiple meshes
+//
+
 
 class GraphicsLayer {
     var device: MTLDevice
@@ -121,6 +126,11 @@ class GameBoardLayer: GraphicsLayer {
     }
 }
 
+// // // // // // // // // // // // // // // // // // // // //
+//
+// EffectsLayer - additive layer conceived for making EDR effects that stand out
+//
+
 class EffectsLayer: GraphicsLayer {
     override init(device: MTLDevice) {
         super.init(device: device)
@@ -178,6 +188,23 @@ class EffectsLayer: GraphicsLayer {
             }
             mesh.draw(encoder: encoder)
         }
+    }
+
+    func generateParticles(position: SIMD2<Float>, speedLimit: Float, width: Float, color: SegmentColor, count: Int) {
+        // Generate particles
+        var particles = Particle.generate(device: device, count: count, speedLimit: speedLimit, width: width, color: color)
+        
+        // Set initial position for all particles
+        for particle in particles {
+            particle.position = position
+        }
+        
+        // Add particles to effectsLayer
+        meshes.append(contentsOf: particles)
+    }
+    
+    func removeAllParticles() {
+        meshes.removeAll { $0 is Particle }
     }
     
 }

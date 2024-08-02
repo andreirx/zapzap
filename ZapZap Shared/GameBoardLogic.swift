@@ -118,6 +118,9 @@ class GameBoard {
         // reset all info
         for j in 0..<height {
             for i in 0..<width {
+                // clear the markings except for animations
+                // although it's hard to pretend the tile is not there...
+                // TODO - clear this up
                 if connectMarkings[i][j] != .animating
                 {
                     connectMarkings[i][j] = .none

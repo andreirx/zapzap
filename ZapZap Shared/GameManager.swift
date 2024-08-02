@@ -38,6 +38,9 @@ class GameManager {
     var tileQuads: [[QuadMesh?]]
     var lastInput: CGPoint?
     
+    var scoreLeftMesh: TextQuadMesh? = nil
+    var scoreRightMesh: TextQuadMesh? = nil
+    
     // these are the correct texture positions (to be divided by 16.0) based on the connection code
     let grid_codep: [Float] = [
         0.0, 12.0, 15.0, 5.0, 14.0, 1.0, 4.0, 7.0, 13.0, 6.0, 2.0, 8.0, 3.0, 9.0, 10.0, 11.0
@@ -112,6 +115,17 @@ class GameManager {
                 tileQuads[j][i] = createNewTileQuad(i: i, j: j)
             }
         }
+
+        // create text meshes for keeping score
+        var text = "INDIGO\n0 points"
+        let font = Font.systemFont(ofSize: 32)
+//        let color = Color.magenta
+        let textSize = CGSize(width: 256, height: 128)
+        scoreLeftMesh = TextQuadMesh(device: renderer.device, text: text, font: font, color: Color.magenta, size: textSize)
+        scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 - tileSize * 3.0, -needH / 2.0 + tileSize * 2.0)
+        text = "ORANGE\n0 points"
+        scoreRightMesh = TextQuadMesh(device: renderer.device, text: text, font: font, color: Color.orange, size: textSize)
+        scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 + tileSize * 3.0, -needH / 2.0 + tileSize * 2.0)
     }
 
     func update() {
@@ -137,7 +151,7 @@ class GameManager {
             let quadX = Int(round((gameX + needW / 2.0) / tileSize) - 1)
             let quadY = Int(round((gameY + needH / 2.0) / tileSize) - 1)
             if quadX >= 0 && quadX < boardWidth + 2 && quadY >= 0 && quadY < boardWidth {
-                tileQuads[quadY][quadX]?.position = SIMD2<Float>(gameX, gameY)
+//                tileQuads[quadY][quadX]?.position = SIMD2<Float>(gameX, gameY)
                 if quadX >= 1 && quadX < boardWidth + 1 {
                     print ("hit the board at ", quadX - 1, quadY)
                     gameBoard?.connections[quadX - 1][quadY]?.rotate()
@@ -145,6 +159,10 @@ class GameManager {
                     tileQuads[quadY][quadX] = newQuad
                     let animation = RotateAnimation(quad: newQuad!, duration: 1, tilePosition: (x: quadX - 1, y: quadY), objectsLayer: renderer.objectsLayer, effectsLayer: renderer.effectsLayer)
                     animationManager?.addAnimation(animation)
+
+                    Particle.attractor = scoreLeftMesh!.position
+                    let particleAnimation = ParticleAnimation(speedLimit: 20.0, width: 4.0, color: .red, count: 100, duration: 10.0, tilePosition: (x: quadX - 1, y: quadY), effectsLayer: renderer.effectsLayer)
+                    animationManager?.addAnimation(particleAnimation)
                 }
             }
             self.lastInput = nil
