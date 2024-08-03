@@ -163,6 +163,7 @@ class GameBoard {
         }
         
         // if both sides connect, compute a score
+        // in fact you can use leftPinsConnect and rightPinsConnect for this
         
         return rVal
     }

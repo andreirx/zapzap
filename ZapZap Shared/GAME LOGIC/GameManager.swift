@@ -122,10 +122,10 @@ class GameManager {
 //        let color = Color.magenta
         let textSize = CGSize(width: 256, height: 128)
         scoreLeftMesh = TextQuadMesh(device: renderer.device, text: text, font: font, color: Color.magenta, size: textSize)
-        scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 - tileSize * 3.0, -needH / 2.0 + tileSize * 2.0)
+        scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 - tileSize * 2.0, -needH / 2.0 + tileSize * 2.0)
         text = "ORANGE\n0 points"
         scoreRightMesh = TextQuadMesh(device: renderer.device, text: text, font: font, color: Color.orange, size: textSize)
-        scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 + tileSize * 3.0, -needH / 2.0 + tileSize * 2.0)
+        scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 + tileSize * 2.0, -needH / 2.0 + tileSize * 2.0)
     }
 
     func update() {
