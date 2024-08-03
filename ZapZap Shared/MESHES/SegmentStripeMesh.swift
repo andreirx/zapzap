@@ -86,7 +86,7 @@ class SegmentStripMesh: Mesh {
     var width: Float
     var color: SegmentColor
     
-    init(device: MTLDevice, points: [SIMD2<Float>], width: Float, color: SegmentColor) {
+    init(points: [SIMD2<Float>], width: Float, color: SegmentColor) {
         self.points = points
         self.width = width
         self.color = color
@@ -175,7 +175,7 @@ class SegmentStripMesh: Mesh {
         indices.append(UInt16(vertices.count / 5 - 2))
         indices.append(UInt16(vertices.count / 5 - 1))
         
-        super.init(device: device, vertices: vertices, indices: indices, primitiveType: .triangleStrip)
+        super.init(vertices: vertices, indices: indices, primitiveType: .triangleStrip)
     }
     
     func remakeVertices() {

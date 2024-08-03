@@ -40,6 +40,8 @@
 		18BEF39D2C5E16DF00A4D753 /* ElectricArcMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF39B2C5E16DF00A4D753 /* ElectricArcMesh.swift */; };
 		18BEF39F2C5E175D00A4D753 /* SegmentStripeMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF39E2C5E175D00A4D753 /* SegmentStripeMesh.swift */; };
 		18BEF3A02C5E175D00A4D753 /* SegmentStripeMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF39E2C5E175D00A4D753 /* SegmentStripeMesh.swift */; };
+		18BEF3A42C5E56F000A4D753 /* Screen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3A32C5E56F000A4D753 /* Screen.swift */; };
+		18BEF3A52C5E56F000A4D753 /* Screen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3A32C5E56F000A4D753 /* Screen.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -66,6 +68,7 @@
 		18BEF3972C5A1EC900A4D753 /* ParticleEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticleEffects.swift; sourceTree = "<group>"; };
 		18BEF39B2C5E16DF00A4D753 /* ElectricArcMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectricArcMesh.swift; sourceTree = "<group>"; };
 		18BEF39E2C5E175D00A4D753 /* SegmentStripeMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentStripeMesh.swift; sourceTree = "<group>"; };
+		18BEF3A32C5E56F000A4D753 /* Screen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Screen.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,12 +105,8 @@
 				18BEF3A22C5E17DF00A4D753 /* GFX LOGIC */,
 				18BEF3A12C5E17CF00A4D753 /* GAME LOGIC */,
 				18BEF39A2C5E16B900A4D753 /* MESHES */,
-				18BEF3532C4A824A00A4D753 /* Renderer.swift */,
-				18BEF3852C4A9C9500A4D753 /* GraphicsLayer.swift */,
-				18BEF38B2C4FDE9900A4D753 /* GameBoardAnimations.swift */,
 				18BEF3942C5415AD00A4D753 /* Math.swift */,
 				18BEF3542C4A824A00A4D753 /* ShaderTypes.h */,
-				18BEF3522C4A824A00A4D753 /* Shaders.metal */,
 				18BEF3552C4A824B00A4D753 /* Assets.xcassets */,
 			);
 			path = "ZapZap Shared";
@@ -167,6 +166,11 @@
 		18BEF3A22C5E17DF00A4D753 /* GFX LOGIC */ = {
 			isa = PBXGroup;
 			children = (
+				18BEF3532C4A824A00A4D753 /* Renderer.swift */,
+				18BEF3852C4A9C9500A4D753 /* GraphicsLayer.swift */,
+				18BEF38B2C4FDE9900A4D753 /* GameBoardAnimations.swift */,
+				18BEF3A32C5E56F000A4D753 /* Screen.swift */,
+				18BEF3522C4A824A00A4D753 /* Shaders.metal */,
 			);
 			path = "GFX LOGIC";
 			sourceTree = "<group>";
@@ -281,6 +285,7 @@
 				18BEF3892C4F7BA400A4D753 /* GameBoardLogic.swift in Sources */,
 				18BEF3772C4A824B00A4D753 /* Renderer.swift in Sources */,
 				18BEF3922C5396F400A4D753 /* Meshes.swift in Sources */,
+				18BEF3A42C5E56F000A4D753 /* Screen.swift in Sources */,
 				18BEF3982C5A1EC900A4D753 /* ParticleEffects.swift in Sources */,
 				18BEF3752C4A824B00A4D753 /* Shaders.metal in Sources */,
 				18BEF3602C4A824B00A4D753 /* GameViewController.swift in Sources */,
@@ -301,6 +306,7 @@
 				18BEF38A2C4F7BA400A4D753 /* GameBoardLogic.swift in Sources */,
 				18BEF3782C4A824B00A4D753 /* Renderer.swift in Sources */,
 				18BEF3932C5396F400A4D753 /* Meshes.swift in Sources */,
+				18BEF3A52C5E56F000A4D753 /* Screen.swift in Sources */,
 				18BEF3992C5A1EC900A4D753 /* ParticleEffects.swift in Sources */,
 				18BEF3762C4A824B00A4D753 /* Shaders.metal in Sources */,
 				18BEF3702C4A824B00A4D753 /* GameViewController.swift in Sources */,

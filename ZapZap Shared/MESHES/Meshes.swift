@@ -31,7 +31,6 @@ class Mesh {
     var indexCount: Int = 0
     var primitiveType: MTLPrimitiveType
     var perInstanceUniform: PerInstanceUniforms
-    var mtlDevice: MTLDevice
 
     var position: SIMD2<Float> = SIMD2<Float>(0, 0) {
         didSet { updateModelMatrix() }
@@ -43,19 +42,18 @@ class Mesh {
         didSet { updateModelMatrix() }
     }
         
-    init(device: MTLDevice, vertices: [Float], indices: [UInt16]?, primitiveType: MTLPrimitiveType) {
-        self.mtlDevice = device
+    init(vertices: [Float], indices: [UInt16]?, primitiveType: MTLPrimitiveType) {
         self.primitiveType = primitiveType
-        self.vertexBuffer = device.makeBuffer(bytes: vertices, length: MemoryLayout<Float>.size * vertices.count, options: [])
+        self.vertexBuffer = Renderer.device.makeBuffer(bytes: vertices, length: MemoryLayout<Float>.size * vertices.count, options: [])
         self.vertexCount = vertices.count / 5
         
         if let indices = indices {
-            self.indexBuffer = device.makeBuffer(bytes: indices, length: MemoryLayout<UInt16>.size * indices.count, options: [])
+            self.indexBuffer = Renderer.device.makeBuffer(bytes: indices, length: MemoryLayout<UInt16>.size * indices.count, options: [])
             self.indexCount = indices.count
         }
         
         self.perInstanceUniform = PerInstanceUniforms(modelMatrix: matrix_identity_float4x4)
-        self.uniformBuffer = device.makeBuffer(length: MemoryLayout<PerInstanceUniforms>.size, options: .storageModeShared)
+        self.uniformBuffer = Renderer.device.makeBuffer(length: MemoryLayout<PerInstanceUniforms>.size, options: .storageModeShared)
         updateModelMatrix()
     }
     
@@ -100,7 +98,7 @@ class Mesh {
 //
 
 class QuadMesh: Mesh {
-    init(device: MTLDevice, size: Float, topLeftUV: SIMD2<Float>, bottomRightUV: SIMD2<Float>) {
+    init(size: Float, topLeftUV: SIMD2<Float>, bottomRightUV: SIMD2<Float>) {
         let halfSize = size / 2.0
         let vertices: [Float] = [
             // Position          // Texture Coordinates
@@ -110,7 +108,7 @@ class QuadMesh: Mesh {
             -halfSize,  halfSize, 0, topLeftUV.x, 1.0 - bottomRightUV.y
         ]
         let indices: [UInt16] = [0, 1, 2, 2, 3, 0]
-        super.init(device: device, vertices: vertices, indices: indices, primitiveType: .triangle)
+        super.init(vertices: vertices, indices: indices, primitiveType: .triangle)
     }
 }
 
@@ -129,9 +127,9 @@ import MetalKit
 class TextQuadMesh: Mesh {
     var texture: MTLTexture?
     
-    init(device: MTLDevice, text: String, font: Font, color: Color, size: CGSize) {
+    init(text: String, font: Font, color: Color, size: CGSize) {
         let textImage = TextQuadMesh.createTextImage(text: text, font: font, color: color, size: size)
-        guard let texture = TextQuadMesh.createTextureFromImage(device: device, image: textImage) else {
+        guard let texture = TextQuadMesh.createTextureFromImage(image: textImage) else {
             fatalError("Failed to create texture from text image")
         }
         self.texture = texture
@@ -143,7 +141,7 @@ class TextQuadMesh: Mesh {
              -Float(size.width / 2),  Float(size.height / 2), 0, 0.0, 1.0
         ]
         let indices: [UInt16] = [0, 1, 2, 2, 3, 0]
-        super.init(device: device, vertices: vertices, indices: indices, primitiveType: .triangle)
+        super.init(vertices: vertices, indices: indices, primitiveType: .triangle)
     }
     
     override func draw(encoder: MTLRenderCommandEncoder) {
@@ -208,7 +206,7 @@ class TextQuadMesh: Mesh {
 #endif
     }
     
-    private static func createTextureFromImage(device: MTLDevice, image: Image) -> MTLTexture? {
+    private static func createTextureFromImage(image: Image) -> MTLTexture? {
 #if os(iOS)
         guard let cgImage = image.cgImage else { return nil }
 #elseif os(macOS)
@@ -241,7 +239,7 @@ class TextQuadMesh: Mesh {
                                                                          height: height,
                                                                          mipmapped: false)
         textureDescriptor.usage = .shaderRead
-        let texture = device.makeTexture(descriptor: textureDescriptor)
+        let texture = Renderer.device.makeTexture(descriptor: textureDescriptor)
         
         let region = MTLRegionMake2D(0, 0, width, height)
         texture?.replace(region: region, mipmapLevel: 0, withBytes: rawPointer, bytesPerRow: bytesPerRow)
@@ -251,9 +249,9 @@ class TextQuadMesh: Mesh {
         return texture
     }
     
-    func updateText(device: MTLDevice, text: String, font: Font, color: Color, size: CGSize) {
+    func updateText(text: String, font: Font, color: Color, size: CGSize) {
         let textImage = TextQuadMesh.createTextImage(text: text, font: font, color: color, size: size)
-        guard let newTexture = TextQuadMesh.createTextureFromImage(device: device, image: textImage) else {
+        guard let newTexture = TextQuadMesh.createTextureFromImage(image: textImage) else {
             fatalError("Failed to create texture from text image")
         }
         self.texture = newTexture

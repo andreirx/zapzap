@@ -94,7 +94,7 @@ class GameManager {
         let topLeftUV = SIMD2<Float>(textureX, textureY)
         let bottomRightUV = SIMD2<Float>(textureX + textureUnitX, textureY + textureUnitY)
 
-        let quad = QuadMesh(device: renderer.device, size: tileSize, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV)
+        let quad = QuadMesh(size: tileSize, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV)
         quad.position = SIMD2<Float>(Float(i) * tileSize + tileSize / 2.0 - Float(boardWidth + 2) / 2.0 * tileSize,
                                      Float(j) * tileSize + tileSize / 2.0 - Float(boardHeight) / 2.0 * tileSize)
         quad.rotation = 0.0
@@ -121,10 +121,10 @@ class GameManager {
         let font = Font.systemFont(ofSize: 32)
 //        let color = Color.magenta
         let textSize = CGSize(width: 256, height: 128)
-        scoreLeftMesh = TextQuadMesh(device: renderer.device, text: text, font: font, color: Color.magenta, size: textSize)
+        scoreLeftMesh = TextQuadMesh(text: text, font: font, color: Color.magenta, size: textSize)
         scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 - tileSize * 2.0, -needH / 2.0 + tileSize * 2.0)
         text = "ORANGE\n0 points"
-        scoreRightMesh = TextQuadMesh(device: renderer.device, text: text, font: font, color: Color.orange, size: textSize)
+        scoreRightMesh = TextQuadMesh(text: text, font: font, color: Color.orange, size: textSize)
         scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 + tileSize * 2.0, -needH / 2.0 + tileSize * 2.0)
     }
 
@@ -187,7 +187,7 @@ class GameManager {
                     if tile.hasConnection(direction: .left) {
                         let start = tileQuads[y][0]!.position
                         let end = tileQuads[y][1]!.position
-                        let arc = ElectricArcMesh(device: renderer.device, startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
+                        let arc = ElectricArcMesh(startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
                         renderer.effectsLayer.meshes.append(arc)
                     }
                 }
@@ -198,7 +198,7 @@ class GameManager {
                     if tile.hasConnection(direction: .right) {
                         let start = tileQuads[y][gameBoard.width]!.position
                         let end = tileQuads[y][gameBoard.width + 1]!.position
-                        let arc = ElectricArcMesh(device: renderer.device, startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
+                        let arc = ElectricArcMesh(startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
                         renderer.effectsLayer.meshes.append(arc)
                     }
                 }
@@ -213,7 +213,7 @@ class GameManager {
                             if let rightTile = gameBoard.connections[x + 1][y], rightTile.hasConnection(direction: .left) {
                                 let start = tileQuads[y][x + 1]!.position
                                 let end = tileQuads[y][x + 2]!.position
-                                let arc = ElectricArcMesh(device: renderer.device, startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
+                                let arc = ElectricArcMesh(startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
                                 renderer.effectsLayer.meshes.append(arc)
                             }
                         }
@@ -222,7 +222,7 @@ class GameManager {
                             if let downTile = gameBoard.connections[x][y + 1], downTile.hasConnection(direction: .up) {
                                 let start = tileQuads[y][x + 1]!.position
                                 let end = tileQuads[y + 1][x + 1]!.position
-                                let arc = ElectricArcMesh(device: renderer.device, startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
+                                let arc = ElectricArcMesh(startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
                                 renderer.effectsLayer.meshes.append(arc)
                             }
                         }

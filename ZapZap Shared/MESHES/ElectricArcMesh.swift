@@ -94,9 +94,9 @@ class ElectricArc {
 class ElectricArcMesh: SegmentStripMesh {
     var electricArc: ElectricArc
 
-    init(device: MTLDevice, startPoint: SIMD2<Float>, endPoint: SIMD2<Float>, powerOfTwo: Int, width: Float, color: SegmentColor) {
+    init(startPoint: SIMD2<Float>, endPoint: SIMD2<Float>, powerOfTwo: Int, width: Float, color: SegmentColor) {
         self.electricArc = ElectricArc(startPoint: startPoint, endPoint: endPoint, powerOfTwo: powerOfTwo)
-        super.init(device: device, points: electricArc.points, width: width, color: color)
+        super.init(points: electricArc.points, width: width, color: color)
     }
 
     func twitch(byFactor: Float) {

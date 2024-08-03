@@ -38,8 +38,8 @@ class GraphicsLayer {
     var texture: MTLTexture?
     var meshes: [Mesh] = []
     
-    init(device: MTLDevice) {
-        self.device = device
+    init() {
+        self.device = Renderer.device
         print("GraphicsLayer init: will create pipeline")
         setupPipeline(vertexFunctionName: "vertex_main", fragmentFunctionName: "sprite_fragment_main")
     }
@@ -95,7 +95,7 @@ class GraphicsLayer {
     
     func loadTexture(imageName: String) {
         do {
-            self.texture = try Renderer.loadTexture(device: device, textureName: imageName)
+            self.texture = try Renderer.loadTexture(textureName: imageName)
         } catch {
             print("Failed to load texture: \(error)")
         }
@@ -105,9 +105,9 @@ class GraphicsLayer {
 class GameBoardLayer: GraphicsLayer {
     var gameMgr: GameManager
     
-    init(device: MTLDevice, gameManager: GameManager) {
+    init(gameManager: GameManager) {
         self.gameMgr = gameManager
-        super.init(device: device)
+        super.init()
     }
     
     override func render(encoder: MTLRenderCommandEncoder) {
@@ -132,8 +132,8 @@ class GameBoardLayer: GraphicsLayer {
 //
 
 class EffectsLayer: GraphicsLayer {
-    override init(device: MTLDevice) {
-        super.init(device: device)
+    override init() {
+        super.init()
         print("EffectsLayer init: will create pipeline")
         setupAdditivePipeline(vertexFunctionName: "vertex_main", fragmentFunctionName: "additive_fragment_main")
     }

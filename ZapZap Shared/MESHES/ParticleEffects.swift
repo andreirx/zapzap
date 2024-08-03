@@ -24,9 +24,9 @@ class Particle: SegmentStripMesh {
 
     var speed: SIMD2<Float>
 
-    init(device: MTLDevice, position: SIMD2<Float>, speed: SIMD2<Float>, width: Float, color: SegmentColor) {
+    init(position: SIMD2<Float>, speed: SIMD2<Float>, width: Float, color: SegmentColor) {
         self.speed = speed
-        super.init(device: device, points: [SIMD2<Float>(0, 0), speed], width: width, color: color)
+        super.init(points: [SIMD2<Float>(0, 0), speed], width: width, color: color)
         self.position = position
     }
 
@@ -65,7 +65,7 @@ class Particle: SegmentStripMesh {
             let randomY = Float.random(in: -speedLimit...speedLimit)
             let speed = SIMD2<Float>(randomX, randomY)
             let position = SIMD2<Float>(0, 0) // Initial position
-            let particle = Particle(device: device, position: position, speed: speed, width: width, color: color)
+            let particle = Particle(position: position, speed: speed, width: width, color: color)
             particles.append(particle)
         }
 

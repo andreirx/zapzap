@@ -22,7 +22,8 @@ class GameViewController: UIViewController {
             return
         }
 
-        guard let defaultDevice = MTLCreateSystemDefaultDevice() else {
+        Renderer.device = MTLCreateSystemDefaultDevice()
+        guard let defaultDevice = Renderer.device else {
             print("Metal is not supported")
             return
         }

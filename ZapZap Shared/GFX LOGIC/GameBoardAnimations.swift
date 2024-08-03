@@ -102,7 +102,7 @@ class RotateAnimation: Animation {
         // and rotate into its correct position
         
         // Create a temporary object and add it to the objectsLayer
-        let tempQuad = QuadMesh(device: quad.mtlDevice, size: 100.0, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(0.25, 0.25))
+        let tempQuad = QuadMesh(size: 100.0, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(0.25, 0.25))
         tempQuad.position = quad.position
         tempQuad.rotation = quad.rotation
         effectsLayer.meshes.append(tempQuad)

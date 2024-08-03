@@ -19,7 +19,7 @@ let MaxOutstandingFrameCount = 3
 
 class Renderer: NSObject, MTKViewDelegate {
     var gameMgr: GameManager
-    public let device: MTLDevice
+    static var device: MTLDevice!
     let commandQueue: MTLCommandQueue
     let view: MTKView
     var samplerState: MTLSamplerState?
@@ -40,9 +40,12 @@ class Renderer: NSObject, MTKViewDelegate {
     private var frameIndex: Int = 0
         
     init?(metalKitView: MTKView, gameManager: GameManager) {
+        guard let device = Renderer.device else {
+            print("Renderer init... No device to render on...")
+            return nil
+        }
         self.gameMgr = gameManager
-        self.device = metalKitView.device!
-        guard let queue = self.device.makeCommandQueue() else { return nil }
+        guard let queue = device.makeCommandQueue() else { return nil }
         self.commandQueue = queue
         self.view = metalKitView
         self.view.device = device
@@ -73,14 +76,14 @@ class Renderer: NSObject, MTKViewDelegate {
 
         // must have the tilequads already initialized in gameManager before creating the renderer!
         
-        objectsLayer = GraphicsLayer(device: device)
-        textLayer = GraphicsLayer(device: device)
-        effectsLayer = EffectsLayer(device: device)
+        objectsLayer = GraphicsLayer()
+        textLayer = GraphicsLayer()
+        effectsLayer = EffectsLayer()
         
         do {
-            objectsLayer.texture = try Renderer.loadTexture(device: device, textureName: "arrows")
+            objectsLayer.texture = try Renderer.loadTexture(textureName: "arrows")
             print ("created objects layer texture")
-            effectsLayer.texture = try Renderer.loadTexture(device: device, textureName: "arrows")
+            effectsLayer.texture = try Renderer.loadTexture(textureName: "arrows")
             print ("created effects layer texture")
         } catch {
             print("Unable to load texture. Error info: \(error)")
@@ -90,9 +93,9 @@ class Renderer: NSObject, MTKViewDelegate {
     
     func createBaseLayer(fromGameManager: GameManager) {
         gameMgr = fromGameManager
-        baseLayer = GameBoardLayer(device: device, gameManager: fromGameManager)
+        baseLayer = GameBoardLayer(gameManager: fromGameManager)
         do {
-            baseLayer!.texture = try Renderer.loadTexture(device: device, textureName: "base_tiles")
+            baseLayer!.texture = try Renderer.loadTexture(textureName: "base_tiles")
             print ("created base layer texture")
         } catch {
             print("Unable to load base layer texture. Error info: \(error)")
@@ -111,8 +114,8 @@ class Renderer: NSObject, MTKViewDelegate {
         gameMgr.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
     }
     
-    class func loadTexture(device: MTLDevice, textureName: String) throws -> MTLTexture {
-        let textureLoader = MTKTextureLoader(device: device)
+    class func loadTexture(textureName: String) throws -> MTLTexture {
+        let textureLoader = MTKTextureLoader(device: Renderer.device)
         let textureLoaderOptions: [MTKTextureLoader.Option: Any] = [
             .textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
             .textureStorageMode: NSNumber(value: MTLStorageMode.private.rawValue)
