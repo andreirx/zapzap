@@ -42,6 +42,16 @@
 		18BEF3A02C5E175D00A4D753 /* SegmentStripeMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF39E2C5E175D00A4D753 /* SegmentStripeMesh.swift */; };
 		18BEF3A42C5E56F000A4D753 /* Screen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3A32C5E56F000A4D753 /* Screen.swift */; };
 		18BEF3A52C5E56F000A4D753 /* Screen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3A32C5E56F000A4D753 /* Screen.swift */; };
+		18BEF3AC2C611D7800A4D753 /* bop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3A72C611D7500A4D753 /* bop.wav */; };
+		18BEF3AD2C611D7800A4D753 /* bop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3A72C611D7500A4D753 /* bop.wav */; };
+		18BEF3AE2C611D7800A4D753 /* buzz.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3A82C611D7500A4D753 /* buzz.wav */; };
+		18BEF3AF2C611D7800A4D753 /* buzz.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3A82C611D7500A4D753 /* buzz.wav */; };
+		18BEF3B02C611D7800A4D753 /* rotate.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3A92C611D7600A4D753 /* rotate.wav */; };
+		18BEF3B12C611D7800A4D753 /* rotate.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3A92C611D7600A4D753 /* rotate.wav */; };
+		18BEF3B22C611D7800A4D753 /* powerup.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3AA2C611D7700A4D753 /* powerup.wav */; };
+		18BEF3B32C611D7800A4D753 /* powerup.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3AA2C611D7700A4D753 /* powerup.wav */; };
+		18BEF3B42C611D7800A4D753 /* explode.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3AB2C611D7800A4D753 /* explode.wav */; };
+		18BEF3B52C611D7800A4D753 /* explode.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3AB2C611D7800A4D753 /* explode.wav */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +79,11 @@
 		18BEF39B2C5E16DF00A4D753 /* ElectricArcMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectricArcMesh.swift; sourceTree = "<group>"; };
 		18BEF39E2C5E175D00A4D753 /* SegmentStripeMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentStripeMesh.swift; sourceTree = "<group>"; };
 		18BEF3A32C5E56F000A4D753 /* Screen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Screen.swift; sourceTree = "<group>"; };
+		18BEF3A72C611D7500A4D753 /* bop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = bop.wav; sourceTree = "<group>"; };
+		18BEF3A82C611D7500A4D753 /* buzz.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = buzz.wav; sourceTree = "<group>"; };
+		18BEF3A92C611D7600A4D753 /* rotate.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = rotate.wav; sourceTree = "<group>"; };
+		18BEF3AA2C611D7700A4D753 /* powerup.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = powerup.wav; sourceTree = "<group>"; };
+		18BEF3AB2C611D7800A4D753 /* explode.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = explode.wav; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,6 +117,7 @@
 		18BEF3512C4A824A00A4D753 /* ZapZap Shared */ = {
 			isa = PBXGroup;
 			children = (
+				18BEF3A62C611D4D00A4D753 /* AudioResources */,
 				18BEF3A22C5E17DF00A4D753 /* GFX LOGIC */,
 				18BEF3A12C5E17CF00A4D753 /* GAME LOGIC */,
 				18BEF39A2C5E16B900A4D753 /* MESHES */,
@@ -173,6 +189,18 @@
 				18BEF3522C4A824A00A4D753 /* Shaders.metal */,
 			);
 			path = "GFX LOGIC";
+			sourceTree = "<group>";
+		};
+		18BEF3A62C611D4D00A4D753 /* AudioResources */ = {
+			isa = PBXGroup;
+			children = (
+				18BEF3A72C611D7500A4D753 /* bop.wav */,
+				18BEF3A82C611D7500A4D753 /* buzz.wav */,
+				18BEF3AB2C611D7800A4D753 /* explode.wav */,
+				18BEF3AA2C611D7700A4D753 /* powerup.wav */,
+				18BEF3A92C611D7600A4D753 /* rotate.wav */,
+			);
+			path = AudioResources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -255,9 +283,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				18BEF3792C4A824B00A4D753 /* ShaderTypes.h in Resources */,
+				18BEF3B22C611D7800A4D753 /* powerup.wav in Resources */,
 				18BEF3632C4A824B00A4D753 /* Base in Resources */,
 				18BEF37B2C4A824B00A4D753 /* Assets.xcassets in Resources */,
+				18BEF3AE2C611D7800A4D753 /* buzz.wav in Resources */,
+				18BEF3B02C611D7800A4D753 /* rotate.wav in Resources */,
+				18BEF3AC2C611D7800A4D753 /* bop.wav in Resources */,
 				18BEF3662C4A824B00A4D753 /* Base in Resources */,
+				18BEF3B42C611D7800A4D753 /* explode.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -265,7 +298,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18BEF3B52C611D7800A4D753 /* explode.wav in Resources */,
+				18BEF3B32C611D7800A4D753 /* powerup.wav in Resources */,
+				18BEF3AF2C611D7800A4D753 /* buzz.wav in Resources */,
+				18BEF3AD2C611D7800A4D753 /* bop.wav in Resources */,
 				18BEF3732C4A824B00A4D753 /* Base in Resources */,
+				18BEF3B12C611D7800A4D753 /* rotate.wav in Resources */,
 				18BEF37C2C4A824B00A4D753 /* Assets.xcassets in Resources */,
 				18BEF37A2C4A824B00A4D753 /* ShaderTypes.h in Resources */,
 			);
@@ -475,7 +513,7 @@
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -506,7 +544,7 @@
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -542,7 +580,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.incordo.ZapZap;
 				PRODUCT_NAME = ZapZap;
@@ -572,7 +610,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.incordo.ZapZap;
 				PRODUCT_NAME = ZapZap;

@@ -19,8 +19,8 @@ import Metal
 class Particle: SegmentStripMesh {
     static var friction: Float = 0.02
     static var attractor: SIMD2<Float> = SIMD2<Float>(-300, -300)
-    static var attractStrength: Float = 0.5
-    static var speedFactor: Float = 0.3
+    static var attractStrength: Float = 0.8
+    static var speedFactor: Float = 0.8
 
     var speed: SIMD2<Float>
 
@@ -57,7 +57,7 @@ class Particle: SegmentStripMesh {
         position += speed * Particle.speedFactor
     }
 
-    static func generate(device: MTLDevice, count: Int, speedLimit: Float, width: Float, color: SegmentColor) -> [Particle] {
+    static func generate(count: Int, speedLimit: Float, width: Float) -> [Particle] {
         var particles: [Particle] = []
 
         for _ in 0..<count {
@@ -65,6 +65,7 @@ class Particle: SegmentStripMesh {
             let randomY = Float.random(in: -speedLimit...speedLimit)
             let speed = SIMD2<Float>(randomX, randomY)
             let position = SIMD2<Float>(0, 0) // Initial position
+            let color = SegmentColor.random()
             let particle = Particle(position: position, speed: speed, width: width, color: color)
             particles.append(particle)
         }

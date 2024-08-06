@@ -7,6 +7,11 @@
 
 import Foundation
 
+// // // // // // // // // // // // // // // // // // // // //
+//
+// AnimationManager - class to manage animations around
+//
+
 class AnimationManager {
     var animations: [Animation] = []
     weak var gameManager: GameManager? // Use weak reference to avoid retain cycles
@@ -66,11 +71,21 @@ class AnimationManager {
     }
 }
 
+// // // // // // // // // // // // // // // // // // // // //
+//
+// Animation - protocol to say what an animation is
+//
+
 protocol Animation {
     var isFinished: Bool { get }
     var tilePosition: (x: Int, y: Int) { get }
     func update()
 }
+
+// // // // // // // // // // // // // // // // // // // // //
+//
+// RotateAnimation - class defining and managing a rotating tile animation
+//
 
 class RotateAnimation: Animation {
     private let quad: QuadMesh
@@ -133,6 +148,10 @@ class RotateAnimation: Animation {
     }
 }
 
+// // // // // // // // // // // // // // // // // // // // //
+//
+// ParticleAnimation - class defining and managing animating particles
+//
 
 class ParticleAnimation: Animation {
     private var duration: TimeInterval
@@ -143,15 +162,23 @@ class ParticleAnimation: Animation {
     }
 
     let tilePosition: (x: Int, y: Int)
-    private weak var effectsLayer: EffectsLayer?
+    private var effectsLayer: EffectsLayer
+    private weak var targetScreen: Screen?
 
-    init(speedLimit: Float, width: Float, color: SegmentColor, count: Int, duration: TimeInterval, tilePosition: (x: Int, y: Int), effectsLayer: EffectsLayer) {
+    init(speedLimit: Float, width: Float, count: Int, duration: TimeInterval, tilePosition: (x: Int, y: Int), targetScreen: Screen) {
         self.duration = duration
         self.tilePosition = tilePosition
-        self.effectsLayer = effectsLayer
-        let position = SIMD2<Float>(Float(tilePosition.x + 2) * tileSize - needW / 2.0,
-                                    Float(tilePosition.y + 1) * tileSize - needH / 2.0)
-        effectsLayer.generateParticles(position: position, speedLimit: speedLimit, width: width, color: color, count: count)
+        self.targetScreen = targetScreen
+        
+        // Create a new EffectsLayer
+        self.effectsLayer = EffectsLayer()
+        
+        let position = SIMD2<Float>(Float(tilePosition.x + 2) * tileSize - boardW / 2.0,
+                                    Float(tilePosition.y + 1) * tileSize - boardH / 2.0)
+        effectsLayer.generateParticles(position: position, speedLimit: speedLimit, width: width, count: count)
+
+        // Add the new EffectsLayer to the target screen's layers
+        targetScreen.addLayer(self.effectsLayer)
     }
 
     func update() {
@@ -161,6 +188,8 @@ class ParticleAnimation: Animation {
 
     func cleanup() {
         // Remove all particles from effectsLayer
-        effectsLayer?.removeAllParticles()
+        effectsLayer.removeAllParticles()
+        // Remove the EffectsLayer from the target screen's layers
+        targetScreen?.removeLayer(self.effectsLayer)
     }
 }

@@ -14,8 +14,12 @@ import simd
 // SegmentColor - texture positions
 //
 
-enum SegmentColor {
+enum SegmentColor: CaseIterable {
     case red, orange, yellow, limeGreen, green, greenCyan, cyan, skyBlue, blue, indigo, magenta, pink, white
+
+    static func random() -> SegmentColor {
+        return SegmentColor.allCases.randomElement()!
+    }
 
     var textureCoordinates: (first: (start: SIMD2<Float>, end: SIMD2<Float>), middle: (start: SIMD2<Float>, end: SIMD2<Float>), last: (start: SIMD2<Float>, end: SIMD2<Float>)) {
         let tu = Float(1.0 / 8.0)

@@ -17,12 +17,65 @@ let alignedUniformsSize = (MemoryLayout<matrix_float4x4>.size + 0xFF) & -0x100
 let maxBuffersInFlight = 3
 let MaxOutstandingFrameCount = 3
 
+
+// // // // // // // // // // // // // // // // // // // // //
+//
+// ResourceTextures - class for managing textures
+//
+
+class ResourceTextures {
+    private var textures: [String: MTLTexture] = [:]
+    private let textureLoader: MTKTextureLoader
+    
+    init(device: MTLDevice, textureNames: [String]) {
+        self.textureLoader = MTKTextureLoader(device: device)
+        loadTextures(textureNames: textureNames)
+    }
+    
+    private func loadTextures(textureNames: [String]) {
+        let textureLoaderOptions: [MTKTextureLoader.Option: Any] = [
+            .textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
+            .textureStorageMode: NSNumber(value: MTLStorageMode.private.rawValue)
+        ]
+        
+        for name in textureNames {
+            do {
+                let texture = try textureLoader.newTexture(name: name, scaleFactor: 1.0, bundle: nil, options: textureLoaderOptions)
+                textures[name] = texture
+                print("Loaded texture: \(name)")
+            } catch {
+                print("Failed to load texture: \(name). Error: \(error)")
+            }
+        }
+    }
+    
+    func getTexture(named name: String) -> MTLTexture? {
+        return textures[name]
+    }
+}
+
+
+// // // // // // // // // // // // // // // // // // // // //
+//
+// Renderer - the class that will draw everything
+//
+
 class Renderer: NSObject, MTKViewDelegate {
     var gameMgr: GameManager
     static var device: MTLDevice!
     let commandQueue: MTLCommandQueue
     let view: MTKView
     var samplerState: MTLSamplerState?
+
+    var textures: ResourceTextures!
+    
+    var logoScreen: Screen!
+    var titleScreen: Screen!
+    var mainMenuScreen: Screen!
+    var gameScreen: Screen!
+    var pauseScreen: Screen!
+    
+    var currentScreen: Screen?
     
     var baseLayer: GameBoardLayer? // this one won't be ready at creation time, will have to add it later after getting a GameManager
     var objectsLayer: GraphicsLayer!
@@ -33,12 +86,14 @@ class Renderer: NSObject, MTKViewDelegate {
     static let constantsSize: Int = MemoryLayout<matrix_float4x4>.size
     static let constantsStride: Int = align(constantsSize, upTo: 256)
     private var currentConstantBufferOffset: Int
+
     var projectionMatrix: matrix_float4x4 = matrix_float4x4()
     var modelMatrix: matrix_float4x4 = matrix_float4x4()
 
     let inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
     private var frameIndex: Int = 0
-        
+
+    
     init?(metalKitView: MTKView, gameManager: GameManager) {
         guard let device = Renderer.device else {
             print("Renderer init... No device to render on...")
@@ -62,8 +117,9 @@ class Renderer: NSObject, MTKViewDelegate {
         samplerDescriptor.tAddressMode = .repeat
         self.samplerState = device.makeSamplerState(descriptor: samplerDescriptor)
 
-//        self.constantsSize = MemoryLayout<Uniforms>.size
-//        self.constantsStride = align(self.constantsSize, upTo: 256)
+        let textureNames = ["arrows", "base_tiles", "stars"]
+        textures = ResourceTextures(device: Renderer.device, textureNames: textureNames)
+
         self.currentConstantBufferOffset = 0
         self.frameIndex = 0
         let constantBufferSize = Renderer.constantsStride * maxBuffersInFlight
@@ -74,32 +130,27 @@ class Renderer: NSObject, MTKViewDelegate {
         super.init()
         self.view.delegate = self
 
+        logoScreen = Screen()
+        titleScreen = Screen()
+        mainMenuScreen = Screen()
+        gameScreen = Screen()
+        pauseScreen = Screen()
+
+        setCurrentScreen(gameScreen)
         // must have the tilequads already initialized in gameManager before creating the renderer!
         
         objectsLayer = GraphicsLayer()
         textLayer = GraphicsLayer()
         effectsLayer = EffectsLayer()
         
-        do {
-            objectsLayer.texture = try Renderer.loadTexture(textureName: "arrows")
-            print ("created objects layer texture")
-            effectsLayer.texture = try Renderer.loadTexture(textureName: "arrows")
-            print ("created effects layer texture")
-        } catch {
-            print("Unable to load texture. Error info: \(error)")
-            return nil
-        }
+        objectsLayer.texture = textures.getTexture(named: "arrows")
+        effectsLayer.texture = textures.getTexture(named: "arrows")
     }
     
     func createBaseLayer(fromGameManager: GameManager) {
         gameMgr = fromGameManager
         baseLayer = GameBoardLayer(gameManager: fromGameManager)
-        do {
-            baseLayer!.texture = try Renderer.loadTexture(textureName: "base_tiles")
-            print ("created base layer texture")
-        } catch {
-            print("Unable to load base layer texture. Error info: \(error)")
-        }
+        baseLayer?.texture = textures.getTexture(named: "base_tiles")
 
         // Example of adding a text quad
         textLayer.meshes.append(gameMgr.scoreLeftMesh!)
@@ -112,8 +163,18 @@ class Renderer: NSObject, MTKViewDelegate {
         gameMgr.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
         gameMgr.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
         gameMgr.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+        
+        // add layers to game screen
+        gameScreen.addLayer(baseLayer!)
+        gameScreen.addLayer(objectsLayer)
+        gameScreen.addLayer(effectsLayer)
+        gameScreen.addLayer(textLayer)
     }
     
+    func setCurrentScreen(_ screen: Screen) {
+        currentScreen = screen
+    }
+
     class func loadTexture(textureName: String) throws -> MTLTexture {
         let textureLoader = MTKTextureLoader(device: Renderer.device)
         let textureLoaderOptions: [MTKTextureLoader.Option: Any] = [
@@ -174,8 +235,6 @@ class Renderer: NSObject, MTKViewDelegate {
         }
         
         renderEncoder.label = "Primary Render Encoder"
-//        renderEncoder.pushDebugGroup("Draw Layers")
-//        renderEncoder.setVertexBuffer(constantBuffer, offset: currentConstantBufferOffset, index: 2)
 
         if let samplerState = samplerState {
             renderEncoder.setFragmentSamplerState(samplerState, index: 0)
@@ -185,12 +244,13 @@ class Renderer: NSObject, MTKViewDelegate {
         let constants = constantBuffer.contents().advanced(by: currentConstantBufferOffset)
         renderEncoder.setVertexBuffer(constantBuffer, offset: currentConstantBufferOffset, index: 2)
 
+        currentScreen?.render(encoder: renderEncoder)
+/*
         baseLayer!.render(encoder: renderEncoder)
         objectsLayer.render(encoder: renderEncoder)
         effectsLayer.render(encoder: renderEncoder)
         textLayer.render(encoder: renderEncoder)
-
-//        renderEncoder.popDebugGroup()
+*/
         renderEncoder.endEncoding()
 
         if let drawable = view.currentDrawable {
@@ -209,7 +269,6 @@ class Renderer: NSObject, MTKViewDelegate {
         let aspect = Float(size.width) / Float(size.height)
         projectionMatrix = matrix_perspective_right_hand(fovyRadians: radians_from_degrees(0), aspectRatio: aspect, nearZ: 0.1, farZ: 100.0)
         modelMatrix = matrix4x4_translation(0, 0, -1)
-//        print("view size has changed: ", size.width, size.height, " and aspect: ", aspect)
     }
 }
 

@@ -50,8 +50,11 @@ class GameBoard {
     let height: Int
     var connections: [[Tile?]]
     var connectMarkings: [[Connection]]
+
     var leftPinsConnect: Int = 0
+    var leftConquered: Int = 0
     var rightPinsConnect: Int = 0
+    var rightConquered: Int = 0
     
     private var missingLinks: Int = 0
     private var newElements: Int = 0

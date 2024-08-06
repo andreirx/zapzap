@@ -18,7 +18,10 @@ let boardWidth = 12
 let boardHeight = 12
 let tileSize: Float = 50.0
 
-let needW = Float(boardWidth + 3) * tileSize
+let boardW = Float(boardWidth + 3) * tileSize
+let boardH = Float(boardHeight + 1) * tileSize
+
+let needW = Float(boardWidth + 9) * tileSize
 let needH = Float(boardHeight + 1) * tileSize
 
 enum GameScreen: Int {
@@ -122,10 +125,10 @@ class GameManager {
 //        let color = Color.magenta
         let textSize = CGSize(width: 256, height: 128)
         scoreLeftMesh = TextQuadMesh(text: text, font: font, color: Color.magenta, size: textSize)
-        scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 - tileSize * 2.0, -needH / 2.0 + tileSize * 2.0)
+        scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 + tileSize * 1.75, -needH / 2.0 + tileSize * 2.0)
         text = "ORANGE\n0 points"
         scoreRightMesh = TextQuadMesh(text: text, font: font, color: Color.orange, size: textSize)
-        scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 + tileSize * 2.0, -needH / 2.0 + tileSize * 2.0)
+        scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 - tileSize * 1.75, -needH / 2.0 + tileSize * 2.0)
     }
 
     func update() {
@@ -148,8 +151,8 @@ class GameManager {
                 gameY = (Float(self.lastInput!.y) - (screenH / 2.0)) / vertRatio
             }
             // and then convert to tile coordinates to check if the user is interacting with the board
-            let quadX = Int(round((gameX + needW / 2.0) / tileSize) - 1)
-            let quadY = Int(round((gameY + needH / 2.0) / tileSize) - 1)
+            let quadX = Int(round((gameX + boardW / 2.0) / tileSize) - 1)
+            let quadY = Int(round((gameY + boardH / 2.0) / tileSize) - 1)
             if quadX >= 0 && quadX < boardWidth + 2 && quadY >= 0 && quadY < boardWidth {
 //                tileQuads[quadY][quadX]?.position = SIMD2<Float>(gameX, gameY)
                 if quadX >= 1 && quadX < boardWidth + 1 {
@@ -161,7 +164,7 @@ class GameManager {
                     animationManager?.addAnimation(animation)
 
                     Particle.attractor = scoreLeftMesh!.position
-                    let particleAnimation = ParticleAnimation(speedLimit: 20.0, width: 4.0, color: .red, count: 100, duration: 10.0, tilePosition: (x: quadX - 1, y: quadY), effectsLayer: renderer.effectsLayer)
+                    let particleAnimation = ParticleAnimation(speedLimit: 20.0, width: 8.0, count: 100, duration: 4.0, tilePosition: (x: quadX - 1, y: quadY), targetScreen:  renderer.gameScreen)
                     animationManager?.addAnimation(particleAnimation)
                 }
             }

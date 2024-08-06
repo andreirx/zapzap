@@ -190,9 +190,9 @@ class EffectsLayer: GraphicsLayer {
         }
     }
 
-    func generateParticles(position: SIMD2<Float>, speedLimit: Float, width: Float, color: SegmentColor, count: Int) {
+    func generateParticles(position: SIMD2<Float>, speedLimit: Float, width: Float, count: Int) {
         // Generate particles
-        var particles = Particle.generate(device: device, count: count, speedLimit: speedLimit, width: width, color: color)
+        var particles = Particle.generate(count: count, speedLimit: speedLimit, width: width)
         
         // Set initial position for all particles
         for particle in particles {

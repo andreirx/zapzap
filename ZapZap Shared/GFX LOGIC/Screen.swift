@@ -9,6 +9,11 @@ import Foundation
 import MetalKit
 import Metal
 
+// // // // // // // // // // // // // // // // // // // // //
+//
+// Screen - generic class designed to organize layers together
+//
+
 class Screen {
     var layers: [GraphicsLayer] = []
 
@@ -19,6 +24,10 @@ class Screen {
 
     func addLayer(_ layer: GraphicsLayer) {
         layers.append(layer)
+    }
+
+    func removeLayer(_ layer: GraphicsLayer) {
+        layers.removeAll { $0 === layer }
     }
 
     func render(encoder: MTLRenderCommandEncoder) {
