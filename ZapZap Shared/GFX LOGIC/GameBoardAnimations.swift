@@ -24,19 +24,8 @@ class AnimationManager {
         guard let gameManager = gameManager else { return }
         animations.append(animation)
         let tilePosition = animation.tilePosition
-
-        // Call checkConnections and recreate connections
-        gameManager.gameBoard?.checkConnections()
-        // except this one that is going to be rotating
-        gameManager.gameBoard?.connectMarkings[tilePosition.x][tilePosition.y] = .animating
-
         // Remove all ElectricArcMesh instances from effectsLayer
         gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
-
-        // remake all electric arcs according to their markers
-        gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
-        gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
-        gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
     }
     
     func updateAnimations() {
@@ -172,6 +161,7 @@ class ParticleAnimation: Animation {
         
         // Create a new EffectsLayer
         self.effectsLayer = EffectsLayer()
+        effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         
         let position = SIMD2<Float>(Float(tilePosition.x + 2) * tileSize - boardW / 2.0,
                                     Float(tilePosition.y + 1) * tileSize - boardH / 2.0)
@@ -193,3 +183,52 @@ class ParticleAnimation: Animation {
         targetScreen?.removeLayer(self.effectsLayer)
     }
 }
+
+// // // // // // // // // // // // // // // // // // // // //
+//
+// FallAnimation - class defining and managing a falling tile animation
+//
+
+class FallAnimation: Animation {
+    private let quad: QuadMesh
+    private let targetY: Float
+    private var elapsedTime: TimeInterval = 0
+    private var speed: Float = 0
+
+    static var gravity: Float = 9.8
+    static var friction: Float = 0.02
+    static var speedFactor: Float = 0.1
+
+    var isFinished: Bool {
+        return quad.position.y >= targetY
+    }
+
+    var tilePosition: (x: Int, y: Int)
+
+    init(quad: QuadMesh, targetY: Float, tilePosition: (x: Int, y: Int)) {
+        self.quad = quad
+        self.targetY = targetY
+        self.tilePosition = tilePosition
+    }
+
+    func update() {
+        guard !isFinished else {
+            quad.position.y = targetY
+            return
+        }
+
+        elapsedTime += 1 / 60.0 // Assuming 60 FPS update rate
+        speed += FallAnimation.gravity * FallAnimation.speedFactor * (1 / 60.0)
+        speed *= (1.0 - FallAnimation.friction)
+        quad.position.y += speed
+
+        if quad.position.y >= targetY {
+            quad.position.y = targetY
+        }
+    }
+
+    func cleanup() {
+        // Cleanup logic if necessary
+    }
+}
+

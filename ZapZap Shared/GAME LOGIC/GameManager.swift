@@ -64,11 +64,23 @@ class GameManager {
         createTiles()
     }
     
+    // get correct texture position depending on the grid connections
     func getTextureX(gridConnections: Int) -> Float {
         let textureUnitX: Float = 1.0 / 16.0
         return grid_codep[gridConnections] * textureUnitX
     }
     
+    // get correct tile position X
+    func getIdealTilePositionX(i: Int) -> Float {
+        return Float(i) * tileSize + tileSize / 2.0 - Float(boardWidth + 2) / 2.0 * tileSize
+    }
+    
+    // get correct tile position Y
+    func getIdealTilePositionY(j: Int) -> Float {
+        return Float(j) * tileSize + tileSize / 2.0 - Float(boardHeight) / 2.0 * tileSize
+    }
+    
+    // function to create ONE tile quad based on its position and gameBoard connections
     func createNewTileQuad(i: Int, j: Int) -> QuadMesh? {
         guard let gameBoard = gameBoard else { return nil }
         guard let renderer = renderer else { return nil }
@@ -98,6 +110,7 @@ class GameManager {
         let bottomRightUV = SIMD2<Float>(textureX + textureUnitX, textureY + textureUnitY)
 
         let quad = QuadMesh(size: tileSize, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV)
+        // appropriate positions for the tile
         quad.position = SIMD2<Float>(Float(i) * tileSize + tileSize / 2.0 - Float(boardWidth + 2) / 2.0 * tileSize,
                                      Float(j) * tileSize + tileSize / 2.0 - Float(boardHeight) / 2.0 * tileSize)
         quad.rotation = 0.0
@@ -106,6 +119,7 @@ class GameManager {
         return quad
     }
 
+    // function to create ALL tileQuads when initializing
     func createTiles() {
         guard let gameBoard = gameBoard else { return }
         guard let renderer = renderer else { return }
@@ -131,6 +145,58 @@ class GameManager {
         scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 - tileSize * 1.75, -needH / 2.0 + tileSize * 2.0)
     }
 
+    // method to update tileQuads based on the new connections table
+    func zapRemoveConnectionsCreateNewAndMakeThemFall() {
+        // first remove from the tile matrix and generate new tiles
+        gameBoard?.removeAndShiftConnectingTiles()
+        // now our business - remove old and create new tile quads
+        // and set up animations for them to fall into place
+        for x in 1..<boardWidth + 1 {
+            var newTilePosition = getIdealTilePositionY(j: 0) - Float(tileSize)
+            var shiftedItems = 0
+            for y in (0..<boardHeight).reversed() {
+                if gameBoard?.connectMarkings[x - 1][y] == .ok {
+                    // make an explosion out of it
+                    Particle.attractor = scoreLeftMesh!.position
+                    let particleAnimation = ParticleAnimation(speedLimit: 20.0, width: 8.0, count: 20, duration: 4.0, tilePosition: (x: x - 1, y: y), targetScreen:  renderer!.gameScreen)
+                    animationManager?.addAnimation(particleAnimation)
+                    // but make sure to remake the marking
+                    gameBoard?.connectMarkings[x - 1][y] = .ok
+                    shiftedItems += 1
+                    // Shift tileQuads above downward - only in the tileQuads matrix
+                    if y >= 1 {
+                        for shiftY in (1...y).reversed() {
+                            tileQuads[shiftY][x] = tileQuads[shiftY - 1][x]
+                        }
+                    }
+                }
+            }
+            print ("on column ", x, " we shifted ", shiftedItems, " tileQuads down")
+            for y in (0..<shiftedItems).reversed() {
+                // do NOT update their positions, let them stand where they are
+                // will add an animation later to bring them down
+                // Create new tileQuad at the top
+                tileQuads[y][x] = createNewTileQuad(i: x, j: y)
+                if let quad = tileQuads[y][x] {
+                    quad.position.y = newTilePosition
+                    newTilePosition -= Float(tileSize) // generate the next one even higher above
+                }
+            }
+        }
+        for x in 1..<boardWidth + 1 {
+            for y in 0..<boardHeight {
+                // as mentioned above, if a tile is above where it should be
+                // then generate an animation to bring it down
+                if let quad = tileQuads[y][x], quad.position.y < getIdealTilePositionY(j: y) {
+//                    print("falling tile at (", x, ", ", y, ") from ", quad.position.y, " to ", getIdealTilePositionY(j: y))
+                    let fallAnimation = FallAnimation(quad: quad, targetY: getIdealTilePositionY(j: y), tilePosition: (x: x - 1, y: y))
+                    animationManager?.addAnimation(fallAnimation)
+                }
+            }
+        }
+    }
+
+    // function that handles frame by frame updates
     func update() {
         guard let renderer = renderer else { print("NO RENDERER? return");return }
         // ...
@@ -162,23 +228,25 @@ class GameManager {
                     tileQuads[quadY][quadX] = newQuad
                     let animation = RotateAnimation(quad: newQuad!, duration: 1, tilePosition: (x: quadX - 1, y: quadY), objectsLayer: renderer.objectsLayer, effectsLayer: renderer.effectsLayer)
                     animationManager?.addAnimation(animation)
-
+/*
                     Particle.attractor = scoreLeftMesh!.position
                     let particleAnimation = ParticleAnimation(speedLimit: 20.0, width: 8.0, count: 100, duration: 4.0, tilePosition: (x: quadX - 1, y: quadY), targetScreen:  renderer.gameScreen)
                     animationManager?.addAnimation(particleAnimation)
+*/
                 }
             }
             self.lastInput = nil
         }
         // move those animations
         animationManager?.updateAnimations()
-        // check whether any of them are blocking
-        // Additional game update logic
-        // ...
-        // check connections - NOT HERE NOT ANYMORE - only check when an animation starts or finishes
-        // gameBoard?.checkConnections()
+        // check connections
+        if gameBoard?.checkConnections() != 0 {
+            zapRemoveConnectionsCreateNewAndMakeThemFall()
+        }
     }
 
+    // function to clean up and remake electric arcs when the board changes
+    // call after checkConnections
     func remakeElectricArcs(forMarker: Connection, withColor: SegmentColor, po2: Int, andWidth: Float) {
         guard let gameBoard = gameBoard, let renderer = renderer else { return }
 
@@ -235,6 +303,8 @@ class GameManager {
         }
     }
 
+    // function to call when getting input from mouse or touch
+    // - converted to game coordinates
     func notifyInput(at point: CGPoint) {
         self.lastInput = CGPoint(x: point.x, y: point.y)
         print("got some input at ", self.lastInput!.x, self.lastInput!.y)

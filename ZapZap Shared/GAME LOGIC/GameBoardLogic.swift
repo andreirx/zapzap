@@ -72,7 +72,8 @@ class GameBoard {
     func setTile(at x: Int, y: Int, tile: Tile) {
         connections[x][y] = tile
     }
-    
+
+    // internal function used in checkConnections
     func expandConnectionsMarkings(cx: Int, cy: Int, ctype: Direction, marker: Connection) {
         // recursive until you get out of the board or you get to animating tiles
         guard cx >= 0, cy >= 0, cx < width, cy < height,
@@ -113,6 +114,8 @@ class GameBoard {
         }
     }
     
+    // method to paint connecting tiles from the left, from the right
+    // and then both sides if applicable
     func checkConnections() -> Int {
         var rVal = 0
         leftPinsConnect = 0
@@ -190,6 +193,26 @@ class GameBoard {
         return k
     }
     
+    // method to remove "ok" tiles and shift down - to call when zapping
+    // - but don't touch the markings, not yet!
+    func removeAndShiftConnectingTiles() {
+        for x in 0..<width {
+            for y in (0..<height).reversed() {
+                if connectMarkings[x][y] == .ok {
+                    // Shift tiles above down
+                    if y >= 1 {
+                        for shiftY in (1...y).reversed() {
+                            connections[x][shiftY] = connections[x][shiftY - 1]
+                        }
+                    }
+                    // Create new tile at the top
+                    connections[x][0] = Tile(connections: getNewElement())
+                }
+            }
+        }
+    }
+
+    // method to reset the entire table
     func resetTable(percentMissingLinks: Int) {
         missingLinks = percentMissingLinks
         newElements = 0

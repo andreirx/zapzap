@@ -67,7 +67,7 @@ class Renderer: NSObject, MTKViewDelegate {
     let view: MTKView
     var samplerState: MTLSamplerState?
 
-    var textures: ResourceTextures!
+    static var textures: ResourceTextures!
     
     var logoScreen: Screen!
     var titleScreen: Screen!
@@ -118,7 +118,7 @@ class Renderer: NSObject, MTKViewDelegate {
         self.samplerState = device.makeSamplerState(descriptor: samplerDescriptor)
 
         let textureNames = ["arrows", "base_tiles", "stars"]
-        textures = ResourceTextures(device: Renderer.device, textureNames: textureNames)
+        Renderer.textures = ResourceTextures(device: Renderer.device, textureNames: textureNames)
 
         self.currentConstantBufferOffset = 0
         self.frameIndex = 0
@@ -143,14 +143,14 @@ class Renderer: NSObject, MTKViewDelegate {
         textLayer = GraphicsLayer()
         effectsLayer = EffectsLayer()
         
-        objectsLayer.texture = textures.getTexture(named: "arrows")
-        effectsLayer.texture = textures.getTexture(named: "arrows")
+        objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
+        effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
     }
     
     func createBaseLayer(fromGameManager: GameManager) {
         gameMgr = fromGameManager
         baseLayer = GameBoardLayer(gameManager: fromGameManager)
-        baseLayer?.texture = textures.getTexture(named: "base_tiles")
+        baseLayer?.texture = Renderer.textures.getTexture(named: "base_tiles")
 
         // Example of adding a text quad
         textLayer.meshes.append(gameMgr.scoreLeftMesh!)
