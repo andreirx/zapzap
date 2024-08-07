@@ -36,9 +36,14 @@ class SoundManager: NSObject {
 
     // MARK: - Background Music
 /*
-    "Itty Bitty 8 Bit" Kevin MacLeod (incompetech.com)
-    Licensed under Creative Commons: By Attribution 4.0 License
-    http://creativecommons.org/licenses/by/4.0/
+ "Itty Bitty 8 Bit" Kevin MacLeod (incompetech.com)
+ Licensed under Creative Commons: By Attribution 4.0 License
+ http://creativecommons.org/licenses/by/4.0/
+*/
+/*
+ "8bit Dungeon Level" Kevin MacLeod (incompetech.com)
+ Licensed under Creative Commons: By Attribution 4.0 License
+ http://creativecommons.org/licenses/by/4.0/
 */
     func playBackgroundMusic(filename: String, fileExtension: String = "mp3") {
         guard isBackgroundMusicEnabled else { return }

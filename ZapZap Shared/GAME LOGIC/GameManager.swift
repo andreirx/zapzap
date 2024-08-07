@@ -169,7 +169,7 @@ class GameManager {
             for y in (0..<boardHeight).reversed() {
                 if gameBoard?.connectMarkings[x - 1][y] == .ok {
                     // make an explosion out of it
-                    let particleAnimation = ParticleAnimation(speedLimit: 10.0, width: 4.0, count: 10, duration: 1.0, tilePosition: (x: x - 1, y: y), targetScreen:  renderer!.gameScreen)
+                    let particleAnimation = ParticleAnimation(speedLimit: 10.0, width: 4.0, count: 10, duration: 2.0, tilePosition: (x: x - 1, y: y), targetScreen:  renderer!.gameScreen)
                     animationManager?.addAnimation(particleAnimation)
                     // but make sure to remake the marking
                     gameBoard?.connectMarkings[x - 1][y] = .ok

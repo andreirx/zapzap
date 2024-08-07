@@ -45,11 +45,13 @@ class AnimationManager {
                 // Remove all ElectricArcMesh instances from effectsLayer
                 gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
 
-                // remake all electric arcs according to their markers
-                gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
-                gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
-                gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
-
+                if let rotateAnimation = animation as? RotateAnimation {
+                    // remake all electric arcs according to their markers
+                    gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
+                    gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
+                    gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+                }
+                
                 // clean up if particle animation
                 if let particleAnimation = animation as? ParticleAnimation {
                     particleAnimation.cleanup()
@@ -224,6 +226,7 @@ class FallAnimation: Animation {
 
         if quad.position.y >= targetY {
             quad.position.y = targetY
+            SoundManager.shared.playSoundEffect(filename: "buzz")
         }
     }
 

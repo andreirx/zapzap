@@ -61,7 +61,7 @@ class GameViewController: NSViewController {
         mtkView.delegate = renderer
 
         // start the music
-        SoundManager.shared.playBackgroundMusic(filename: "IttyBitty")
+        SoundManager.shared.playBackgroundMusic(filename: "DungeonLevel")
     }
 
     override func mouseUp(with event: NSEvent) {

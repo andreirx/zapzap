@@ -160,7 +160,11 @@ class GameBoard {
                 } else {
                     expandConnectionsMarkings(cx: 0, cy: j, ctype: .left, marker: .left)
                 }
-                
+            }
+        }
+        // see if both sides connect and count the "score"
+        for j in 0..<height {
+            if let tile = connections[0][j], tile.hasConnection(direction: .left) {
                 // if any of the connections are "ok" then both sides connect
                 if connectMarkings[0][j] == .ok {
                     rVal = 1
