@@ -196,8 +196,8 @@ class FallAnimation: Animation {
     private var speed: Float = 0
 
     static var gravity: Float = 9.8
-    static var friction: Float = 0.02
-    static var speedFactor: Float = 0.1
+    static var friction: Float = 0.005
+    static var speedFactor: Float = 1.0
 
     var isFinished: Bool {
         return quad.position.y >= targetY

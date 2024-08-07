@@ -40,8 +40,10 @@ class GameManager {
     var animationManager: AnimationManager?
     var tileQuads: [[QuadMesh?]]
     var lastInput: CGPoint?
-    
+
+    var leftScore: Int = 0
     var scoreLeftMesh: TextQuadMesh? = nil
+    var rightScore: Int = 0
     var scoreRightMesh: TextQuadMesh? = nil
     
     // these are the correct texture positions (to be divided by 16.0) based on the connection code
@@ -103,7 +105,7 @@ class GameManager {
             let gridIndex = Int(gameBoard.connections[i - 1][j]!.connections)
             textureX = getTextureX(gridConnections: gridIndex)
             textureY = 1.0 * textureUnitY
-            print ("created new quad mesh based on gbc ", Int(gameBoard.connections[i - 1][j]!.connections), "at ", i, j)
+//            print ("created new quad mesh based on gbc ", Int(gameBoard.connections[i - 1][j]!.connections), "at ", i, j)
         }
 
         let topLeftUV = SIMD2<Float>(textureX, textureY)
@@ -119,34 +121,44 @@ class GameManager {
         return quad
     }
 
+    // function to remake the score meshes
+    func updateScoreMeshes() {
+        // create text meshes for keeping score
+        var text = "INDIGO\n\(leftScore) points"
+        let font = Font.systemFont(ofSize: 32)
+
+        if (renderer != nil) {
+            renderer!.textLayer.meshes.removeAll { $0 === scoreLeftMesh }
+            renderer!.textLayer.meshes.removeAll { $0 === scoreRightMesh }
+        }
+
+        let textSize = CGSize(width: 256, height: 128)
+        scoreLeftMesh = TextQuadMesh(text: text, font: font, color: Color.magenta, size: textSize)
+        scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 + tileSize * 1.75, -needH / 2.0 + tileSize * 2.0)
+        text = "ORANGE\n\(rightScore) points"
+        scoreRightMesh = TextQuadMesh(text: text, font: font, color: Color.orange, size: textSize)
+        scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 - tileSize * 1.75, -needH / 2.0 + tileSize * 2.0)
+        
+        if (renderer != nil) {
+            renderer!.textLayer.meshes.append(scoreLeftMesh!)
+            renderer!.textLayer.meshes.append(scoreRightMesh!)
+        }
+    }
+    
     // function to create ALL tileQuads when initializing
     func createTiles() {
-        guard let gameBoard = gameBoard else { return }
-        guard let renderer = renderer else { return }
-
-        let textureUnitX: Float = 1.0 / 16.0
-        let textureUnitY: Float = 1.0 / 8.0
-
         for i in 0..<boardWidth + 2 {
             for j in 0..<boardHeight {
                 tileQuads[j][i] = createNewTileQuad(i: i, j: j)
             }
         }
 
-        // create text meshes for keeping score
-        var text = "INDIGO\n0 points"
-        let font = Font.systemFont(ofSize: 32)
-//        let color = Color.magenta
-        let textSize = CGSize(width: 256, height: 128)
-        scoreLeftMesh = TextQuadMesh(text: text, font: font, color: Color.magenta, size: textSize)
-        scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 + tileSize * 1.75, -needH / 2.0 + tileSize * 2.0)
-        text = "ORANGE\n0 points"
-        scoreRightMesh = TextQuadMesh(text: text, font: font, color: Color.orange, size: textSize)
-        scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 - tileSize * 1.75, -needH / 2.0 + tileSize * 2.0)
+        updateScoreMeshes()
     }
 
     // method to update tileQuads based on the new connections table
     func zapRemoveConnectionsCreateNewAndMakeThemFall() {
+        SoundManager.shared.playSoundEffect(filename: "explode")
         // first remove from the tile matrix and generate new tiles
         gameBoard?.removeAndShiftConnectingTiles()
         // now our business - remove old and create new tile quads
@@ -157,8 +169,7 @@ class GameManager {
             for y in (0..<boardHeight).reversed() {
                 if gameBoard?.connectMarkings[x - 1][y] == .ok {
                     // make an explosion out of it
-                    Particle.attractor = scoreLeftMesh!.position
-                    let particleAnimation = ParticleAnimation(speedLimit: 20.0, width: 8.0, count: 20, duration: 4.0, tilePosition: (x: x - 1, y: y), targetScreen:  renderer!.gameScreen)
+                    let particleAnimation = ParticleAnimation(speedLimit: 10.0, width: 4.0, count: 10, duration: 1.0, tilePosition: (x: x - 1, y: y), targetScreen:  renderer!.gameScreen)
                     animationManager?.addAnimation(particleAnimation)
                     // but make sure to remake the marking
                     gameBoard?.connectMarkings[x - 1][y] = .ok
@@ -171,7 +182,7 @@ class GameManager {
                     }
                 }
             }
-            print ("on column ", x, " we shifted ", shiftedItems, " tileQuads down")
+//            print ("on column ", x, " we shifted ", shiftedItems, " tileQuads down")
             for y in (0..<shiftedItems).reversed() {
                 // do NOT update their positions, let them stand where they are
                 // will add an animation later to bring them down
@@ -188,7 +199,6 @@ class GameManager {
                 // as mentioned above, if a tile is above where it should be
                 // then generate an animation to bring it down
                 if let quad = tileQuads[y][x], quad.position.y < getIdealTilePositionY(j: y) {
-//                    print("falling tile at (", x, ", ", y, ") from ", quad.position.y, " to ", getIdealTilePositionY(j: y))
                     let fallAnimation = FallAnimation(quad: quad, targetY: getIdealTilePositionY(j: y), tilePosition: (x: x - 1, y: y))
                     animationManager?.addAnimation(fallAnimation)
                 }
@@ -196,12 +206,25 @@ class GameManager {
         }
     }
 
+    // function that does what it has to do when a tile is tapped
+    func tapTile(i: Int, j: Int) {
+        // play that sound
+        SoundManager.shared.playSoundEffect(filename: "rotate")
+        
+        gameBoard?.connections[i][j]?.rotate()
+        let newQuad = createNewTileQuad(i: i + 1, j: j)
+        tileQuads[j][i + 1] = newQuad
+        let animation = RotateAnimation(quad: newQuad!, duration: 0.2, tilePosition: (x: i, y: j), objectsLayer: renderer!.objectsLayer, effectsLayer: renderer!.effectsLayer)
+        animationManager?.addAnimation(animation)
+    }
+    
     // function that handles frame by frame updates
     func update() {
         guard let renderer = renderer else { print("NO RENDERER? return");return }
         // ...
         // check for input
         if self.lastInput != nil {
+            SoundManager.shared.playSoundEffect(filename: "bop")
             // converting from screen coordinates to game coordinates
             let screenW = Float(renderer.view.drawableSize.width)
             let screenH = Float(renderer.view.drawableSize.height)
@@ -223,16 +246,7 @@ class GameManager {
 //                tileQuads[quadY][quadX]?.position = SIMD2<Float>(gameX, gameY)
                 if quadX >= 1 && quadX < boardWidth + 1 {
                     print ("hit the board at ", quadX - 1, quadY)
-                    gameBoard?.connections[quadX - 1][quadY]?.rotate()
-                    let newQuad = createNewTileQuad(i: quadX, j: quadY)
-                    tileQuads[quadY][quadX] = newQuad
-                    let animation = RotateAnimation(quad: newQuad!, duration: 1, tilePosition: (x: quadX - 1, y: quadY), objectsLayer: renderer.objectsLayer, effectsLayer: renderer.effectsLayer)
-                    animationManager?.addAnimation(animation)
-/*
-                    Particle.attractor = scoreLeftMesh!.position
-                    let particleAnimation = ParticleAnimation(speedLimit: 20.0, width: 8.0, count: 100, duration: 4.0, tilePosition: (x: quadX - 1, y: quadY), targetScreen:  renderer.gameScreen)
-                    animationManager?.addAnimation(particleAnimation)
-*/
+                    tapTile(i: quadX - 1, j: quadY)
                 }
             }
             self.lastInput = nil
@@ -241,6 +255,22 @@ class GameManager {
         animationManager?.updateAnimations()
         // check connections
         if gameBoard?.checkConnections() != 0 {
+            // wait, who gets the points?
+            print ("left pins connected: ", gameBoard!.leftPinsConnect)
+            print ("right pins connected: ", gameBoard!.rightPinsConnect)
+            
+            if gameBoard!.leftPinsConnect > gameBoard!.rightPinsConnect {
+                // point for INDIGO (left)
+                leftScore += 1
+                Particle.attractor = scoreLeftMesh!.position
+            } else if gameBoard!.leftPinsConnect < gameBoard!.rightPinsConnect {
+                // point for INDIGO (left)
+                rightScore += 1
+                Particle.attractor = scoreRightMesh!.position
+            } else {
+                Particle.attractor = SIMD2<Float> (0.0, 1000.0)
+            }
+            updateScoreMeshes()
             zapRemoveConnectionsCreateNewAndMakeThemFall()
         }
     }

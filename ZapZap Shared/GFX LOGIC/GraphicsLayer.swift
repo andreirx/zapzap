@@ -40,7 +40,7 @@ class GraphicsLayer {
     
     init() {
         self.device = Renderer.device
-        print("GraphicsLayer init: will create pipeline")
+//        print("GraphicsLayer init: will create pipeline")
         setupPipeline(vertexFunctionName: "vertex_main", fragmentFunctionName: "sprite_fragment_main")
     }
     
@@ -75,7 +75,7 @@ class GraphicsLayer {
         
         do {
             pipelineState = try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
-            print("Created pipeline state for simple alpha blending")
+//            print("Created pipeline state for simple alpha blending")
         } catch let error {
             print("Failed to create pipeline state: \(error)")
         }
@@ -134,7 +134,7 @@ class GameBoardLayer: GraphicsLayer {
 class EffectsLayer: GraphicsLayer {
     override init() {
         super.init()
-        print("EffectsLayer init: will create pipeline")
+//        print("EffectsLayer init: will create pipeline")
         setupAdditivePipeline(vertexFunctionName: "vertex_main", fragmentFunctionName: "additive_fragment_main")
     }
     
@@ -169,7 +169,7 @@ class EffectsLayer: GraphicsLayer {
         
         do {
             pipelineState = try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
-            print("Created pipeline state for additive EDR effects")
+//            print("Created pipeline state for additive EDR effects")
         } catch let error {
             print("Failed to create additive pipeline state: \(error)")
         }

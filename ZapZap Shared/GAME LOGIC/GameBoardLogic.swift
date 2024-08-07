@@ -15,6 +15,12 @@ enum Connection: UInt8 {
     case left = 0
 }
 
+enum AnimationMarking: UInt8 {
+    case falling = 2
+    case rotating = 1
+    case none = 0
+}
+
 class Tile {
     // Using 4-bit representation for connections
     var connections: UInt8
@@ -50,6 +56,7 @@ class GameBoard {
     let height: Int
     var connections: [[Tile?]]
     var connectMarkings: [[Connection]]
+    var animationMarkings: [[AnimationMarking]]
 
     var leftPinsConnect: Int = 0
     var leftConquered: Int = 0
@@ -66,6 +73,7 @@ class GameBoard {
         self.missingLinks = missingLinks
         self.connections = Array(repeating: Array(repeating: nil, count: width), count: height)
         self.connectMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
+        self.animationMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
         self.resetTable(percentMissingLinks: missingLinks)
     }
     
@@ -137,10 +145,6 @@ class GameBoard {
         // check connections from the rightmost pins
         for j in 0..<height {
             if let tile = connections[width - 1][j], tile.hasConnection(direction: .right) {
-                // count one more connecting pin from this side
-                // (RIGHT)
-                rightPinsConnect += 1
-                
                 expandConnectionsMarkings(cx: width - 1, cy: j, ctype: .right, marker: .right)
             }
         }
@@ -148,10 +152,6 @@ class GameBoard {
         // check connections from the leftmost pins
         for j in 0..<height {
             if let tile = connections[0][j], tile.hasConnection(direction: .left) {
-                // count one more connecting pin from this side
-                // (LEFT)
-                leftPinsConnect += 1
-                
                 // if you encounter markings from the right, start marking as "ok"
                 // which means both sides connect
                 // otherwise continue marking as "left"
@@ -164,6 +164,16 @@ class GameBoard {
                 // if any of the connections are "ok" then both sides connect
                 if connectMarkings[0][j] == .ok {
                     rVal = 1
+                    // count one more connecting pin from this side
+                    // (LEFT)
+                    leftPinsConnect += 1
+                }
+            }
+            if let tile = connections[width - 1][j], tile.hasConnection(direction: .right) {
+                // count one more connecting pin from this side
+                // (RIGHT)
+                if connectMarkings[width - 1][j] == .ok {
+                    rightPinsConnect += 1
                 }
             }
         }

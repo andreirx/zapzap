@@ -52,6 +52,10 @@
 		18BEF3B32C611D7800A4D753 /* powerup.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3AA2C611D7700A4D753 /* powerup.wav */; };
 		18BEF3B42C611D7800A4D753 /* explode.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3AB2C611D7800A4D753 /* explode.wav */; };
 		18BEF3B52C611D7800A4D753 /* explode.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3AB2C611D7800A4D753 /* explode.wav */; };
+		18BEF3B82C636F5D00A4D753 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3B72C636F5D00A4D753 /* SoundManager.swift */; };
+		18BEF3B92C636F5D00A4D753 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3B72C636F5D00A4D753 /* SoundManager.swift */; };
+		18BEF3BB2C63722500A4D753 /* IttyBitty.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3BA2C63722500A4D753 /* IttyBitty.mp3 */; };
+		18BEF3BC2C63722500A4D753 /* IttyBitty.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3BA2C63722500A4D753 /* IttyBitty.mp3 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -84,6 +88,8 @@
 		18BEF3A92C611D7600A4D753 /* rotate.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = rotate.wav; sourceTree = "<group>"; };
 		18BEF3AA2C611D7700A4D753 /* powerup.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = powerup.wav; sourceTree = "<group>"; };
 		18BEF3AB2C611D7800A4D753 /* explode.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = explode.wav; sourceTree = "<group>"; };
+		18BEF3B72C636F5D00A4D753 /* SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManager.swift; sourceTree = "<group>"; };
+		18BEF3BA2C63722500A4D753 /* IttyBitty.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = IttyBitty.mp3; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,6 +128,7 @@
 				18BEF3A12C5E17CF00A4D753 /* GAME LOGIC */,
 				18BEF39A2C5E16B900A4D753 /* MESHES */,
 				18BEF3942C5415AD00A4D753 /* Math.swift */,
+				18BEF3B62C636F3000A4D753 /* Sound LOGIC */,
 				18BEF3542C4A824A00A4D753 /* ShaderTypes.h */,
 				18BEF3552C4A824B00A4D753 /* Assets.xcassets */,
 			);
@@ -196,11 +203,20 @@
 			children = (
 				18BEF3A72C611D7500A4D753 /* bop.wav */,
 				18BEF3A82C611D7500A4D753 /* buzz.wav */,
+				18BEF3BA2C63722500A4D753 /* IttyBitty.mp3 */,
 				18BEF3AB2C611D7800A4D753 /* explode.wav */,
 				18BEF3AA2C611D7700A4D753 /* powerup.wav */,
 				18BEF3A92C611D7600A4D753 /* rotate.wav */,
 			);
 			path = AudioResources;
+			sourceTree = "<group>";
+		};
+		18BEF3B62C636F3000A4D753 /* Sound LOGIC */ = {
+			isa = PBXGroup;
+			children = (
+				18BEF3B72C636F5D00A4D753 /* SoundManager.swift */,
+			);
+			path = "Sound LOGIC";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -283,6 +299,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18BEF3792C4A824B00A4D753 /* ShaderTypes.h in Resources */,
+				18BEF3BB2C63722500A4D753 /* IttyBitty.mp3 in Resources */,
 				18BEF3B22C611D7800A4D753 /* powerup.wav in Resources */,
 				18BEF3632C4A824B00A4D753 /* Base in Resources */,
 				18BEF37B2C4A824B00A4D753 /* Assets.xcassets in Resources */,
@@ -305,6 +322,7 @@
 				18BEF3732C4A824B00A4D753 /* Base in Resources */,
 				18BEF3B12C611D7800A4D753 /* rotate.wav in Resources */,
 				18BEF37C2C4A824B00A4D753 /* Assets.xcassets in Resources */,
+				18BEF3BC2C63722500A4D753 /* IttyBitty.mp3 in Resources */,
 				18BEF37A2C4A824B00A4D753 /* ShaderTypes.h in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -330,6 +348,7 @@
 				18BEF35E2C4A824B00A4D753 /* AppDelegate.swift in Sources */,
 				18BEF38C2C4FDE9900A4D753 /* GameBoardAnimations.swift in Sources */,
 				18BEF3952C5415AD00A4D753 /* Math.swift in Sources */,
+				18BEF3B82C636F5D00A4D753 /* SoundManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -351,6 +370,7 @@
 				18BEF36E2C4A824B00A4D753 /* AppDelegate.swift in Sources */,
 				18BEF38D2C4FDE9900A4D753 /* GameBoardAnimations.swift in Sources */,
 				18BEF3962C5415AD00A4D753 /* Math.swift in Sources */,
+				18BEF3B92C636F5D00A4D753 /* SoundManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
