@@ -13,7 +13,12 @@ import Foundation
 //
 
 class AnimationManager {
-    var animations: [Animation] = []
+
+    var rotateAnimations: [RotateAnimation] = []
+    var fallAnimations: [FallAnimation] = []
+    var particleAnimations: [ParticleAnimation] = []
+    var freezeFrameAnimations: [FreezeFrameAnimation] = []
+
     weak var gameManager: GameManager? // Use weak reference to avoid retain cycles
     
     init(gameManager: GameManager) {
@@ -22,44 +27,83 @@ class AnimationManager {
     
     func addAnimation(_ animation: Animation) {
         guard let gameManager = gameManager else { return }
-        animations.append(animation)
-        let tilePosition = animation.tilePosition
+        if let animation = animation as? RotateAnimation {
+            rotateAnimations.append(animation)
+        } else if let animation = animation as? FallAnimation {
+            fallAnimations.append(animation)
+        } else if let animation = animation as? ParticleAnimation {
+            particleAnimations.append(animation)
+        } else if let animation = animation as? FreezeFrameAnimation {
+            freezeFrameAnimations.append(animation)
+        }
         // Remove all ElectricArcMesh instances from effectsLayer
         gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
     }
     
     func updateAnimations() {
-        for animation in animations {
+        // do the freeze frame animations first
+        if let freezeFrame = freezeFrameAnimations.first {
+            freezeFrame.update()
+            if freezeFrame.isFinished {
+                freezeFrame.cleanup()
+                freezeFrameAnimations.removeFirst()
+            }
+            // and don't do anything else until they are over
+            return
+        }
+        
+        updateRotateAnimations()
+        updateFallAnimations()
+        updateParticleAnimations()
+    }
+    
+    private func updateRotateAnimations() {
+        for animation in rotateAnimations {
             animation.update()
         }
         
         guard let gameManager = gameManager else { return }
-        // Remove finished animations and update connectMarkings
-        animations.removeAll { animation in
+        rotateAnimations.removeAll { animation in
             if animation.isFinished {
                 let tilePosition = animation.tilePosition
                 gameManager.gameBoard?.connectMarkings[tilePosition.x][tilePosition.y] = .none
-                // Call checkConnections and recreate connections
                 gameManager.gameBoard?.checkConnections()
-
-                // Remove all ElectricArcMesh instances from effectsLayer
                 gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
-
-                if let rotateAnimation = animation as? RotateAnimation {
-                    // remake all electric arcs according to their markers
-                    gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
-                    gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
-                    gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
-                }
-                
-                // clean up if particle animation
-                if let particleAnimation = animation as? ParticleAnimation {
-                    particleAnimation.cleanup()
-                }
+                gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
+                gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
+                gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+                animation.cleanup()
             }
             return animation.isFinished
         }
     }
+    
+    private func updateFallAnimations() {
+        for animation in fallAnimations {
+            animation.update()
+        }
+        
+        fallAnimations.removeAll { animation in
+            if animation.isFinished {
+                animation.cleanup()
+            }
+            return animation.isFinished
+        }
+    }
+    
+    private func updateParticleAnimations() {
+        for animation in particleAnimations {
+            animation.update()
+        }
+        
+        particleAnimations.removeAll { animation in
+            if animation.isFinished {
+                animation.cleanup()
+            }
+            return animation.isFinished
+        }
+    }
+
 }
 
 // // // // // // // // // // // // // // // // // // // // //
@@ -71,6 +115,7 @@ protocol Animation {
     var isFinished: Bool { get }
     var tilePosition: (x: Int, y: Int) { get }
     func update()
+    func cleanup()
 }
 
 // // // // // // // // // // // // // // // // // // // // //
@@ -89,7 +134,7 @@ class RotateAnimation: Animation {
     private var tempQuad: QuadMesh?
     private weak var objectsLayer: GraphicsLayer?
     private weak var effectsLayer: EffectsLayer?
-
+    
     var isFinished: Bool {
         return elapsedTime >= duration
     }
@@ -125,7 +170,7 @@ class RotateAnimation: Animation {
         let newRotation = startRotation + (endRotation - startRotation) * Float(progress)
         quad.rotation = newRotation
         tempQuad?.rotation = newRotation
-
+        
         // Update the connections at the end of the animation
         if progress >= 1.0 {
             quad.rotation = endRotation
@@ -135,6 +180,12 @@ class RotateAnimation: Animation {
             if let tempQuad = tempQuad {
                 effectsLayer?.meshes.removeAll { $0 === tempQuad }
             }
+        }
+    }
+    
+    func cleanup() {
+        if let tempQuad = tempQuad {
+            effectsLayer?.meshes.removeAll { $0 === tempQuad }
         }
     }
 }
@@ -230,6 +281,34 @@ class FallAnimation: Animation {
         }
     }
 
+    func cleanup() {
+        // Cleanup logic if necessary
+    }
+}
+
+// // // // // // // // // // // // // // // // // // // // //
+//
+// FreezeFrameAnimation - high priority animation that stops everything else until it's done
+//
+
+class FreezeFrameAnimation: Animation {
+    private let duration: TimeInterval
+    private var elapsedTime: TimeInterval = 0
+    var tilePosition: (x: Int, y: Int) = (0, 0) // Dummy position as it's not used
+    
+    var isFinished: Bool {
+        return elapsedTime >= duration
+    }
+    
+    init(duration: TimeInterval) {
+        self.duration = duration
+    }
+    
+    func update() {
+        guard !isFinished else { return }
+        elapsedTime += 1 / 60.0 // Assuming 60 FPS update rate
+    }
+    
     func cleanup() {
         // Cleanup logic if necessary
     }
