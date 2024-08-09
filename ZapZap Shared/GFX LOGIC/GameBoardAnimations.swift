@@ -343,7 +343,7 @@ class FallAnimation: Animation, Poolable {
 
         if quad.position.y >= targetY {
             quad.position.y = targetY
-            SoundManager.shared.playSoundEffect(filename: "buzz")
+//            SoundManager.shared.playSoundEffect(filename: "buzz")
         }
     }
 
