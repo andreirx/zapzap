@@ -256,17 +256,21 @@ class GameManager {
             print ("left pins connected: ", gameBoard!.leftPinsConnect)
             print ("right pins connected: ", gameBoard!.rightPinsConnect)
             
+            leftScore += gameBoard!.leftPinsConnect
+            rightScore += gameBoard!.rightPinsConnect
+            
             if gameBoard!.leftPinsConnect > gameBoard!.rightPinsConnect {
                 // point for INDIGO (left)
-                leftScore += 1
+//                leftScore += 1
                 Particle.attractor = scoreLeftMesh!.position
             } else if gameBoard!.leftPinsConnect < gameBoard!.rightPinsConnect {
                 // point for INDIGO (left)
-                rightScore += 1
+//                rightScore += 1
                 Particle.attractor = scoreRightMesh!.position
             } else {
                 Particle.attractor = SIMD2<Float> (0.0, 1000.0)
             }
+            animationManager?.addFreezeFrameAnimation(duration: 2.0)
             updateScoreMeshes()
             zapRemoveConnectionsCreateNewAndMakeThemFall()
         }
@@ -276,16 +280,22 @@ class GameManager {
     // call after checkConnections
     func remakeElectricArcs(forMarker: Connection, withColor: SegmentColor, po2: Int, andWidth: Float) {
         guard let gameBoard = gameBoard, let renderer = renderer else { return }
+        
+        var preferredColor: SegmentColor = withColor
 
         // Recreate arcs based on connections
         for y in 0..<gameBoard.height {
+            // make those pins BRIGHT RED to see them better
+            if forMarker == .ok {
+                preferredColor = .red
+            }
             // check leftmost connections with the pins
             if forMarker == gameBoard.connectMarkings[0][y] {
                 if let tile = gameBoard.connections[0][y] {
                     if tile.hasConnection(direction: .left) {
                         let start = tileQuads[y][0]!.position
                         let end = tileQuads[y][1]!.position
-                        let arc = ElectricArcMesh(startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
+                        let arc = ElectricArcMesh(startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: preferredColor)
                         renderer.effectsLayer.meshes.append(arc)
                     }
                 }
@@ -296,7 +306,7 @@ class GameManager {
                     if tile.hasConnection(direction: .right) {
                         let start = tileQuads[y][gameBoard.width]!.position
                         let end = tileQuads[y][gameBoard.width + 1]!.position
-                        let arc = ElectricArcMesh(startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
+                        let arc = ElectricArcMesh(startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: preferredColor)
                         renderer.effectsLayer.meshes.append(arc)
                     }
                 }

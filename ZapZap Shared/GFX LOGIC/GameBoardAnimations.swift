@@ -46,6 +46,14 @@ class AnimationManager {
     func addFreezeFrameAnimation(duration: TimeInterval) {
         let animation = AnimationPools.freezeFrameAnimationPool.getObject()
         animation.configure(duration: duration)
+        
+        guard let gameManager = gameManager else { return }
+        gameManager.gameBoard?.checkConnections()
+        gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
+        gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
+        gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
+        gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+
         freezeFrameAnimations.append(animation)
     }
 
@@ -91,18 +99,31 @@ class AnimationManager {
     }
     
     private func updateFallAnimations() {
+        guard let gameManager = gameManager else { return }
+
         for animation in fallAnimations {
             animation.update()
         }
-        
+
+        var removedOne = false
         fallAnimations.removeAll { animation in
             if animation.isFinished {
                 animation.cleanup()
                 AnimationPools.fallAnimationPool.releaseObject(animation)
+                removedOne = true
                 return true
             }
             return false
         }
+        
+        if removedOne && fallAnimations.isEmpty {
+            gameManager.gameBoard?.checkConnections()
+            gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
+            gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
+            gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
+            gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+        }
+
     }
     
     private func updateParticleAnimations() {
