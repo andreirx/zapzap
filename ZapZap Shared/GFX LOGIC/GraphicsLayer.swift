@@ -204,7 +204,15 @@ class EffectsLayer: GraphicsLayer {
     }
     
     func removeAllParticles() {
-        meshes.removeAll { $0 is Particle }
+        // Iterate through the meshes and find the ones that are particles
+        meshes.removeAll { mesh in
+            if let particle = mesh as? Particle {
+                // Return the particle to the pool
+                AnimationPools.particlePool.releaseObject(particle)
+                return true // Remove this particle from the meshes array
+            }
+            return false // Keep non-particle meshes in the array
+        }
     }
-    
+
 }

@@ -25,21 +25,30 @@ class AnimationManager {
         self.gameManager = gameManager
     }
     
-    func addAnimation(_ animation: Animation) {
-        guard let gameManager = gameManager else { return }
-        if let animation = animation as? RotateAnimation {
-            rotateAnimations.append(animation)
-        } else if let animation = animation as? FallAnimation {
-            fallAnimations.append(animation)
-        } else if let animation = animation as? ParticleAnimation {
-            particleAnimations.append(animation)
-        } else if let animation = animation as? FreezeFrameAnimation {
-            freezeFrameAnimations.append(animation)
-        }
-        // Remove all ElectricArcMesh instances from effectsLayer
-        gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
+    func addRotateAnimation(quad: QuadMesh, duration: TimeInterval, tilePosition: (x: Int, y: Int), objectsLayer: GraphicsLayer, effectsLayer: EffectsLayer) {
+        let animation = AnimationPools.rotateAnimationPool.getObject()
+        animation.configure(quad: quad, duration: duration, tilePosition: tilePosition, objectsLayer: objectsLayer, effectsLayer: effectsLayer)
+        rotateAnimations.append(animation)
     }
     
+    func addFallAnimation(quad: QuadMesh, targetY: Float, tilePosition: (x: Int, y: Int)) {
+        let animation = AnimationPools.fallAnimationPool.getObject()
+        animation.configure(quad: quad, targetY: targetY, tilePosition: tilePosition)
+        fallAnimations.append(animation)
+    }
+    
+    func addParticleAnimation(speedLimit: Float, width: Float, count: Int, duration: TimeInterval, tilePosition: (x: Int, y: Int), targetScreen: Screen) {
+        let animation = AnimationPools.particleAnimationPool.getObject()
+        animation.configure(speedLimit: speedLimit, width: width, count: count, duration: duration, tilePosition: tilePosition, targetScreen: targetScreen)
+        particleAnimations.append(animation)
+    }
+
+    func addFreezeFrameAnimation(duration: TimeInterval) {
+        let animation = AnimationPools.freezeFrameAnimationPool.getObject()
+        animation.configure(duration: duration)
+        freezeFrameAnimations.append(animation)
+    }
+
     func updateAnimations() {
         // do the freeze frame animations first
         if let freezeFrame = freezeFrameAnimations.first {
@@ -47,6 +56,7 @@ class AnimationManager {
             if freezeFrame.isFinished {
                 freezeFrame.cleanup()
                 freezeFrameAnimations.removeFirst()
+                AnimationPools.freezeFrameAnimationPool.releaseObject(freezeFrame)
             }
             // and don't do anything else until they are over
             return
@@ -73,8 +83,10 @@ class AnimationManager {
                 gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
                 gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
                 animation.cleanup()
+                AnimationPools.rotateAnimationPool.releaseObject(animation)
+                return true
             }
-            return animation.isFinished
+            return false
         }
     }
     
@@ -86,8 +98,10 @@ class AnimationManager {
         fallAnimations.removeAll { animation in
             if animation.isFinished {
                 animation.cleanup()
+                AnimationPools.fallAnimationPool.releaseObject(animation)
+                return true
             }
-            return animation.isFinished
+            return false
         }
     }
     
@@ -99,8 +113,10 @@ class AnimationManager {
         particleAnimations.removeAll { animation in
             if animation.isFinished {
                 animation.cleanup()
+                AnimationPools.particleAnimationPool.releaseObject(animation)
+                return true
             }
-            return animation.isFinished
+            return false
         }
     }
 
@@ -123,23 +139,35 @@ protocol Animation {
 // RotateAnimation - class defining and managing a rotating tile animation
 //
 
-class RotateAnimation: Animation {
-    private let quad: QuadMesh
-    private let duration: TimeInterval
+class RotateAnimation: Animation, Poolable {
+    var available: Bool = true
+    private var quad: QuadMesh?
+    private var duration: TimeInterval = 0
     private var elapsedTime: TimeInterval = 0
-    private let startRotation: Float
-    private let endRotation: Float
-    let tilePosition: (x: Int, y: Int)
+    private var startRotation: Float = 0
+    private var endRotation: Float = 0
+    var tilePosition: (x: Int, y: Int) = (0, 0)
     
     private var tempQuad: QuadMesh?
     private weak var objectsLayer: GraphicsLayer?
     private weak var effectsLayer: EffectsLayer?
     
-    var isFinished: Bool {
-        return elapsedTime >= duration
-    }
+    required init() {}
     
-    init(quad: QuadMesh, duration: TimeInterval, tilePosition: (x: Int, y: Int), objectsLayer: GraphicsLayer, effectsLayer: EffectsLayer) {
+    func resetToUnused() {
+        available = true
+        quad = nil
+        duration = 0
+        elapsedTime = 0
+        startRotation = 0
+        endRotation = 0
+        tilePosition = (0, 0)
+        tempQuad = nil
+        objectsLayer = nil
+        effectsLayer = nil
+    }
+
+    func configure(quad: QuadMesh, duration: TimeInterval, tilePosition: (x: Int, y: Int), objectsLayer: GraphicsLayer, effectsLayer: EffectsLayer) {
         self.quad = quad
         self.duration = duration
         self.tilePosition = tilePosition
@@ -147,33 +175,34 @@ class RotateAnimation: Animation {
         self.startRotation = quad.rotation + .pi / 2
         self.objectsLayer = objectsLayer
         self.effectsLayer = effectsLayer
-        // we start from -90 degrees because the tile actually got rotated 90 degrees
-        // which is to say its texture now shows it rotated
-        // so we start rotating from -90 as if it was the old tile
-        // and rotate into its correct position
-        
-        // Create a temporary object and add it to the objectsLayer
+
         let tempQuad = QuadMesh(size: 100.0, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(0.25, 0.25))
         tempQuad.position = quad.position
         tempQuad.rotation = quad.rotation
         effectsLayer.meshes.append(tempQuad)
         self.tempQuad = tempQuad
     }
+
+    var isFinished: Bool {
+        return elapsedTime >= duration
+    }
     
     func update() {
         guard !isFinished else { return }
+        guard quad != nil else { return }
+        guard tempQuad != nil else { return }
         
         elapsedTime += 1 / 60.0 // Assuming 60 FPS update rate
         let progress = min(elapsedTime / duration, 1.0)
         
         // Interpolate rotation
         let newRotation = startRotation + (endRotation - startRotation) * Float(progress)
-        quad.rotation = newRotation
+        quad!.rotation = newRotation
         tempQuad?.rotation = newRotation
         
         // Update the connections at the end of the animation
         if progress >= 1.0 {
-            quad.rotation = endRotation
+            quad!.rotation = endRotation
             tempQuad?.rotation = endRotation
             
             // Remove the temporary object from the objectsLayer
@@ -195,33 +224,53 @@ class RotateAnimation: Animation {
 // ParticleAnimation - class defining and managing animating particles
 //
 
-class ParticleAnimation: Animation {
-    private var duration: TimeInterval
+class ParticleAnimation: Animation, Poolable {
+    private var duration: TimeInterval = 0
     private var elapsedTime: TimeInterval = 0
 
     var isFinished: Bool {
         return elapsedTime >= duration
     }
 
-    let tilePosition: (x: Int, y: Int)
-    private var effectsLayer: EffectsLayer
+    var tilePosition: (x: Int, y: Int) = (0, 0)
+    private var effectsLayer: EffectsLayer?
     private weak var targetScreen: Screen?
 
-    init(speedLimit: Float, width: Float, count: Int, duration: TimeInterval, tilePosition: (x: Int, y: Int), targetScreen: Screen) {
+    var available: Bool = true
+
+    required init() {}
+
+    func resetToUnused() {
+        available = true
+        duration = 0
+        elapsedTime = 0
+        tilePosition = (0, 0)
+        effectsLayer?.removeAllParticles()
+        effectsLayer = nil
+        if targetScreen != nil {
+            if effectsLayer != nil {
+                targetScreen?.removeLayer(effectsLayer!)
+            }
+        }
+        targetScreen = nil
+    }
+
+    func configure(speedLimit: Float, width: Float, count: Int, duration: TimeInterval, tilePosition: (x: Int, y: Int), targetScreen: Screen) {
         self.duration = duration
         self.tilePosition = tilePosition
         self.targetScreen = targetScreen
+        available = false
         
         // Create a new EffectsLayer
         self.effectsLayer = EffectsLayer()
-        effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
+        effectsLayer?.texture = Renderer.textures.getTexture(named: "arrows")
         
         let position = SIMD2<Float>(Float(tilePosition.x + 2) * tileSize - boardW / 2.0,
                                     Float(tilePosition.y + 1) * tileSize - boardH / 2.0)
-        effectsLayer.generateParticles(position: position, speedLimit: speedLimit, width: width, count: count)
+        effectsLayer?.generateParticles(position: position, speedLimit: speedLimit, width: width, count: count)
 
         // Add the new EffectsLayer to the target screen's layers
-        targetScreen.addLayer(self.effectsLayer)
+        targetScreen.addLayer(effectsLayer!)
     }
 
     func update() {
@@ -231,9 +280,9 @@ class ParticleAnimation: Animation {
 
     func cleanup() {
         // Remove all particles from effectsLayer
-        effectsLayer.removeAllParticles()
+        effectsLayer?.removeAllParticles()
         // Remove the EffectsLayer from the target screen's layers
-        targetScreen?.removeLayer(self.effectsLayer)
+        targetScreen?.removeLayer(effectsLayer!)
     }
 }
 
@@ -242,9 +291,9 @@ class ParticleAnimation: Animation {
 // FallAnimation - class defining and managing a falling tile animation
 //
 
-class FallAnimation: Animation {
-    private let quad: QuadMesh
-    private let targetY: Float
+class FallAnimation: Animation, Poolable {
+    private var quad: QuadMesh?
+    private var targetY: Float = 0
     private var elapsedTime: TimeInterval = 0
     private var speed: Float = 0
 
@@ -253,20 +302,37 @@ class FallAnimation: Animation {
     static var speedFactor: Float = 1.0
 
     var isFinished: Bool {
+        guard let quad = quad else { return true }
         return quad.position.y >= targetY
     }
 
-    var tilePosition: (x: Int, y: Int)
+    var tilePosition: (x: Int, y: Int) = (0, 0)
 
-    init(quad: QuadMesh, targetY: Float, tilePosition: (x: Int, y: Int)) {
+    var available: Bool = true
+
+    required init() {}
+
+    func configure(quad: QuadMesh, targetY: Float, tilePosition: (x: Int, y: Int)) {
         self.quad = quad
         self.targetY = targetY
         self.tilePosition = tilePosition
+        self.elapsedTime = 0
+        self.speed = 0
+        self.available = false
+    }
+
+    func resetToUnused() {
+        quad = nil
+        targetY = 0
+        elapsedTime = 0
+        speed = 0
+        tilePosition = (0, 0)
+        available = true
     }
 
     func update() {
-        guard !isFinished else {
-            quad.position.y = targetY
+        guard let quad = quad, !isFinished else {
+            self.quad?.position.y = targetY
             return
         }
 
@@ -291,24 +357,36 @@ class FallAnimation: Animation {
 // FreezeFrameAnimation - high priority animation that stops everything else until it's done
 //
 
-class FreezeFrameAnimation: Animation {
-    private let duration: TimeInterval
+class FreezeFrameAnimation: Animation, Poolable {
+    private var duration: TimeInterval = 0
     private var elapsedTime: TimeInterval = 0
     var tilePosition: (x: Int, y: Int) = (0, 0) // Dummy position as it's not used
-    
+
     var isFinished: Bool {
         return elapsedTime >= duration
     }
-    
-    init(duration: TimeInterval) {
+
+    var available: Bool = true
+
+    required init() {}
+
+    func configure(duration: TimeInterval) {
         self.duration = duration
+        self.elapsedTime = 0
+        self.available = false
     }
-    
+
+    func resetToUnused() {
+        duration = 0
+        elapsedTime = 0
+        available = true
+    }
+
     func update() {
         guard !isFinished else { return }
         elapsedTime += 1 / 60.0 // Assuming 60 FPS update rate
     }
-    
+
     func cleanup() {
         // Cleanup logic if necessary
     }

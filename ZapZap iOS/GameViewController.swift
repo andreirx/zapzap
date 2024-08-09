@@ -56,7 +56,7 @@ class GameViewController: UIViewController {
         mtkView.delegate = renderer
 
         // start the music
-        SoundManager.shared.playBackgroundMusic(filename: "DungeonLevel")
+        SoundManager.shared.playBackgroundMusic(filename: "IttyBitty")
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {

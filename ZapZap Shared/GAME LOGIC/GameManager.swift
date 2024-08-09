@@ -169,8 +169,7 @@ class GameManager {
             for y in (0..<boardHeight).reversed() {
                 if gameBoard?.connectMarkings[x - 1][y] == .ok {
                     // make an explosion out of it
-                    let particleAnimation = ParticleAnimation(speedLimit: 10.0, width: 4.0, count: 10, duration: 2.0, tilePosition: (x: x - 1, y: y), targetScreen:  renderer!.gameScreen)
-                    animationManager?.addAnimation(particleAnimation)
+                    animationManager?.addParticleAnimation(speedLimit: 10.0, width: 4.0, count: 10, duration: 2.0, tilePosition: (x: x - 1, y: y), targetScreen: renderer!.gameScreen)
                     // but make sure to remake the marking
                     gameBoard?.connectMarkings[x - 1][y] = .ok
                     shiftedItems += 1
@@ -199,8 +198,7 @@ class GameManager {
                 // as mentioned above, if a tile is above where it should be
                 // then generate an animation to bring it down
                 if let quad = tileQuads[y][x], quad.position.y < getIdealTilePositionY(j: y) {
-                    let fallAnimation = FallAnimation(quad: quad, targetY: getIdealTilePositionY(j: y), tilePosition: (x: x - 1, y: y))
-                    animationManager?.addAnimation(fallAnimation)
+                    animationManager?.addFallAnimation(quad: quad, targetY: getIdealTilePositionY(j: y), tilePosition: (x: x - 1, y: y))
                 }
             }
         }
@@ -214,8 +212,7 @@ class GameManager {
         gameBoard?.connections[i][j]?.rotate()
         let newQuad = createNewTileQuad(i: i + 1, j: j)
         tileQuads[j][i + 1] = newQuad
-        let animation = RotateAnimation(quad: newQuad!, duration: 0.2, tilePosition: (x: i, y: j), objectsLayer: renderer!.objectsLayer, effectsLayer: renderer!.effectsLayer)
-        animationManager?.addAnimation(animation)
+        animationManager?.addRotateAnimation(quad: newQuad!, duration: 0.2, tilePosition: (x: i, y: j), objectsLayer: renderer!.objectsLayer, effectsLayer: renderer!.effectsLayer)
     }
     
     // function that handles frame by frame updates
