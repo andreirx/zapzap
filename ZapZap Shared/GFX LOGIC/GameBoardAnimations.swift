@@ -25,24 +25,28 @@ class AnimationManager {
         self.gameManager = gameManager
     }
     
+    // this will also link a rotation indicator quad to the base tile quad
     func addRotateAnimation(quad: QuadMesh, duration: TimeInterval, tilePosition: (x: Int, y: Int), objectsLayer: GraphicsLayer, effectsLayer: EffectsLayer) {
         let animation = AnimationPools.rotateAnimationPool.getObject()
         animation.configure(quad: quad, duration: duration, tilePosition: tilePosition, objectsLayer: objectsLayer, effectsLayer: effectsLayer)
         rotateAnimations.append(animation)
     }
     
+    // this is for falling tiles until they get into their ideal position
     func addFallAnimation(quad: QuadMesh, targetY: Float, tilePosition: (x: Int, y: Int)) {
         let animation = AnimationPools.fallAnimationPool.getObject()
         animation.configure(quad: quad, targetY: targetY, tilePosition: tilePosition)
         fallAnimations.append(animation)
     }
     
+    // this is to start a burst of particles and add them to an effects layer in the desired screen
     func addParticleAnimation(speedLimit: Float, width: Float, count: Int, duration: TimeInterval, tilePosition: (x: Int, y: Int), targetScreen: Screen) {
         let animation = AnimationPools.particleAnimationPool.getObject()
         animation.configure(speedLimit: speedLimit, width: width, count: count, duration: duration, tilePosition: tilePosition, targetScreen: targetScreen)
         particleAnimations.append(animation)
     }
 
+    // this will stop all other animations for the duration of the animation
     func addFreezeFrameAnimation(duration: TimeInterval) {
         let animation = AnimationPools.freezeFrameAnimationPool.getObject()
         animation.configure(duration: duration)
@@ -57,6 +61,7 @@ class AnimationManager {
         freezeFrameAnimations.append(animation)
     }
 
+    // this will be called every frame
     func updateAnimations() {
         // do the freeze frame animations first
         if let freezeFrame = freezeFrameAnimations.first {
@@ -65,6 +70,10 @@ class AnimationManager {
                 freezeFrame.cleanup()
                 freezeFrameAnimations.removeFirst()
                 AnimationPools.freezeFrameAnimationPool.releaseObject(freezeFrame)
+                // after the last freeze frame completes, remove the arcs
+                if freezeFrameAnimations.isEmpty {
+                    gameManager!.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
+                }
             }
             // and don't do anything else until they are over
             return
@@ -75,6 +84,7 @@ class AnimationManager {
         updateParticleAnimations()
     }
     
+    // this handles updates to rotations and their completion
     private func updateRotateAnimations() {
         for animation in rotateAnimations {
             animation.update()
@@ -87,9 +97,12 @@ class AnimationManager {
                 gameManager.gameBoard?.connectMarkings[tilePosition.x][tilePosition.y] = .none
                 gameManager.gameBoard?.checkConnections()
                 gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
-                gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
-                gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
-                gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+                // remake the arcs only if there's no falling tiles
+                if fallAnimations.isEmpty {
+                    gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
+                    gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
+                    gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+                }
                 animation.cleanup()
                 AnimationPools.rotateAnimationPool.releaseObject(animation)
                 return true
@@ -98,6 +111,7 @@ class AnimationManager {
         }
     }
     
+    // this handles updates to falling tiles and their completion
     private func updateFallAnimations() {
         guard let gameManager = gameManager else { return }
 
@@ -125,7 +139,8 @@ class AnimationManager {
         }
 
     }
-    
+
+    // this will update particle animations - and their completion
     private func updateParticleAnimations() {
         for animation in particleAnimations {
             animation.update()

@@ -76,7 +76,8 @@ class Renderer: NSObject, MTKViewDelegate {
     var pauseScreen: Screen!
     
     var currentScreen: Screen?
-    
+
+    var backgroundLayer: GraphicsLayer!
     var baseLayer: GameBoardLayer? // this one won't be ready at creation time, will have to add it later after getting a GameManager
     var objectsLayer: GraphicsLayer!
     var textLayer: GraphicsLayer!
@@ -139,14 +140,43 @@ class Renderer: NSObject, MTKViewDelegate {
         setCurrentScreen(gameScreen)
         // must have the tilequads already initialized in gameManager before creating the renderer!
         
+        backgroundLayer = GraphicsLayer()
         objectsLayer = GraphicsLayer()
         textLayer = GraphicsLayer()
         effectsLayer = EffectsLayer()
         
+//        createBackgroundLayer()
+        
+        backgroundLayer.texture = Renderer.textures.getTexture(named: "stars")
         objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
     }
     
+    func createBackgroundLayer() {
+        // Tile size for the background grid
+        let animQuadSize = tileSize / 2.0
+
+        // Calculate the number of quads needed on the x and y axes
+        let xCount = Int((needW) / animQuadSize)
+        let yCount = Int((needH) / animQuadSize)
+
+        // Create the quads and position them in the grid
+        for i in 0..<xCount {
+            for j in 0..<yCount {
+                // Calculate position for each quad
+                let xPos = -needW + Float(i) * animQuadSize * 2
+                let yPos = -needH + Float(j) * animQuadSize * 2
+
+                // Create and position the AnimQuadMesh
+                let animQuad = AnimQuadMesh(size: animQuadSize)
+                animQuad.position = SIMD2<Float>(xPos + animQuadSize / 2.0, yPos + animQuadSize / 2.0)
+
+                // Add the quad to the background layer
+                backgroundLayer.meshes.append(animQuad)
+            }
+        }
+    }
+
     func createBaseLayer(fromGameManager: GameManager) {
         gameMgr = fromGameManager
         baseLayer = GameBoardLayer(gameManager: fromGameManager)
@@ -165,6 +195,7 @@ class Renderer: NSObject, MTKViewDelegate {
         gameMgr.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
         
         // add layers to game screen
+        gameScreen.addLayer(backgroundLayer)
         gameScreen.addLayer(baseLayer!)
         gameScreen.addLayer(objectsLayer)
         gameScreen.addLayer(effectsLayer)

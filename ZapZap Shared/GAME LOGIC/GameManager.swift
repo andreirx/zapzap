@@ -258,18 +258,16 @@ class GameManager {
             
             leftScore += gameBoard!.leftPinsConnect
             rightScore += gameBoard!.rightPinsConnect
-            
+/*
             if gameBoard!.leftPinsConnect > gameBoard!.rightPinsConnect {
-                // point for INDIGO (left)
-//                leftScore += 1
                 Particle.attractor = scoreLeftMesh!.position
             } else if gameBoard!.leftPinsConnect < gameBoard!.rightPinsConnect {
-                // point for INDIGO (left)
-//                rightScore += 1
                 Particle.attractor = scoreRightMesh!.position
             } else {
                 Particle.attractor = SIMD2<Float> (0.0, 1000.0)
             }
+*/
+            Particle.attractor = SIMD2<Float> (0.0, tileSize * Float(boardHeight))
             animationManager?.addFreezeFrameAnimation(duration: 2.0)
             updateScoreMeshes()
             zapRemoveConnectionsCreateNewAndMakeThemFall()

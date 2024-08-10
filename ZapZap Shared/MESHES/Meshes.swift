@@ -114,6 +114,88 @@ class QuadMesh: Mesh {
 
 // // // // // // // // // // // // // // // // // // // // //
 //
+// AnimQuadMesh - simple RECTANGULAR sprite with animated texture position
+//
+
+
+class AnimQuadMesh: Mesh, Animation {
+    private var elapsedTime: TimeInterval = 0
+    private var textureX: Float
+    private var textureY: Float
+    private var direction: Float = 1.0 // 1.0 for up, -1.0 for down
+    private var frameDuration: TimeInterval = 1 / 60.0 // Assuming 60 FPS update rate
+    var isAnimating = false
+    private var halfSize: Float
+
+    var tilePosition: (x: Int, y: Int) = (0, 0) // Dummy position as it's not used
+
+    var isFinished: Bool {
+        return !isAnimating
+    }
+
+    init(size: Float) {
+//        isAnimating
+        // Initialize textureX randomly
+        self.textureX = Float(Int.random(in: 0..<16)) / 16.0
+        self.textureY = Float(Int.random(in: 0..<16)) / 16.0 // Start from the darkest
+        
+        self.halfSize = size / 2.0
+        let vertices: [Float] = [
+            // Position          // Texture Coordinates
+            -halfSize, -halfSize, 0, textureX, 1.0 - textureY,
+             halfSize, -halfSize, 0, textureX + 1.0 / 16.0, 1.0 - textureY,
+             halfSize,  halfSize, 0, textureX + 1.0 / 16.0, 1.0 - (textureY + 1.0 / 16.0),
+            -halfSize,  halfSize, 0, textureX, 1.0 - (textureY + 1.0 / 16.0)
+        ]
+        let indices: [UInt16] = [0, 1, 2, 2, 3, 0]
+        super.init(vertices: vertices, indices: indices, primitiveType: .triangle)
+    }
+
+    func update() {
+        guard isAnimating else { return }
+        
+        elapsedTime += frameDuration
+
+        // Update the textureY coordinate
+        textureY += direction * (1.0 / 16.0) // 60.0 // Increment by one step per frame
+
+        // Check if we reached the top or bottom
+        if textureY >= 1.0 || textureY <= 0.0 {
+            direction *= -1.0 // Reverse the direction
+        }
+
+        // If we reached back to the dark position, stop animating
+        if textureY <= 0.0 {
+            isAnimating = false
+        }
+
+        // Update vertices with the new texture coordinates
+        updateVertices()
+    }
+
+    private func updateVertices() {
+        //let halfSize = (self.vertexBuffer!.length / MemoryLayout<Float>.stride) / 5
+        let vertices: [Float] = [
+            // Position          // Texture Coordinates
+            -halfSize, -halfSize, 0, textureX, 1.0 - textureY,
+             halfSize, -halfSize, 0, textureX + 1.0 / 16.0, 1.0 - textureY,
+             halfSize,  halfSize, 0, textureX + 1.0 / 16.0, 1.0 - (textureY + 1.0 / 16.0),
+            -halfSize,  halfSize, 0, textureX, 1.0 - (textureY + 1.0 / 16.0)
+        ]
+        self.updateBuffers(vertices: vertices, indices: [0, 1, 2, 2, 3, 0])
+    }
+
+    func cleanup() {
+        // Reset animation state if necessary
+        isAnimating = false
+        elapsedTime = 0
+        textureY = 0.0
+        direction = 1.0
+    }
+}
+
+// // // // // // // // // // // // // // // // // // // // //
+//
 // TextQuadMesh - generate text into texture and make a QuadMesh out of it
 //
 
