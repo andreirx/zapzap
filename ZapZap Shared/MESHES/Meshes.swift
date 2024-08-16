@@ -16,6 +16,7 @@ import simd
 
 struct PerInstanceUniforms {
     var modelMatrix: matrix_float4x4
+    var alphaUniform: Float
 }
 
 // // // // // // // // // // // // // // // // // // // // //
@@ -41,7 +42,10 @@ class Mesh {
     var scale: Float = 1 {
         didSet { updateModelMatrix() }
     }
-        
+    var alpha: Float = 0.9 { // Alpha value that controls transparency or brightness
+        didSet { updateModelMatrix() }
+    }
+
     init(vertices: [Float], indices: [UInt16]?, primitiveType: MTLPrimitiveType) {
         self.primitiveType = primitiveType
         self.vertexBuffer = Renderer.device.makeBuffer(bytes: vertices, length: MemoryLayout<Float>.size * vertices.count, options: [])
@@ -52,8 +56,8 @@ class Mesh {
             self.indexCount = indices.count
         }
         
-        self.perInstanceUniform = PerInstanceUniforms(modelMatrix: matrix_identity_float4x4)
-        self.uniformBuffer = Renderer.device.makeBuffer(length: MemoryLayout<PerInstanceUniforms>.size, options: .storageModeShared)
+        self.perInstanceUniform = PerInstanceUniforms(modelMatrix: matrix_identity_float4x4, alphaUniform: alpha)
+        self.uniformBuffer = Renderer.device.makeBuffer(length: MemoryLayout<PerInstanceUniforms>.stride, options: .storageModeShared)
         updateModelMatrix()
     }
     
@@ -67,6 +71,7 @@ class Mesh {
         let rotationMatrix = matrix4x4_rotation_z(rotation)
         let scaleMatrix = matrix4x4_scale(scale, scale, scale)
         perInstanceUniform.modelMatrix = translationMatrix * rotationMatrix * scaleMatrix
+        perInstanceUniform.alphaUniform = alpha // Set the alpha value
         let bufferPointer = uniformBuffer?.contents()
         memcpy(bufferPointer, &perInstanceUniform, MemoryLayout<PerInstanceUniforms>.size)
     }
@@ -81,9 +86,15 @@ class Mesh {
         guard let vertexBuffer = vertexBuffer else { return }
         guard let uniformBuffer = uniformBuffer else { return }
         
+        // Set the vertex buffer for the vertex stage
         encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        
+        // Set the uniform buffer for the vertex stage
         encoder.setVertexBuffer(uniformBuffer, offset: 0, index: 3)
         
+        // Also bind the uniform buffer to the fragment stage
+        encoder.setFragmentBuffer(uniformBuffer, offset: 0, index: 3)
+
         if let indexBuffer = indexBuffer, indexCount > 0 {
             encoder.drawIndexedPrimitives(type: primitiveType, indexCount: indexCount, indexType: .uint16, indexBuffer: indexBuffer, indexBufferOffset: 0)
         } else {

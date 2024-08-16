@@ -45,6 +45,7 @@ typedef struct {
 
 typedef struct {
     matrix_float4x4 modelMatrix;
+    float alphaUniform; // New alpha uniform to control transparency
 } UniformModel;
 
 

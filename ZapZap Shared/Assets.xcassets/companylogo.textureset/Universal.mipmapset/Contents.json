@@ -1,0 +1,12 @@
+{
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "levels" : [
+    {
+      "filename" : "Bijuterie-Software-Logo.png",
+      "mipmap-level" : "base"
+    }
+  ]
+}

@@ -19,6 +19,7 @@ typedef struct {
 
 typedef struct {
     float4x4 modelMatrix;
+    float alphaUniform; // New alpha uniform to control transparency
 } UniformModel;
 
 vertex ColorInOut vertex_main(Vertex in [[stage_in]],
@@ -32,11 +33,13 @@ vertex ColorInOut vertex_main(Vertex in [[stage_in]],
 }
 
 fragment float4 sprite_fragment_main(ColorInOut in [[stage_in]],
-                                     texture2d<float> colorTexture [[texture(0)]]) {
+                                     texture2d<float> colorTexture [[texture(0)]],
+                                     constant UniformModel &uniformModel [[buffer(3)]]) {
     constexpr sampler textureSampler(mip_filter::linear,
                                      mag_filter::linear,
                                      min_filter::linear);
     float4 color = colorTexture.sample(textureSampler, in.texCoord);
+    color *= uniformModel.alphaUniform; // Multiply color by alpha uniform
     return color;
 }
 
