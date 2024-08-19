@@ -128,8 +128,10 @@ class GameManager {
         let font = Font.systemFont(ofSize: 32)
 
         if (renderer != nil) {
-            renderer!.textLayer.meshes.removeAll { $0 === scoreLeftMesh }
-            renderer!.textLayer.meshes.removeAll { $0 === scoreRightMesh }
+            if renderer!.textLayer != nil {
+                renderer!.textLayer.meshes.removeAll { $0 === scoreLeftMesh }
+                renderer!.textLayer.meshes.removeAll { $0 === scoreRightMesh }
+            }
         }
 
         let textSize = CGSize(width: 256, height: 128)
@@ -140,8 +142,10 @@ class GameManager {
         scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 - tileSize * 1.75, -needH / 2.0 + tileSize * 2.0)
         
         if (renderer != nil) {
-            renderer!.textLayer.meshes.append(scoreLeftMesh!)
-            renderer!.textLayer.meshes.append(scoreRightMesh!)
+            if renderer!.textLayer != nil {
+                renderer!.textLayer.meshes.append(scoreLeftMesh!)
+                renderer!.textLayer.meshes.append(scoreRightMesh!)
+            }
         }
     }
     
@@ -160,32 +164,47 @@ class GameManager {
     func zapRemoveConnectionsCreateNewAndMakeThemFall() {
         SoundManager.shared.playSoundEffect(filename: "explode")
         // first remove from the tile matrix and generate new tiles
+        // in the game board representation
+        // VERY IMPORTANT - this function needs to mirror EXACTLY
+        // the algorightm below - shift tiles from above, overwrite the current one
+        // when they are part of a connection
+        // then generate new ones in the spots left open at the top
         gameBoard?.removeAndShiftConnectingTiles()
-        // now our business - remove old and create new tile quads
+        // now do our business - remove old and create new tile quads
         // and set up animations for them to fall into place
+        // everything is done PER COLUMN
         for x in 1..<boardWidth + 1 {
+            // new tiles will be added above the first tile
+            // so they can fall down
+            // new tile position will be shifted as we add more tiles later
             var newTilePosition = getIdealTilePositionY(j: 0) - Float(tileSize)
-            var shiftedItems = 0
+            var shiftedItems = 0 // remember how many tiles we shift as we go
+            // because we will have to compensate the copying position by this number
             for y in (0..<boardHeight).reversed() {
                 if gameBoard?.connectMarkings[x - 1][y] == .ok {
                     // make an explosion out of it
+                    // at exactly x-1, y tile position
                     animationManager?.addParticleAnimation(speedLimit: 10.0, width: 4.0, count: 10, duration: 2.0, tilePosition: (x: x - 1, y: y), targetScreen: renderer!.gameScreen)
                     // but make sure to remake the marking
                     gameBoard?.connectMarkings[x - 1][y] = .ok
-                    shiftedItems += 1
-                    // Shift tileQuads above downward - only in the tileQuads matrix
+                    // Shift tileQuads above downward
+                    // - only in the tileQuads matrix
+                    // - their position on screen remains the same
                     if y >= 1 {
                         for shiftY in (1...y).reversed() {
-                            tileQuads[shiftY][x] = tileQuads[shiftY - 1][x]
+                            // remember to compensate copying position by shiftedItems
+                            tileQuads[shiftY + shiftedItems][x] = tileQuads[shiftY + shiftedItems - 1][x]
                         }
                     }
+                    // one more disappeared so far
+                    shiftedItems += 1
                 }
             }
-//            print ("on column ", x, " we shifted ", shiftedItems, " tileQuads down")
+//            print ("GM column ", x, " shifted: ", shiftedItems, " tileQuads")
             for y in (0..<shiftedItems).reversed() {
                 // do NOT update their positions, let them stand where they are
                 // will add an animation later to bring them down
-                // Create new tileQuad at the top
+                // for now just create one more tileQuad at the top
                 tileQuads[y][x] = createNewTileQuad(i: x, j: y)
                 if let quad = tileQuads[y][x] {
                     quad.position.y = newTilePosition

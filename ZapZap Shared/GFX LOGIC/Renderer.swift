@@ -117,10 +117,13 @@ class Renderer: NSObject, MTKViewDelegate {
         samplerDescriptor.sAddressMode = .repeat
         samplerDescriptor.tAddressMode = .repeat
         self.samplerState = device.makeSamplerState(descriptor: samplerDescriptor)
-
+        
+        let logoTexture = ["companylogo"]
+        let tempTexture = ResourceTextures(device: Renderer.device, textureNames: logoTexture)
+/*
         let textureNames = ["arrows", "base_tiles", "stars"]
         Renderer.textures = ResourceTextures(device: Renderer.device, textureNames: textureNames)
-
+*/
         self.currentConstantBufferOffset = 0
         self.frameIndex = 0
         let constantBufferSize = Renderer.constantsStride * maxBuffersInFlight
@@ -137,6 +140,12 @@ class Renderer: NSObject, MTKViewDelegate {
         gameScreen = Screen()
         pauseScreen = Screen()
 
+        // Setup logo screen
+        setupLogoScreen()
+        
+        // Set logo screen as the initial screen
+        setCurrentScreen(logoScreen)
+/*
         setCurrentScreen(gameScreen)
         // must have the tilequads already initialized in gameManager before creating the renderer!
         
@@ -150,8 +159,23 @@ class Renderer: NSObject, MTKViewDelegate {
         backgroundLayer.texture = Renderer.textures.getTexture(named: "stars")
         objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
+        */
     }
     
+    private func setupLogoScreen() {
+        let logoTexture = ["companylogo"]
+        let logoTextures = ResourceTextures(device: Renderer.device, textureNames: logoTexture)
+        
+        let logoQuad = QuadMesh(size: boardH / 1.1, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(1, 1))
+        logoQuad.position = SIMD2<Float>(0, 0)
+        
+        let logoLayer = GraphicsLayer()
+        logoLayer.texture = logoTextures.getTexture(named: "companylogo")
+        logoLayer.meshes.append(logoQuad)
+        
+        logoScreen.addLayer(logoLayer)
+    }
+
     func createBackgroundLayer() {
         // Tile size for the background grid
         let animQuadSize = tileSize / 2.0
@@ -182,9 +206,11 @@ class Renderer: NSObject, MTKViewDelegate {
         baseLayer = GameBoardLayer(gameManager: fromGameManager)
         baseLayer?.texture = Renderer.textures.getTexture(named: "base_tiles")
 
-        // Example of adding a text quad
-        textLayer.meshes.append(gameMgr.scoreLeftMesh!)
-        textLayer.meshes.append(gameMgr.scoreRightMesh!)
+        if textLayer != nil {
+            // Example of adding a text quad
+            textLayer.meshes.append(gameMgr.scoreLeftMesh!)
+            textLayer.meshes.append(gameMgr.scoreRightMesh!)
+        }
 
         // Call checkConnections and recreate connections
         gameMgr.gameBoard?.checkConnections()
@@ -202,17 +228,30 @@ class Renderer: NSObject, MTKViewDelegate {
         gameScreen.addLayer(textLayer)
     }
     
-    func setCurrentScreen(_ screen: Screen) {
-        currentScreen = screen
+    func initializeGameScreen() {
+        let textureNames = ["arrows", "base_tiles", "stars"]
+        Renderer.textures = ResourceTextures(device: Renderer.device, textureNames: textureNames)
+        
+        // Set up layers and initialize game screen
+        backgroundLayer = GraphicsLayer()
+        objectsLayer = GraphicsLayer()
+        textLayer = GraphicsLayer()
+        effectsLayer = EffectsLayer()
+
+        gameMgr.createTiles()
+        createBaseLayer(fromGameManager: gameMgr)
+
+//        createBackgroundLayer()
+        
+        backgroundLayer.texture = Renderer.textures.getTexture(named: "stars")
+        objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
+        effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
+        
+        createBaseLayer(fromGameManager: gameMgr)
     }
 
-    class func loadTexture(textureName: String) throws -> MTLTexture {
-        let textureLoader = MTKTextureLoader(device: Renderer.device)
-        let textureLoaderOptions: [MTKTextureLoader.Option: Any] = [
-            .textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
-            .textureStorageMode: NSNumber(value: MTLStorageMode.private.rawValue)
-        ]
-        return try textureLoader.newTexture(name: textureName, scaleFactor: 1.0, bundle: nil, options: textureLoaderOptions)
+    func setCurrentScreen(_ screen: Screen) {
+        currentScreen = screen
     }
     
     private func updateConstants() {
@@ -251,12 +290,43 @@ class Renderer: NSObject, MTKViewDelegate {
         constants.copyMemory(from: &transformMatrix, byteCount: Renderer.constantsSize)
     }
     
+    func update() {
+        // logo screen updates
+        if currentScreen === logoScreen {
+            // Update elapsed time
+            let elapsedTime = Float(frameIndex) / 60.0 // Assuming 60 FPS
+            
+            if frameIndex == 5 { // at exactly frame 5
+                print ("this is frame 5")
+                initializeGameScreen()
+            }
+
+            if let logoQuad = logoScreen.layers.first?.meshes.first as? QuadMesh {
+                if elapsedTime <= 0.5 {
+                    logoQuad.alpha = elapsedTime * 2.0
+                } else if elapsedTime <= 1.5 {
+                    logoQuad.alpha = 1.0
+                } else {
+                    logoQuad.alpha = (2.0 - elapsedTime) * 6.0
+                }
+            }
+            if elapsedTime >= 2.0 {
+                // Proceed to load textures and initialize other screens
+                setCurrentScreen(gameScreen)
+            }
+        }
+
+        if currentScreen === gameScreen {
+            gameMgr.update()
+        }
+    }
+
     func draw(in view: MTKView) {
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
         
         currentConstantBufferOffset = (frameIndex % maxBuffersInFlight) * Renderer.constantsStride
         updateConstants()
-        gameMgr.update()
+        update()
         
         guard let commandBuffer = commandQueue.makeCommandBuffer(),
               let renderPassDescriptor = view.currentRenderPassDescriptor,
@@ -276,12 +346,7 @@ class Renderer: NSObject, MTKViewDelegate {
         renderEncoder.setVertexBuffer(constantBuffer, offset: currentConstantBufferOffset, index: 2)
 
         currentScreen?.render(encoder: renderEncoder)
-/*
-        baseLayer!.render(encoder: renderEncoder)
-        objectsLayer.render(encoder: renderEncoder)
-        effectsLayer.render(encoder: renderEncoder)
-        textLayer.render(encoder: renderEncoder)
-*/
+
         renderEncoder.endEncoding()
 
         if let drawable = view.currentDrawable {

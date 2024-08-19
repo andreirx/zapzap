@@ -93,13 +93,6 @@ class GraphicsLayer {
         }
     }
     
-    func loadTexture(imageName: String) {
-        do {
-            self.texture = try Renderer.loadTexture(textureName: imageName)
-        } catch {
-            print("Failed to load texture: \(error)")
-        }
-    }
 }
 
 class GameBoardLayer: GraphicsLayer {

@@ -43,7 +43,7 @@ class ObjectPool<T: Poolable> {
             var newObject = factory()
             newObject.available = false
             availableObjects.append(newObject)
-            print("enlarging pool ", availableObjects.count)
+//            print("enlarging pool ", availableObjects.count)
             return newObject
         }
     }

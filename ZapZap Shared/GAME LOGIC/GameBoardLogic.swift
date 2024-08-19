@@ -209,20 +209,32 @@ class GameBoard {
     
     // method to remove "ok" tiles and shift down - to call when zapping
     // - but don't touch the markings, not yet!
+    // - because they are needed to apply the same algorithm on the tileQuads
     func removeAndShiftConnectingTiles() {
+        //
         for x in 0..<width {
+            var shiftedItems = 0 // remember how many tiles we shift as we go
+            // because we will have to compensate the copying position by this number
             for y in (0..<height).reversed() {
                 if connectMarkings[x][y] == .ok {
                     // Shift tiles above down
                     if y >= 1 {
                         for shiftY in (1...y).reversed() {
-                            connections[x][shiftY] = connections[x][shiftY - 1]
+                            // remember to compensate copying position by shiftedItems
+                            connections[x][shiftY + shiftedItems] = connections[x][shiftY + shiftedItems - 1]
                         }
                     }
                     // Create new tile at the top
                     connections[x][0] = Tile(connections: getNewElement())
+                    // one more disappeared so far
+                    shiftedItems += 1
+                }
+                // make new ones
+                for y in (0..<shiftedItems).reversed() {
+                    connections[x][y] = Tile(connections: getNewElement())
                 }
             }
+//            print("GBL column ", x, " shifted: ", shiftedItems, " connections")
         }
     }
 
@@ -235,7 +247,7 @@ class GameBoard {
         for i in 0..<width {
             for j in 0..<height {
                 let newConnection = getNewElement()
-                connections[j][i] = Tile(connections: newConnection)
+                connections[i][j] = Tile(connections: newConnection)
                 connectMarkings[i][j] = .none
             }
         }
