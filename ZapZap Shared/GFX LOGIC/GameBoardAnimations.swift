@@ -18,6 +18,7 @@ class AnimationManager {
     var fallAnimations: [FallAnimation] = []
     var particleAnimations: [ParticleAnimation] = []
     var freezeFrameAnimations: [FreezeFrameAnimation] = []
+    var objectFallAnimations: [ObjectFallAnimation] = []
 
     weak var gameManager: GameManager? // Use weak reference to avoid retain cycles
     
@@ -60,6 +61,43 @@ class AnimationManager {
 
         freezeFrameAnimations.append(animation)
     }
+    
+    // this will create a falling object animation
+    // Function to create a falling object with a specific type
+    func createFallingObject(objectType: GameObject.Type) {
+        guard let gameManager = gameManager else { return }
+        
+        // Choose a random tile on the game board
+        let randomX = 1 + Int.random(in: 0..<gameManager.gameBoard!.width)
+        let randomY = Int.random(in: 0..<gameManager.gameBoard!.height)
+        print("chose random position ", randomX, ", ", randomY)
+        
+        // Create the object instance
+        // Retrieve the correct initializer and create the object
+        guard let factory = GameObject.objectFactory[ObjectIdentifier(objectType)] else {
+            print("Unknown object type")
+            return
+        }
+        
+        let gameObject = factory()
+
+        // Set the initial position above the board
+        let initialX = Float(randomX) * tileSize - boardW / 2.0
+        let initialY = -needH / 2.0 - tileSize // Start above the top of the screen
+        gameObject.position = SIMD2<Float>(initialX, initialY)
+        
+        // Calculate the target position (the tile's center)
+        let targetY = Float(randomY) * tileSize - boardH / 2.0
+        
+        // Add the object to the objects layer
+        gameManager.renderer?.objectsLayer.meshes.append(gameObject)
+        
+        // Create a fall animation for this object
+        let fallAnimation = ObjectFallAnimation(object: gameObject, targetY: targetY, tilePosition: (x: randomX, y: randomY))
+        
+        // Add the animation to the animation manager
+        objectFallAnimations.append(fallAnimation)
+    }
 
     // this will be called every frame
     func updateAnimations() {
@@ -82,6 +120,7 @@ class AnimationManager {
         updateRotateAnimations()
         updateFallAnimations()
         updateParticleAnimations()
+        updateObjectFallAnimations()
     }
     
     // this handles updates to rotations and their completion
@@ -146,6 +185,8 @@ class AnimationManager {
             animation.update()
         }
         
+        // remove the completed animation objects from the list
+        // return them to the object pool
         particleAnimations.removeAll { animation in
             if animation.isFinished {
                 animation.cleanup()
@@ -156,6 +197,21 @@ class AnimationManager {
         }
     }
 
+    // this will update object falling animation - until their completion
+    private func updateObjectFallAnimations() {
+        for animation in objectFallAnimations {
+            animation.update()
+        }
+        
+        // remove the completed animation objects from the list
+        objectFallAnimations.removeAll { animation in
+            if animation.isFinished {
+                animation.cleanup()
+                return true
+            }
+            return false
+        }
+    }
 }
 
 // // // // // // // // // // // // // // // // // // // // //
@@ -428,3 +484,51 @@ class FreezeFrameAnimation: Animation, Poolable {
     }
 }
 
+// // // // // // // // // // // // // // // // // // // // //
+//
+// ObjectFallAnimation - animation for objects falling from the sky
+//
+
+class ObjectFallAnimation: Animation {
+    private let object: GameObject
+    private let targetY: Float
+    private var elapsedTime: TimeInterval = 0
+    private var speed: Float = 0
+
+    static var gravity: Float = 9.8
+    static var friction: Float = 0.005
+    static var speedFactor: Float = 1.0
+
+    var isFinished: Bool {
+        return object.position.y >= targetY
+    }
+
+    var tilePosition: (x: Int, y: Int)
+
+    init(object: GameObject, targetY: Float, tilePosition: (x: Int, y: Int)) {
+        self.object = object
+        self.targetY = targetY
+        self.tilePosition = tilePosition
+    }
+
+    func update() {
+        guard !isFinished else {
+            object.position.y = targetY
+            return
+        }
+
+        elapsedTime += 1 / 60.0 // Assuming 60 FPS update rate
+        speed += ObjectFallAnimation.gravity * ObjectFallAnimation.speedFactor * (1 / 60.0)
+        speed *= (1.0 - ObjectFallAnimation.friction)
+        object.position.y += speed
+
+        if object.position.y >= targetY {
+            object.position.y = targetY
+        }
+    }
+
+    func cleanup() {
+        // Cleanup logic if necessary
+        // I mean we DO NOT want to remove the object after it fell
+    }
+}

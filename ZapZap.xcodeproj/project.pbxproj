@@ -60,6 +60,8 @@
 		18BEF3BF2C63F1AF00A4D753 /* DungeonLevel.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3BD2C63F1AE00A4D753 /* DungeonLevel.mp3 */; };
 		18BEF3C12C64958800A4D753 /* ObjectPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3C02C64958800A4D753 /* ObjectPool.swift */; };
 		18BEF3C22C64958800A4D753 /* ObjectPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3C02C64958800A4D753 /* ObjectPool.swift */; };
+		18BEF3C42C73AE3200A4D753 /* GameObjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3C32C73AE3200A4D753 /* GameObjects.swift */; };
+		18BEF3C52C73AE3200A4D753 /* GameObjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3C32C73AE3200A4D753 /* GameObjects.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -96,6 +98,7 @@
 		18BEF3BA2C63722500A4D753 /* IttyBitty.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = IttyBitty.mp3; sourceTree = "<group>"; };
 		18BEF3BD2C63F1AE00A4D753 /* DungeonLevel.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = DungeonLevel.mp3; sourceTree = "<group>"; };
 		18BEF3C02C64958800A4D753 /* ObjectPool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectPool.swift; sourceTree = "<group>"; };
+		18BEF3C32C73AE3200A4D753 /* GameObjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameObjects.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -189,6 +192,7 @@
 			children = (
 				18BEF3882C4F7BA400A4D753 /* GameBoardLogic.swift */,
 				18BEF38E2C4FE4B100A4D753 /* GameManager.swift */,
+				18BEF3C32C73AE3200A4D753 /* GameObjects.swift */,
 			);
 			path = "GAME LOGIC";
 			sourceTree = "<group>";
@@ -357,6 +361,7 @@
 				18BEF3602C4A824B00A4D753 /* GameViewController.swift in Sources */,
 				18BEF35E2C4A824B00A4D753 /* AppDelegate.swift in Sources */,
 				18BEF3C12C64958800A4D753 /* ObjectPool.swift in Sources */,
+				18BEF3C42C73AE3200A4D753 /* GameObjects.swift in Sources */,
 				18BEF38C2C4FDE9900A4D753 /* GameBoardAnimations.swift in Sources */,
 				18BEF3952C5415AD00A4D753 /* Math.swift in Sources */,
 				18BEF3B82C636F5D00A4D753 /* SoundManager.swift in Sources */,
@@ -380,6 +385,7 @@
 				18BEF3702C4A824B00A4D753 /* GameViewController.swift in Sources */,
 				18BEF36E2C4A824B00A4D753 /* AppDelegate.swift in Sources */,
 				18BEF3C22C64958800A4D753 /* ObjectPool.swift in Sources */,
+				18BEF3C52C73AE3200A4D753 /* GameObjects.swift in Sources */,
 				18BEF38D2C4FDE9900A4D753 /* GameBoardAnimations.swift in Sources */,
 				18BEF3962C5415AD00A4D753 /* Math.swift in Sources */,
 				18BEF3B92C636F5D00A4D753 /* SoundManager.swift in Sources */,

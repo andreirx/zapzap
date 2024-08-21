@@ -145,21 +145,6 @@ class Renderer: NSObject, MTKViewDelegate {
         
         // Set logo screen as the initial screen
         setCurrentScreen(logoScreen)
-/*
-        setCurrentScreen(gameScreen)
-        // must have the tilequads already initialized in gameManager before creating the renderer!
-        
-        backgroundLayer = GraphicsLayer()
-        objectsLayer = GraphicsLayer()
-        textLayer = GraphicsLayer()
-        effectsLayer = EffectsLayer()
-        
-//        createBackgroundLayer()
-        
-        backgroundLayer.texture = Renderer.textures.getTexture(named: "stars")
-        objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
-        effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
-        */
     }
     
     private func setupLogoScreen() {
@@ -174,31 +159,6 @@ class Renderer: NSObject, MTKViewDelegate {
         logoLayer.meshes.append(logoQuad)
         
         logoScreen.addLayer(logoLayer)
-    }
-
-    func createBackgroundLayer() {
-        // Tile size for the background grid
-        let animQuadSize = tileSize / 2.0
-
-        // Calculate the number of quads needed on the x and y axes
-        let xCount = Int((needW) / animQuadSize)
-        let yCount = Int((needH) / animQuadSize)
-
-        // Create the quads and position them in the grid
-        for i in 0..<xCount {
-            for j in 0..<yCount {
-                // Calculate position for each quad
-                let xPos = -needW + Float(i) * animQuadSize * 2
-                let yPos = -needH + Float(j) * animQuadSize * 2
-
-                // Create and position the AnimQuadMesh
-                let animQuad = AnimQuadMesh(size: animQuadSize)
-                animQuad.position = SIMD2<Float>(xPos + animQuadSize / 2.0, yPos + animQuadSize / 2.0)
-
-                // Add the quad to the background layer
-                backgroundLayer.meshes.append(animQuad)
-            }
-        }
     }
 
     func createBaseLayer(fromGameManager: GameManager) {
@@ -223,9 +183,9 @@ class Renderer: NSObject, MTKViewDelegate {
         // add layers to game screen
         gameScreen.addLayer(backgroundLayer)
         gameScreen.addLayer(baseLayer!)
-        gameScreen.addLayer(objectsLayer)
         gameScreen.addLayer(effectsLayer)
         gameScreen.addLayer(textLayer)
+        gameScreen.addLayer(objectsLayer)
     }
     
     func initializeGameScreen() {
@@ -235,17 +195,26 @@ class Renderer: NSObject, MTKViewDelegate {
         // Set up layers and initialize game screen
         backgroundLayer = GraphicsLayer()
         objectsLayer = GraphicsLayer()
-        textLayer = GraphicsLayer()
         effectsLayer = EffectsLayer()
+        textLayer = GraphicsLayer()
 
         gameMgr.createTiles()
-        createBaseLayer(fromGameManager: gameMgr)
+//        createBaseLayer(fromGameManager: gameMgr)
 
 //        createBackgroundLayer()
         
         backgroundLayer.texture = Renderer.textures.getTexture(named: "stars")
         objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
+        
+        // TEST CODE: Example of creating and adding a bonus object
+        gameMgr.animationManager?.createFallingObject(objectType: Bonus1.self)
+        gameMgr.animationManager?.createFallingObject(objectType: Bonus1.self)
+        gameMgr.animationManager?.createFallingObject(objectType: Bonus2.self)
+        gameMgr.animationManager?.createFallingObject(objectType: Bonus5.self)
+        gameMgr.animationManager?.createFallingObject(objectType: Bonus2.self)
+        gameMgr.animationManager?.createFallingObject(objectType: Bomb.self)
+
         
         createBaseLayer(fromGameManager: gameMgr)
     }
@@ -318,6 +287,14 @@ class Renderer: NSObject, MTKViewDelegate {
 
         if currentScreen === gameScreen {
             gameMgr.update()
+            // update the GameObjects in the objectLayer
+            if objectsLayer != nil {
+                for mesh in objectsLayer.meshes {
+                    if let gameObject = mesh as? GameObject {
+                        gameObject.update()
+                    }
+                }
+            }
         }
     }
 

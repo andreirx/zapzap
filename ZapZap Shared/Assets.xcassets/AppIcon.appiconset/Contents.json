@@ -1,67 +1,67 @@
 {
   "images" : [
     {
-      "filename" : "Zap-1024 1.jpg",
+      "filename" : "ZZL-1024.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
     },
     {
-      "filename" : "Zap-16.jpeg",
+      "filename" : "ZZL-16.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "16x16"
     },
     {
-      "filename" : "Zap-32 1.jpeg",
+      "filename" : "ZZL-32 1.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "16x16"
     },
     {
-      "filename" : "Zap-32.jpeg",
+      "filename" : "ZZL-32.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "32x32"
     },
     {
-      "filename" : "Zap-64.jpeg",
+      "filename" : "ZZL-64.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "32x32"
     },
     {
-      "filename" : "Zap-128.jpeg",
+      "filename" : "ZZL-128.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "128x128"
     },
     {
-      "filename" : "Zap-256 1.jpeg",
+      "filename" : "ZZL-256 1.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "128x128"
     },
     {
-      "filename" : "Zap-256.jpeg",
+      "filename" : "ZZL-256.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "256x256"
     },
     {
-      "filename" : "Zap-512 1.jpeg",
+      "filename" : "ZZL-512 1.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "256x256"
     },
     {
-      "filename" : "Zap-512.jpeg",
+      "filename" : "ZZL-512.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "512x512"
     },
     {
-      "filename" : "Zap-1024.jpg",
+      "filename" : "ZZL-1024 1.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "512x512"

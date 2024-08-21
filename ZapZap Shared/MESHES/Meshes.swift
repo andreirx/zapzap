@@ -128,7 +128,7 @@ class QuadMesh: Mesh {
 // AnimQuadMesh - simple RECTANGULAR sprite with animated texture position
 //
 
-
+/*
 class AnimQuadMesh: Mesh, Animation {
     private var elapsedTime: TimeInterval = 0
     private var textureX: Float
@@ -204,7 +204,7 @@ class AnimQuadMesh: Mesh, Animation {
         direction = 1.0
     }
 }
-
+*/
 // // // // // // // // // // // // // // // // // // // // //
 //
 // TextQuadMesh - generate text into texture and make a QuadMesh out of it
@@ -235,6 +235,7 @@ class TextQuadMesh: Mesh {
         ]
         let indices: [UInt16] = [0, 1, 2, 2, 3, 0]
         super.init(vertices: vertices, indices: indices, primitiveType: .triangle)
+        self.alpha = 1.0
     }
     
     override func draw(encoder: MTLRenderCommandEncoder) {
