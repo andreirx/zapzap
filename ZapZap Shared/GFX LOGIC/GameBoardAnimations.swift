@@ -19,6 +19,7 @@ class AnimationManager {
     var particleAnimations: [ParticleAnimation] = []
     var freezeFrameAnimations: [FreezeFrameAnimation] = []
     var objectFallAnimations: [ObjectFallAnimation] = []
+    var textAnimations: [TextAnimation] = []
 
     weak var gameManager: GameManager? // Use weak reference to avoid retain cycles
     
@@ -75,19 +76,21 @@ class AnimationManager {
         // Create the object instance
         // Retrieve the correct initializer and create the object
         guard let factory = GameObject.objectFactory[ObjectIdentifier(objectType)] else {
-            print("Unknown object type")
+            print("Trying to create an animation for an unknown GameObject type")
             return
         }
         
         let gameObject = factory()
 
         // Set the initial position above the board
-        let initialX = Float(randomX) * tileSize - boardW / 2.0
-        let initialY = -needH / 2.0 - tileSize // Start above the top of the screen
+        let initialX = gameManager.getIdealTilePositionX(i: randomX)
+        let initialY = gameManager.getIdealTilePositionY(j: randomY) - boardH / 2.0 // start Y is one board height above target Y
         gameObject.position = SIMD2<Float>(initialX, initialY)
+        // scale will be 1 + K * (distance in tiles from target position) where K is 0.2
+        gameObject.baseScale = 1.0 + 0.3 * (boardH / tileSize)
         
         // Calculate the target position (the tile's center)
-        let targetY = Float(randomY) * tileSize - boardH / 2.0
+        let targetY = gameManager.getIdealTilePositionY(j: randomY)
         
         // Add the object to the objects layer
         gameManager.renderer?.objectsLayer.meshes.append(gameObject)
@@ -98,9 +101,18 @@ class AnimationManager {
         // Add the animation to the animation manager
         objectFallAnimations.append(fallAnimation)
     }
+    
+    // this will create a "floating text" that grows and fades away
+    func createTextAnimation(text: String, font: Font, color: Color, size: CGSize, startPosition: SIMD2<Float>, textLayer: GraphicsLayer) {
+        let textAnimation = TextAnimation(text: text, font: font, color: color, size: size, startPosition: startPosition, textLayer: textLayer)
+        textAnimations.append(textAnimation)
+    }
 
     // this will be called every frame
     func updateAnimations() {
+        // only the text animations can go even during the freeze frames
+        updateTextAnimations()
+        
         // do the freeze frame animations first
         if let freezeFrame = freezeFrameAnimations.first {
             freezeFrame.update()
@@ -117,6 +129,7 @@ class AnimationManager {
             return
         }
         
+        // if we're not in a freeze frame, continue updating the other animations
         updateRotateAnimations()
         updateFallAnimations()
         updateParticleAnimations()
@@ -205,6 +218,22 @@ class AnimationManager {
         
         // remove the completed animation objects from the list
         objectFallAnimations.removeAll { animation in
+            if animation.isFinished {
+                animation.cleanup()
+                return true
+            }
+            return false
+        }
+    }
+    
+    // this will update the floating text animations - until they are invisible
+    private func updateTextAnimations() {
+        for animation in textAnimations {
+            animation.update()
+        }
+        
+        // remove the completed animation objects from the list
+        textAnimations.removeAll { animation in
             if animation.isFinished {
                 animation.cleanup()
                 return true
@@ -514,6 +543,7 @@ class ObjectFallAnimation: Animation {
     func update() {
         guard !isFinished else {
             object.position.y = targetY
+            self.object.baseScale = 1.0
             return
         }
 
@@ -521,14 +551,69 @@ class ObjectFallAnimation: Animation {
         speed += ObjectFallAnimation.gravity * ObjectFallAnimation.speedFactor * (1 / 60.0)
         speed *= (1.0 - ObjectFallAnimation.friction)
         object.position.y += speed
+        // scale will be 1 + K * (distance in tiles from target position) where K is 0.2
+        object.baseScale = 1.0 + 0.5 * (targetY - object.position.y) / tileSize
 
         if object.position.y >= targetY {
             object.position.y = targetY
+            self.object.baseScale = 1.0
         }
     }
 
     func cleanup() {
         // Cleanup logic if necessary
         // I mean we DO NOT want to remove the object after it fell
+    }
+}
+
+// // // // // // // // // // // // // // // // // // // // //
+//
+// TextAnimation - animation for when you gain or lose something
+//
+
+class TextAnimation: Animation {
+    private let textQuadMesh: TextQuadMesh
+    private let startAlpha: Float = 3.0
+    private let startScale: Float = 1.0
+    private let alphaDecreaseRate: Float = 0.02 // Controls how quickly alpha decreases
+    private let startPosition: SIMD2<Float>
+    private weak var textLayer: GraphicsLayer?
+
+    var isFinished: Bool {
+        return textQuadMesh.alpha <= 0.0
+    }
+
+    var tilePosition: (x: Int, y: Int) = (0, 0) // Not used but required by the Animation protocol
+
+    init(text: String, font: Font, color: Color, size: CGSize, startPosition: SIMD2<Float>, textLayer: GraphicsLayer) {
+        self.textQuadMesh = TextQuadMesh(text: text, font: font, color: color, size: size)
+        self.startPosition = startPosition
+        self.textLayer = textLayer
+        
+        textQuadMesh.position = startPosition
+        textQuadMesh.scale = startScale
+        textQuadMesh.alpha = startAlpha
+        
+        textLayer.meshes.append(textQuadMesh)
+    }
+
+    func update() {
+        guard !isFinished else { return }
+
+        // Increase scale gradually
+        textQuadMesh.scale += 0.02 // or use a different rate if desired
+        
+        // Decrease alpha gradually
+        textQuadMesh.alpha -= alphaDecreaseRate
+
+        // Drift upwards
+        textQuadMesh.position.y -= 0.4 // Adjust speed of drifting as needed
+    }
+    
+    func cleanup() {
+        // Remove the text quad from the layer
+        if let textLayer = textLayer {
+            textLayer.meshes.removeAll { $0 === textQuadMesh }
+        }
     }
 }

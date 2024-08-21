@@ -11,7 +11,7 @@ import simd
 // Base class for all game objects with rotation and pulsating scale
 class GameObject: QuadMesh {
     private var rotationSpeed: Float
-    private var baseScale: Float
+    var baseScale: Float
     private var maxScale: Float
     private var pulseFreq: Float
     private var frameIndex: Int = 0

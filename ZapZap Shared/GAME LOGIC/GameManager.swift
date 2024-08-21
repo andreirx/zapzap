@@ -236,7 +236,7 @@ class GameManager {
     
     // function that handles frame by frame updates
     func update() {
-        guard let renderer = renderer else { print("NO RENDERER? return");return }
+        guard let gameBoard = gameBoard, let renderer = renderer else { return }
         // ...
         // check for input
         if self.lastInput != nil {
@@ -270,25 +270,41 @@ class GameManager {
         // move those animations
         animationManager?.updateAnimations()
         // check connections
-        if gameBoard?.checkConnections() != 0 {
+        if gameBoard.checkConnections() != 0 {
             // wait, who gets the points?
-            print ("left pins connected: ", gameBoard!.leftPinsConnect)
-            print ("right pins connected: ", gameBoard!.rightPinsConnect)
-            
-            leftScore += gameBoard!.leftPinsConnect
-            rightScore += gameBoard!.rightPinsConnect
-/*
-            if gameBoard!.leftPinsConnect > gameBoard!.rightPinsConnect {
-                Particle.attractor = scoreLeftMesh!.position
-            } else if gameBoard!.leftPinsConnect < gameBoard!.rightPinsConnect {
-                Particle.attractor = scoreRightMesh!.position
-            } else {
-                Particle.attractor = SIMD2<Float> (0.0, 1000.0)
-            }
-*/
+            print ("left pins connected: ", gameBoard.leftPinsConnect)
+            print ("right pins connected: ", gameBoard.rightPinsConnect)
+
+            // increment scores
+            leftScore += gameBoard.leftPinsConnect
+            rightScore += gameBoard.rightPinsConnect
+            // set up attractor down below for particles
             Particle.attractor = SIMD2<Float> (0.0, tileSize * Float(boardHeight))
+            // stop everything mid air for the player to see the bolt
             animationManager?.addFreezeFrameAnimation(duration: 2.0)
+            // remake the meshes
             updateScoreMeshes()
+            
+            // add score animations for each pin on the left
+            // and on the right
+            for y in 0..<gameBoard.height {
+                if .ok == gameBoard.connectMarkings[0][y] {
+                    if let tile = gameBoard.connections[0][y] {
+                        if tile.hasConnection(direction: .left) {
+                            animationManager?.createTextAnimation(text: "+1", font: Font.systemFont(ofSize: 24), color: .purple, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: -1), getIdealTilePositionY(j: y)), textLayer: renderer.textLayer)
+                        }
+                    }
+                }
+                if .ok == gameBoard.connectMarkings[gameBoard.width - 1][y] {
+                    if let tile = gameBoard.connections[gameBoard.width - 1][y] {
+                        if tile.hasConnection(direction: .right) {
+                            animationManager?.createTextAnimation(text: "+1", font: Font.systemFont(ofSize: 24), color: .orange, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: gameBoard.width + 2), getIdealTilePositionY(j: y)), textLayer: renderer.textLayer)
+                        }
+                    }
+                }
+            }
+
+            // remove the connecting tiles, make new ones, and make them fall from above
             zapRemoveConnectionsCreateNewAndMakeThemFall()
         }
     }
