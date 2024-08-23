@@ -234,11 +234,34 @@ class GameManager {
         animationManager?.addRotateAnimation(quad: newQuad!, duration: 0.2, tilePosition: (x: i, y: j), objectsLayer: renderer!.objectsLayer, effectsLayer: renderer!.effectsLayer)
     }
     
+    // function to create score animation and update the LEFT score
+    func updateScoreLeft(byPoints: Int, atTile: (Int, Int)) {
+        guard let renderer = renderer else { return }
+        // increase left score
+        leftScore += byPoints
+        // add the animation
+        animationManager?.createTextAnimation(text: "+\(byPoints)", font: Font.systemFont(ofSize: 24), color: .purple, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: atTile.0), getIdealTilePositionY(j: atTile.1)), textLayer: renderer.textLayer)
+        // remake the meshes
+        updateScoreMeshes()
+    }
+    
+    // function to create score animation and update the RIGHT score
+    func updateScoreRight(byPoints: Int, atTile: (Int, Int)) {
+        guard let renderer = renderer else { return }
+        // increase left score
+        rightScore += byPoints
+        // add the animation
+        animationManager?.createTextAnimation(text: "+\(byPoints)", font: Font.systemFont(ofSize: 24), color: .orange, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: atTile.0), getIdealTilePositionY(j: atTile.1)), textLayer: renderer.textLayer)
+        // remake the meshes
+        updateScoreMeshes()
+    }
+    
     // function that handles frame by frame updates
     func update() {
         guard let gameBoard = gameBoard, let renderer = renderer else { return }
         // ...
         // check for input
+        var tapped = false
         if self.lastInput != nil {
             SoundManager.shared.playSoundEffect(filename: "bop")
             // converting from screen coordinates to game coordinates
@@ -266,6 +289,7 @@ class GameManager {
                 }
             }
             self.lastInput = nil
+            tapped = true
         }
         // move those animations
         animationManager?.updateAnimations()
@@ -306,6 +330,8 @@ class GameManager {
 
             // remove the connecting tiles, make new ones, and make them fall from above
             zapRemoveConnectionsCreateNewAndMakeThemFall()
+        } else if tapped {
+            // wait there was no connection left to right, but we still need to check for bonuses after tap
         }
     }
 

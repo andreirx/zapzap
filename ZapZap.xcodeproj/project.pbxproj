@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		185F38982C78C28E00141850 /* coindrop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 185F38972C78C28D00141850 /* coindrop.wav */; };
+		185F38992C78C28E00141850 /* coindrop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 185F38972C78C28D00141850 /* coindrop.wav */; };
 		18BEF35E2C4A824B00A4D753 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF35D2C4A824B00A4D753 /* AppDelegate.swift */; };
 		18BEF3602C4A824B00A4D753 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF35F2C4A824B00A4D753 /* GameViewController.swift */; };
 		18BEF3632C4A824B00A4D753 /* Base in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3622C4A824B00A4D753 /* Base */; };
@@ -65,6 +67,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		185F38972C78C28D00141850 /* coindrop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = coindrop.wav; sourceTree = "<group>"; };
 		18BEF3522C4A824A00A4D753 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		18BEF3532C4A824A00A4D753 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		18BEF3542C4A824A00A4D753 /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
@@ -217,6 +220,7 @@
 				18BEF3A82C611D7500A4D753 /* buzz.wav */,
 				18BEF3BA2C63722500A4D753 /* IttyBitty.mp3 */,
 				18BEF3AB2C611D7800A4D753 /* explode.wav */,
+				185F38972C78C28D00141850 /* coindrop.wav */,
 				18BEF3AA2C611D7700A4D753 /* powerup.wav */,
 				18BEF3A92C611D7600A4D753 /* rotate.wav */,
 			);
@@ -312,6 +316,7 @@
 			files = (
 				18BEF3792C4A824B00A4D753 /* ShaderTypes.h in Resources */,
 				18BEF3BB2C63722500A4D753 /* IttyBitty.mp3 in Resources */,
+				185F38982C78C28E00141850 /* coindrop.wav in Resources */,
 				18BEF3BE2C63F1AF00A4D753 /* DungeonLevel.mp3 in Resources */,
 				18BEF3B22C611D7800A4D753 /* powerup.wav in Resources */,
 				18BEF3632C4A824B00A4D753 /* Base in Resources */,
@@ -330,6 +335,7 @@
 			files = (
 				18BEF3B52C611D7800A4D753 /* explode.wav in Resources */,
 				18BEF3B32C611D7800A4D753 /* powerup.wav in Resources */,
+				185F38992C78C28E00141850 /* coindrop.wav in Resources */,
 				18BEF3BF2C63F1AF00A4D753 /* DungeonLevel.mp3 in Resources */,
 				18BEF3AF2C611D7800A4D753 /* buzz.wav in Resources */,
 				18BEF3AD2C611D7800A4D753 /* bop.wav in Resources */,

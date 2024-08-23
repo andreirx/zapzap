@@ -15,6 +15,8 @@ class GameObject: QuadMesh {
     private var maxScale: Float
     private var pulseFreq: Float
     private var frameIndex: Int = 0
+    var tilePosition: (x: Int, y: Int) = (-1, -1) // start off the table
+    var bonusPoints: Int = 0
 
     // static Dictionary mapping types to their respective initializers
     static let objectFactory: [ObjectIdentifier: () -> GameObject] = [
@@ -55,10 +57,7 @@ class Bonus1: GameObject {
         let bottomRightUV = SIMD2<Float>(4.0 / 8.0, 3.0 / 8.0)
         super.init(size: size, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV, rotationSpeed: 0.0, pulseFreq: 0.11)
         self.alpha = 1.5
-    }
-    
-    func applyBonus(to score: inout Int) {
-        score += 1
+        self.bonusPoints = 1
     }
 }
 
@@ -69,10 +68,7 @@ class Bonus2: GameObject {
         let bottomRightUV = SIMD2<Float>(4.0 / 8.0, 4.0 / 8.0)
         super.init(size: size, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV, rotationSpeed: 0.0, pulseFreq: 0.12)
         self.alpha = 2.0
-    }
-    
-    func applyBonus(to score: inout Int) {
-        score += 2
+        self.bonusPoints = 2
     }
 }
 
@@ -83,10 +79,7 @@ class Bonus5: GameObject {
         let bottomRightUV = SIMD2<Float>(4.0 / 8.0, 5.0 / 8.0)
         super.init(size: size, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV, rotationSpeed: 0.0, pulseFreq: 0.15)
         self.alpha = 3.5
-    }
-    
-    func applyBonus(to score: inout Int) {
-        score += 5
+        self.bonusPoints = 5
     }
 }
 
@@ -98,6 +91,7 @@ class Bomb: GameObject {
         let bottomRightUV = SIMD2<Float>(6.0 / 8.0, 2.0 / 8.0)
         super.init(size: size, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV, rotationSpeed: 0.0, pulseFreq: 0.03)
         self.alpha = 3.0
+        self.bonusPoints = -5
     }
     
     func explode() {

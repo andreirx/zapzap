@@ -72,6 +72,9 @@ class AnimationManager {
         let randomX = 1 + Int.random(in: 0..<gameManager.gameBoard!.width)
         let randomY = Int.random(in: 0..<gameManager.gameBoard!.height)
         print("chose random position ", randomX, ", ", randomY)
+        // TODO
+        // BY THE WAY - we need to check that there is no object
+        // already on this position
         
         // Create the object instance
         // Retrieve the correct initializer and create the object
@@ -88,6 +91,9 @@ class AnimationManager {
         gameObject.position = SIMD2<Float>(initialX, initialY)
         // scale will be 1 + K * (distance in tiles from target position) where K is 0.2
         gameObject.baseScale = 1.0 + 0.3 * (boardH / tileSize)
+        // set the tile position
+        gameObject.tilePosition.x = randomX - 1
+        gameObject.tilePosition.y = randomY
         
         // Calculate the target position (the tile's center)
         let targetY = gameManager.getIdealTilePositionY(j: randomY)
@@ -146,6 +152,7 @@ class AnimationManager {
         rotateAnimations.removeAll { animation in
             if animation.isFinished {
                 let tilePosition = animation.tilePosition
+
                 gameManager.gameBoard?.connectMarkings[tilePosition.x][tilePosition.y] = .none
                 gameManager.gameBoard?.checkConnections()
                 gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
@@ -154,6 +161,33 @@ class AnimationManager {
                     gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
                     gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
                     gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+                    // ok so we also need to check for bonuses now
+                    // Collect bonuses to be removed
+                    var bonusesToRemove: [GameObject] = []
+                    // Check for bonuses on the table - and remove those that are picked
+                    for mesh in gameManager.renderer!.objectsLayer.meshes {
+                        // uhh
+                        if let bonus = mesh as? GameObject {
+                            if bonus.scale < 2 {
+                                let tileX = bonus.tilePosition.x
+                                let tileY = bonus.tilePosition.y
+                                
+                                if let marking = gameManager.gameBoard?.connectMarkings[tileX][tileY] {
+                                    if marking == .left {
+                                        gameManager.updateScoreLeft(byPoints: bonus.bonusPoints, atTile: (tileX + 1, tileY))
+                                        bonusesToRemove.append(bonus)
+                                    } else if marking == .right {
+                                        gameManager.updateScoreRight(byPoints: bonus.bonusPoints, atTile: (tileX + 1, tileY))
+                                        bonusesToRemove.append(bonus)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Remove the collected bonuses
+                    gameManager.renderer!.objectsLayer.meshes.removeAll { mesh in
+                        return bonusesToRemove.contains(where: { $0 === mesh })
+                    }
                 }
                 animation.cleanup()
                 AnimationPools.rotateAnimationPool.releaseObject(animation)
