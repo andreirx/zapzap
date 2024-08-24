@@ -207,15 +207,6 @@ class Renderer: NSObject, MTKViewDelegate {
         objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         
-        // TEST CODE: Example of creating and adding a bonus object
-        gameMgr.animationManager?.createFallingObject(objectType: Bonus1.self)
-        gameMgr.animationManager?.createFallingObject(objectType: Bonus1.self)
-        gameMgr.animationManager?.createFallingObject(objectType: Bonus2.self)
-        gameMgr.animationManager?.createFallingObject(objectType: Bonus5.self)
-        gameMgr.animationManager?.createFallingObject(objectType: Bonus2.self)
-        gameMgr.animationManager?.createFallingObject(objectType: Bomb.self)
-
-        
         createBaseLayer(fromGameManager: gameMgr)
     }
 

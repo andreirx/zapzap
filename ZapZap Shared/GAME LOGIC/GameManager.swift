@@ -53,7 +53,7 @@ class GameManager {
 
     init() {
         // TODO: fix the missing links do not leave it magic like this
-        gameBoard = GameBoard(width: boardWidth, height: boardHeight, missingLinks: 5)
+        gameBoard = GameBoard(width: boardWidth, height: boardHeight, missingLinks: 4)
         self.lastInput = nil
 
         // Initialize tileQuads array with nil values
@@ -85,7 +85,6 @@ class GameManager {
     // function to create ONE tile quad based on its position and gameBoard connections
     func createNewTileQuad(i: Int, j: Int) -> QuadMesh? {
         guard let gameBoard = gameBoard else { return nil }
-        guard let renderer = renderer else { return nil }
         if i < 0 || i >= boardWidth + 2 || j < 0 || j >= boardHeight {
             return nil
         }
@@ -105,7 +104,6 @@ class GameManager {
             let gridIndex = Int(gameBoard.connections[i - 1][j]!.connections)
             textureX = getTextureX(gridConnections: gridIndex)
             textureY = 1.0 * textureUnitY
-//            print ("created new quad mesh based on gbc ", Int(gameBoard.connections[i - 1][j]!.connections), "at ", i, j)
         }
 
         let topLeftUV = SIMD2<Float>(textureX, textureY)
@@ -162,6 +160,7 @@ class GameManager {
 
     // method to update tileQuads based on the new connections table
     func zapRemoveConnectionsCreateNewAndMakeThemFall() {
+        // play exploding sound for effect
         SoundManager.shared.playSoundEffect(filename: "explode")
         // first remove from the tile matrix and generate new tiles
         // in the game board representation
@@ -200,7 +199,6 @@ class GameManager {
                     shiftedItems += 1
                 }
             }
-//            print ("GM column ", x, " shifted: ", shiftedItems, " tileQuads")
             for y in (0..<shiftedItems).reversed() {
                 // do NOT update their positions, let them stand where they are
                 // will add an animation later to bring them down
@@ -239,8 +237,12 @@ class GameManager {
         guard let renderer = renderer else { return }
         // increase left score
         leftScore += byPoints
+        var scoreText = "+\(byPoints)"
+        if byPoints < 0 {
+            scoreText = "\(byPoints)"
+        }
         // add the animation
-        animationManager?.createTextAnimation(text: "+\(byPoints)", font: Font.systemFont(ofSize: 24), color: .purple, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: atTile.0), getIdealTilePositionY(j: atTile.1)), textLayer: renderer.textLayer)
+        animationManager?.createTextAnimation(text: scoreText, font: Font.systemFont(ofSize: 24), color: .purple, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: atTile.0), getIdealTilePositionY(j: atTile.1)), textLayer: renderer.textLayer)
         // remake the meshes
         updateScoreMeshes()
     }
@@ -250,10 +252,33 @@ class GameManager {
         guard let renderer = renderer else { return }
         // increase left score
         rightScore += byPoints
+        var scoreText = "+\(byPoints)"
+        if byPoints < 0 {
+            scoreText = "\(byPoints)"
+        }
         // add the animation
-        animationManager?.createTextAnimation(text: "+\(byPoints)", font: Font.systemFont(ofSize: 24), color: .orange, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: atTile.0), getIdealTilePositionY(j: atTile.1)), textLayer: renderer.textLayer)
+        animationManager?.createTextAnimation(text: scoreText, font: Font.systemFont(ofSize: 24), color: .orange, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: atTile.0), getIdealTilePositionY(j: atTile.1)), textLayer: renderer.textLayer)
         // remake the meshes
         updateScoreMeshes()
+    }
+    
+    // function to generate bonuses of various denominations
+    func dropCoins(many1: Int, many2: Int, many5: Int) {
+        // remake the connection markings
+        _ = gameBoard?.checkConnections()
+        
+        for _ in 0..<many1 {
+            animationManager?.createFallingObject(objectType: Bonus1.self)
+        }
+        for _ in 0..<many2 {
+            animationManager?.createFallingObject(objectType: Bonus2.self)
+        }
+        for _ in 0..<many5 {
+            animationManager?.createFallingObject(objectType: Bonus5.self)
+        }
+
+        // play that coin sound
+        SoundManager.shared.playSoundEffect(filename: "coindrop")
     }
     
     // function that handles frame by frame updates
@@ -298,6 +323,35 @@ class GameManager {
             // wait, who gets the points?
             print ("left pins connected: ", gameBoard.leftPinsConnect)
             print ("right pins connected: ", gameBoard.rightPinsConnect)
+            
+            var many1s = 2
+            var many2s = 0
+            var many5s = 0
+            
+            // let it rain bonus money
+            if gameBoard.leftPinsConnect <= 3 {
+            } else if gameBoard.leftPinsConnect <= 6 {
+                many1s += 1
+                many2s += gameBoard.leftPinsConnect - 3
+            } else {
+                many1s += 1
+                many2s += 3
+                many5s += gameBoard.leftPinsConnect - 6
+            }
+
+            // let it rain bonus money AGAIN
+            if gameBoard.rightPinsConnect <= 3 {
+            } else if gameBoard.rightPinsConnect <= 6 {
+                many1s += 1
+                many2s += gameBoard.leftPinsConnect - 3
+            } else {
+                many1s += 1
+                many2s += 3
+                many5s += gameBoard.leftPinsConnect - 6
+            }
+            
+            // remove existing bonuses
+            renderer.objectsLayer.meshes.removeAll()
 
             // increment scores
             leftScore += gameBoard.leftPinsConnect
@@ -305,7 +359,7 @@ class GameManager {
             // set up attractor down below for particles
             Particle.attractor = SIMD2<Float> (0.0, tileSize * Float(boardHeight))
             // stop everything mid air for the player to see the bolt
-            animationManager?.addFreezeFrameAnimation(duration: 2.0)
+            animationManager?.addFreezeFrameAnimation(duration: 2.0, drop1s: many1s, drop2s: many2s, drop5s: many5s)
             // remake the meshes
             updateScoreMeshes()
             

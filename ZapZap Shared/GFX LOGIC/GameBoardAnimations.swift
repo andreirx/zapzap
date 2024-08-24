@@ -49,9 +49,9 @@ class AnimationManager {
     }
 
     // this will stop all other animations for the duration of the animation
-    func addFreezeFrameAnimation(duration: TimeInterval) {
+    func addFreezeFrameAnimation(duration: TimeInterval, drop1s: Int, drop2s: Int, drop5s: Int) {
         let animation = AnimationPools.freezeFrameAnimationPool.getObject()
-        animation.configure(duration: duration)
+        animation.configure(duration: duration, drop1s: drop1s, drop2s: drop2s, drop5s: drop5s)
         
         guard let gameManager = gameManager else { return }
         gameManager.gameBoard?.checkConnections()
@@ -63,18 +63,38 @@ class AnimationManager {
         freezeFrameAnimations.append(animation)
     }
     
+    // function to check whether there are objects on this tile
+    func anythingOnThisTile(i: Int, j: Int) -> Bool {
+        guard let gameManager = gameManager else { return false }
+
+        if gameManager.gameBoard?.connectMarkings[i - 1][j] != Connection.none {
+            return true
+        }
+        
+        for mesh in gameManager.renderer!.objectsLayer.meshes {
+            if let bonus = mesh as? GameObject {
+                if i == bonus.tilePosition.x && j == bonus.tilePosition.y {
+                    return true
+                }
+            }
+        }
+        
+        return false
+    }
+    
     // this will create a falling object animation
     // Function to create a falling object with a specific type
     func createFallingObject(objectType: GameObject.Type) {
         guard let gameManager = gameManager else { return }
         
         // Choose a random tile on the game board
-        let randomX = 1 + Int.random(in: 0..<gameManager.gameBoard!.width)
-        let randomY = Int.random(in: 0..<gameManager.gameBoard!.height)
-        print("chose random position ", randomX, ", ", randomY)
-        // TODO
-        // BY THE WAY - we need to check that there is no object
-        // already on this position
+        var randomX = 1 + Int.random(in: 0..<gameManager.gameBoard!.width)
+        var randomY = Int.random(in: 0..<gameManager.gameBoard!.height)
+        // if a bonus is falling on "something", choose another position
+        while anythingOnThisTile(i: randomX, j: randomY) {
+            randomX = 1 + Int.random(in: 0..<gameManager.gameBoard!.width)
+            randomY = Int.random(in: 0..<gameManager.gameBoard!.height)
+        }
         
         // Create the object instance
         // Retrieve the correct initializer and create the object
@@ -123,6 +143,7 @@ class AnimationManager {
         if let freezeFrame = freezeFrameAnimations.first {
             freezeFrame.update()
             if freezeFrame.isFinished {
+                gameManager?.dropCoins(many1: freezeFrame.drop1, many2: freezeFrame.drop2, many5: freezeFrame.drop5)
                 freezeFrame.cleanup()
                 freezeFrameAnimations.removeFirst()
                 AnimationPools.freezeFrameAnimationPool.releaseObject(freezeFrame)
@@ -176,9 +197,13 @@ class AnimationManager {
                                     if marking == .left {
                                         gameManager.updateScoreLeft(byPoints: bonus.bonusPoints, atTile: (tileX + 1, tileY))
                                         bonusesToRemove.append(bonus)
+                                        // play that sound
+                                        SoundManager.shared.playSoundEffect(filename: "powerup")
                                     } else if marking == .right {
                                         gameManager.updateScoreRight(byPoints: bonus.bonusPoints, atTile: (tileX + 1, tileY))
                                         bonusesToRemove.append(bonus)
+                                        // play that sound
+                                        SoundManager.shared.playSoundEffect(filename: "powerup")
                                     }
                                 }
                             }
@@ -515,6 +540,9 @@ class FallAnimation: Animation, Poolable {
 class FreezeFrameAnimation: Animation, Poolable {
     private var duration: TimeInterval = 0
     private var elapsedTime: TimeInterval = 0
+    var drop1: Int = 0
+    var drop2: Int = 0
+    var drop5: Int = 0
     var tilePosition: (x: Int, y: Int) = (0, 0) // Dummy position as it's not used
 
     var isFinished: Bool {
@@ -525,15 +553,21 @@ class FreezeFrameAnimation: Animation, Poolable {
 
     required init() {}
 
-    func configure(duration: TimeInterval) {
+    func configure(duration: TimeInterval, drop1s: Int, drop2s: Int, drop5s: Int) {
         self.duration = duration
         self.elapsedTime = 0
         self.available = false
+        self.drop1 = drop1s
+        self.drop2 = drop2s
+        self.drop5 = drop5s
     }
 
     func resetToUnused() {
         duration = 0
         elapsedTime = 0
+        drop1 = 0
+        drop2 = 0
+        drop5 = 0
         available = true
     }
 
