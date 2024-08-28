@@ -19,7 +19,7 @@ import Metal
 class Particle: SegmentStripMesh, Poolable {
     static var friction: Float = 0.02
     static var attractor: SIMD2<Float> = SIMD2<Float>(-300, -300)
-    static var attractStrength: Float = 0.8
+    static var attractStrength: Float = 0.3
     static var speedFactor: Float = 0.8
 
     var speed: SIMD2<Float>

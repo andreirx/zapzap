@@ -157,6 +157,88 @@ class GameManager {
 
         updateScoreMeshes()
     }
+    
+    // method to apply the "bombing" on the table
+    func bombTable(ati: Int, atj: Int) {
+        // make sure we're not bombing outside
+        if ati < 0 || ati >= boardWidth || atj < 0 || atj >= boardHeight {
+            return
+        }
+        // also "bomb" the gameTable
+        gameBoard?.bombTable(ati: ati, atj: atj)
+        // play exploding sound for effect
+//        SoundManager.shared.playSoundEffect(filename: "bomb")
+        // will remove the tiles around ati, atj
+        // will "fall down" the ones above
+        // will generate new ones from above
+        var starti = ati - 2
+        var endi = ati + 2
+        var startj = atj - 2
+        var endj = atj + 2
+        // clip
+        if starti < 0 {
+            starti = 0
+        }
+        if endi >= boardWidth {
+            endi = boardWidth - 1
+        }
+        if startj < 0 {
+            startj = 0
+        }
+        if endj >= boardHeight {
+            endj = boardHeight - 1
+        }
+        starti += 1
+        endi += 1
+        // shift down and generate
+        for x in starti..<endi {
+            // new tiles will be added above the first tile
+            // so they can fall down
+            // new tile position will be shifted as we add more tiles later
+            var newTilePosition = getIdealTilePositionY(j: 0) - Float(tileSize)
+            var shiftedItems = 0 // remember how many tiles we shift as we go
+            // because we will have to compensate the copying position by this number
+            // now do it for each column, bottom-up
+            for y in (startj..<endj).reversed() {
+                // Shift tiles above down
+                if y >= 1 {
+                    for shiftY in (1...y).reversed() {
+                        // remember to compensate copying position by shiftedItems
+                        tileQuads[shiftY + shiftedItems][x] = tileQuads[shiftY + shiftedItems - 1][x]
+                        // Shift tileQuads above downward
+                        // - only in the tileQuads matrix
+                        // - their position on screen remains the same
+                    }
+                }
+                // one more disappeared so far
+                shiftedItems += 1
+                // make an explosion out of it
+                // at exactly x-1, y tile position
+                animationManager?.addParticleAnimation(speedLimit: 10.0, width: 4.0, count: 10, duration: 2.0, tilePosition: (x: x - 1, y: y), targetScreen: renderer!.gameScreen)
+            }
+            for y in (0..<shiftedItems).reversed() {
+                // do NOT update their positions, let them stand where they are
+                // will add an animation later to bring them down
+                // for now just create one more tileQuad at the top
+                tileQuads[y][x] = createNewTileQuad(i: x, j: y)
+                if let quad = tileQuads[y][x] {
+                    quad.position.y = newTilePosition
+                    newTilePosition -= Float(tileSize) // generate the next one even higher above
+                }
+            }
+            // make animations
+            for x in starti..<endi {
+                for y in 0..<endj {
+                    // as mentioned above, if a tile is above where it should be
+                    // then generate an animation to bring it down
+                    if let quad = tileQuads[y][x], quad.position.y < getIdealTilePositionY(j: y) {
+                        animationManager?.addFallAnimation(quad: quad, targetY: getIdealTilePositionY(j: y), tilePosition: (x: x - 1, y: y))
+                    }
+                }
+            }
+        }
+        animationManager?.addFreezeFrameAnimation(duration: 1.0, drop1s: 1, drop2s: 1, drop5s: 1)
+    }
 
     // method to update tileQuads based on the new connections table
     func zapRemoveConnectionsCreateNewAndMakeThemFall() {
@@ -210,6 +292,7 @@ class GameManager {
                 }
             }
         }
+        // make animations
         for x in 1..<boardWidth + 1 {
             for y in 0..<boardHeight {
                 // as mentioned above, if a tile is above where it should be
@@ -267,20 +350,61 @@ class GameManager {
         // remake the connection markings
         _ = gameBoard?.checkConnections()
         
-        for _ in 0..<many1 {
-            animationManager?.createFallingObject(objectType: Bonus1.self)
+        if many1 > 0 {
+            for _ in 0..<many1 {
+                animationManager?.createFallingObject(objectType: Bonus1.self)
+            }
         }
-        for _ in 0..<many2 {
-            animationManager?.createFallingObject(objectType: Bonus2.self)
+        if many2 > 0 {
+            for _ in 0..<many2 {
+                animationManager?.createFallingObject(objectType: Bonus2.self)
+            }
         }
-        for _ in 0..<many5 {
-            animationManager?.createFallingObject(objectType: Bonus5.self)
+        if many5 > 0 {
+            for _ in 0..<many5 {
+                animationManager?.createFallingObject(objectType: Bonus5.self)
+            }
+        }
+        // randomly add a bomb
+        if 0 == Int.random(in: 0..<1) {
+            animationManager?.createFallingObject(objectType: Bomb.self)
         }
 
         // play that coin sound
         SoundManager.shared.playSoundEffect(filename: "coindrop")
     }
     
+    // Converts screen coordinates to tile coordinates and returns the tile position
+    func getTilePosition(from input: CGPoint) -> (x: Int, y: Int)? {
+        guard let renderer = renderer else { return nil }
+        
+        let screenW = Float(renderer.view.drawableSize.width)
+        let screenH = Float(renderer.view.drawableSize.height)
+        let horizRatio = screenW / needW
+        let vertRatio = screenH / needH
+        
+        var gameX: Float
+        var gameY: Float
+        if horizRatio < vertRatio {
+            gameX = (Float(input.x) - (screenW / 2.0)) / horizRatio
+            gameY = (Float(input.y) - (screenH / 2.0)) / horizRatio
+        } else {
+            gameX = (Float(input.x) - (screenW / 2.0)) / vertRatio
+            gameY = (Float(input.y) - (screenH / 2.0)) / vertRatio
+        }
+        
+        // Convert to tile coordinates
+        let quadX = Int(round((gameX + boardW / 2.0) / tileSize) - 1)
+        let quadY = Int(round((gameY + boardH / 2.0) / tileSize) - 1)
+        
+        // Ensure the tile is within bounds
+        if quadX >= 1 && quadX < boardWidth + 1 && quadY >= 0 && quadY < boardHeight {
+            return (x: quadX - 1, y: quadY)
+        } else {
+            return nil
+        }
+    }
+
     // function that handles frame by frame updates
     func update() {
         guard let gameBoard = gameBoard, let renderer = renderer else { return }
@@ -343,11 +467,11 @@ class GameManager {
             if gameBoard.rightPinsConnect <= 3 {
             } else if gameBoard.rightPinsConnect <= 6 {
                 many1s += 1
-                many2s += gameBoard.leftPinsConnect - 3
+                many2s += gameBoard.rightPinsConnect - 3
             } else {
                 many1s += 1
                 many2s += 3
-                many5s += gameBoard.leftPinsConnect - 6
+                many5s += gameBoard.rightPinsConnect - 6
             }
             
             // remove existing bonuses
@@ -357,7 +481,7 @@ class GameManager {
             leftScore += gameBoard.leftPinsConnect
             rightScore += gameBoard.rightPinsConnect
             // set up attractor down below for particles
-            Particle.attractor = SIMD2<Float> (0.0, tileSize * Float(boardHeight))
+            Particle.attractor = SIMD2<Float> (0.0, 2.0 * tileSize * Float(boardHeight))
             // stop everything mid air for the player to see the bolt
             animationManager?.addFreezeFrameAnimation(duration: 2.0, drop1s: many1s, drop2s: many2s, drop5s: many5s)
             // remake the meshes

@@ -73,7 +73,7 @@ class AnimationManager {
         
         for mesh in gameManager.renderer!.objectsLayer.meshes {
             if let bonus = mesh as? GameObject {
-                if i == bonus.tilePosition.x && j == bonus.tilePosition.y {
+                if i-1 == bonus.tilePosition.x && j == bonus.tilePosition.y {
                     return true
                 }
             }
@@ -185,6 +185,7 @@ class AnimationManager {
                     // ok so we also need to check for bonuses now
                     // Collect bonuses to be removed
                     var bonusesToRemove: [GameObject] = []
+                    var didBomb = false
                     // Check for bonuses on the table - and remove those that are picked
                     for mesh in gameManager.renderer!.objectsLayer.meshes {
                         // uhh
@@ -198,12 +199,22 @@ class AnimationManager {
                                         gameManager.updateScoreLeft(byPoints: bonus.bonusPoints, atTile: (tileX + 1, tileY))
                                         bonusesToRemove.append(bonus)
                                         // play that sound
-                                        SoundManager.shared.playSoundEffect(filename: "powerup")
+                                        SoundManager.shared.playSoundEffect(filename: bonus.sound)
+                                        // was it a bomb?
+                                        if let _ = bonus as? Bomb {
+                                            gameManager.bombTable(ati: tileX, atj: tileY)
+                                            didBomb = true
+                                        }
                                     } else if marking == .right {
                                         gameManager.updateScoreRight(byPoints: bonus.bonusPoints, atTile: (tileX + 1, tileY))
                                         bonusesToRemove.append(bonus)
                                         // play that sound
-                                        SoundManager.shared.playSoundEffect(filename: "powerup")
+                                        SoundManager.shared.playSoundEffect(filename: bonus.sound)
+                                        // was it a bomb?
+                                        if let _ = bonus as? Bomb {
+                                            gameManager.bombTable(ati: tileX, atj: tileY)
+                                            didBomb = true
+                                        }
                                     }
                                 }
                             }
@@ -212,6 +223,10 @@ class AnimationManager {
                     // Remove the collected bonuses
                     gameManager.renderer!.objectsLayer.meshes.removeAll { mesh in
                         return bonusesToRemove.contains(where: { $0 === mesh })
+                    }
+                    // remove all bonuses if there was a bomb going off
+                    if didBomb {
+                        gameManager.renderer!.objectsLayer.meshes.removeAll()
                     }
                 }
                 animation.cleanup()

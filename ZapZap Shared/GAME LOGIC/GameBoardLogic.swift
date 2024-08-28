@@ -237,6 +237,58 @@ class GameBoard {
 //            print("GBL column ", x, " shifted: ", shiftedItems, " connections")
         }
     }
+    
+    // another method that has to be called IN SYNC and useing the SAME ALGORITHM as
+    // what you will be doing to the graphics tiles
+    func bombTable(ati: Int, atj: Int) {
+        // make sure we're not bombing outside
+        if ati < 0 || ati >= width || atj < 0 || atj >= height {
+            return
+        }
+        // will remove the tiles around ati, atj
+        // will "fall down" the ones above
+        // will generate new ones from above
+        var starti = ati - 2
+        var endi = ati + 2
+        var startj = atj - 2
+        var endj = atj + 2
+        // clip
+        if starti < 0 {
+            starti = 0
+        }
+        if endi >= width {
+            endi = width - 1
+        }
+        if startj < 0 {
+            startj = 0
+        }
+        if endj >= height {
+            endj = height - 1
+        }
+        // shift down and generate
+        for x in starti..<endi {
+            var shiftedItems = 0 // remember how many tiles we shift as we go
+            // because we will have to compensate the copying position by this number
+            // now do it for each column, bottom-up
+            for y in (startj..<endj).reversed() {
+                // Shift tiles above down
+                if y >= 1 {
+                    for shiftY in (1...y).reversed() {
+                        // remember to compensate copying position by shiftedItems
+                        connections[x][shiftY + shiftedItems] = connections[x][shiftY + shiftedItems - 1]
+                    }
+                }
+                // Create new tile at the top
+                connections[x][0] = Tile(connections: getNewElement())
+                // one more disappeared so far
+                shiftedItems += 1
+            }
+            // make new ones
+            for y in (0..<shiftedItems).reversed() {
+                connections[x][y] = Tile(connections: getNewElement())
+            }
+        }
+    }
 
     // method to reset the entire table
     func resetTable(percentMissingLinks: Int) {

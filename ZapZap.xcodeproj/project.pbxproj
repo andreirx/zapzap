@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		185F38982C78C28E00141850 /* coindrop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 185F38972C78C28D00141850 /* coindrop.wav */; };
 		185F38992C78C28E00141850 /* coindrop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 185F38972C78C28D00141850 /* coindrop.wav */; };
+		185F389E2C7C582100141850 /* bomb.wav in Resources */ = {isa = PBXBuildFile; fileRef = 185F389D2C7C582000141850 /* bomb.wav */; };
+		185F389F2C7C582100141850 /* bomb.wav in Resources */ = {isa = PBXBuildFile; fileRef = 185F389D2C7C582000141850 /* bomb.wav */; };
+		185F38A12C7CB60600141850 /* ZapGame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 185F38A02C7CB60600141850 /* ZapGame.swift */; };
+		185F38A22C7CB60600141850 /* ZapGame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 185F38A02C7CB60600141850 /* ZapGame.swift */; };
 		18BEF35E2C4A824B00A4D753 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF35D2C4A824B00A4D753 /* AppDelegate.swift */; };
 		18BEF3602C4A824B00A4D753 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF35F2C4A824B00A4D753 /* GameViewController.swift */; };
 		18BEF3632C4A824B00A4D753 /* Base in Resources */ = {isa = PBXBuildFile; fileRef = 18BEF3622C4A824B00A4D753 /* Base */; };
@@ -68,6 +72,8 @@
 
 /* Begin PBXFileReference section */
 		185F38972C78C28D00141850 /* coindrop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = coindrop.wav; sourceTree = "<group>"; };
+		185F389D2C7C582000141850 /* bomb.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = bomb.wav; sourceTree = "<group>"; };
+		185F38A02C7CB60600141850 /* ZapGame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZapGame.swift; sourceTree = "<group>"; };
 		18BEF3522C4A824A00A4D753 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		18BEF3532C4A824A00A4D753 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		18BEF3542C4A824A00A4D753 /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
@@ -196,6 +202,7 @@
 				18BEF3882C4F7BA400A4D753 /* GameBoardLogic.swift */,
 				18BEF38E2C4FE4B100A4D753 /* GameManager.swift */,
 				18BEF3C32C73AE3200A4D753 /* GameObjects.swift */,
+				185F38A02C7CB60600141850 /* ZapGame.swift */,
 			);
 			path = "GAME LOGIC";
 			sourceTree = "<group>";
@@ -218,6 +225,7 @@
 				18BEF3A72C611D7500A4D753 /* bop.wav */,
 				18BEF3BD2C63F1AE00A4D753 /* DungeonLevel.mp3 */,
 				18BEF3A82C611D7500A4D753 /* buzz.wav */,
+				185F389D2C7C582000141850 /* bomb.wav */,
 				18BEF3BA2C63722500A4D753 /* IttyBitty.mp3 */,
 				18BEF3AB2C611D7800A4D753 /* explode.wav */,
 				185F38972C78C28D00141850 /* coindrop.wav */,
@@ -326,6 +334,7 @@
 				18BEF3AC2C611D7800A4D753 /* bop.wav in Resources */,
 				18BEF3662C4A824B00A4D753 /* Base in Resources */,
 				18BEF3B42C611D7800A4D753 /* explode.wav in Resources */,
+				185F389E2C7C582100141850 /* bomb.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -333,6 +342,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				185F389F2C7C582100141850 /* bomb.wav in Resources */,
 				18BEF3B52C611D7800A4D753 /* explode.wav in Resources */,
 				18BEF3B32C611D7800A4D753 /* powerup.wav in Resources */,
 				185F38992C78C28E00141850 /* coindrop.wav in Resources */,
@@ -359,6 +369,7 @@
 				18BEF38F2C4FE4B100A4D753 /* GameManager.swift in Sources */,
 				18BEF39C2C5E16DF00A4D753 /* ElectricArcMesh.swift in Sources */,
 				18BEF3892C4F7BA400A4D753 /* GameBoardLogic.swift in Sources */,
+				185F38A12C7CB60600141850 /* ZapGame.swift in Sources */,
 				18BEF3772C4A824B00A4D753 /* Renderer.swift in Sources */,
 				18BEF3922C5396F400A4D753 /* Meshes.swift in Sources */,
 				18BEF3A42C5E56F000A4D753 /* Screen.swift in Sources */,
@@ -383,6 +394,7 @@
 				18BEF3902C4FE4B100A4D753 /* GameManager.swift in Sources */,
 				18BEF39D2C5E16DF00A4D753 /* ElectricArcMesh.swift in Sources */,
 				18BEF38A2C4F7BA400A4D753 /* GameBoardLogic.swift in Sources */,
+				185F38A22C7CB60600141850 /* ZapGame.swift in Sources */,
 				18BEF3782C4A824B00A4D753 /* Renderer.swift in Sources */,
 				18BEF3932C5396F400A4D753 /* Meshes.swift in Sources */,
 				18BEF3A52C5E56F000A4D753 /* Screen.swift in Sources */,

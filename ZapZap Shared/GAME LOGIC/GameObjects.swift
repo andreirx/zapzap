@@ -15,6 +15,7 @@ class GameObject: QuadMesh {
     private var maxScale: Float
     private var pulseFreq: Float
     private var frameIndex: Int = 0
+    var sound: String = "powerup"
     var tilePosition: (x: Int, y: Int) = (-1, -1) // start off the table
     var bonusPoints: Int = 0
 
@@ -92,6 +93,7 @@ class Bomb: GameObject {
         super.init(size: size, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV, rotationSpeed: 0.0, pulseFreq: 0.03)
         self.alpha = 3.0
         self.bonusPoints = -5
+        self.sound = "bomb"
     }
     
     func explode() {
