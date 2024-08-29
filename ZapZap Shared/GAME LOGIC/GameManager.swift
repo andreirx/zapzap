@@ -164,6 +164,8 @@ class GameManager {
         if ati < 0 || ati >= boardWidth || atj < 0 || atj >= boardHeight {
             return
         }
+        // remove the arcs
+        renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
         // also "bomb" the gameTable
         gameBoard?.bombTable(ati: ati, atj: atj)
         // play exploding sound for effect
@@ -172,21 +174,21 @@ class GameManager {
         // will "fall down" the ones above
         // will generate new ones from above
         var starti = ati - 2
-        var endi = ati + 2
+        var endi = ati + 3
         var startj = atj - 2
-        var endj = atj + 2
+        var endj = atj + 3
         // clip
         if starti < 0 {
             starti = 0
         }
         if endi >= boardWidth {
-            endi = boardWidth - 1
+            endi = boardWidth
         }
         if startj < 0 {
             startj = 0
         }
         if endj >= boardHeight {
-            endj = boardHeight - 1
+            endj = boardHeight
         }
         starti += 1
         endi += 1

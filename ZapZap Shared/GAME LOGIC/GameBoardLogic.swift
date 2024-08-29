@@ -249,21 +249,21 @@ class GameBoard {
         // will "fall down" the ones above
         // will generate new ones from above
         var starti = ati - 2
-        var endi = ati + 2
+        var endi = ati + 3
         var startj = atj - 2
-        var endj = atj + 2
+        var endj = atj + 3
         // clip
         if starti < 0 {
             starti = 0
         }
         if endi >= width {
-            endi = width - 1
+            endi = width
         }
         if startj < 0 {
             startj = 0
         }
         if endj >= height {
-            endj = height - 1
+            endj = height
         }
         // shift down and generate
         for x in starti..<endi {
