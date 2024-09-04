@@ -10,52 +10,40 @@ import Foundation
 // high level organization of a ZAP GAME - gather the logic here
 class ZapGame {
     private var gameManager: GameManager
-    private var animationManager: AnimationManager
-    private var renderer: Renderer
+    weak var animationManager: AnimationManager?
+    weak var renderer: Renderer?
+    public var zapGameState: ZapGameState = .waitingForInput
     
     init(gameManager: GameManager, animationManager: AnimationManager, renderer: Renderer) {
         self.gameManager = gameManager
         self.animationManager = animationManager
         self.renderer = renderer
+        renderer.createBaseLayer(fromGameManager: gameManager)
     }
 
     // Initialize a local or multiplayer game
     func startNewGame(isMultiplayer: Bool) {
-        // Initialize the game board, players, etc.
-//        gameManager.initializeGameBoard(isMultiplayer: isMultiplayer)
-        renderer.createBaseLayer(fromGameManager: gameManager)
+        guard let renderer = gameManager.renderer else { return }
         renderer.setCurrentScreen(renderer.gameScreen)
+        gameManager.gameBoard?.resetTable(percentMissingLinks: defaultMissingLinks)
+        zapGameState = .waitingForInput
     }
 
     // Process a single input event (e.g., tap on a tile)
     func processInput(at position: CGPoint) {
+        guard zapGameState == .waitingForInput else { return }
         guard let tilePosition = gameManager.getTilePosition(from: position) else { return }
-        performGameAction(onTileAt: tilePosition)
+        gameManager.tapTile(i: tilePosition.x, j: tilePosition.y)
     }
 
-    // Perform a sequence of game actions for a specific tile
-    private func performGameAction(onTileAt tilePosition: (x: Int, y: Int)) {
-        clearArcs()
-        rotateTile(at: tilePosition)
-        addArcs()
-        while checkZap() {
-            updateScoreComputeBonuses()
-            clearPreviousBonuses()
-            freezeFrame()
-            clearArcs()
-            fallTiles()
-            addArcs()
-            addBonuses()
-        }
-    }
-    
     // update the score after ZAP + compute the bonuses
     private func updateScoreComputeBonuses() {
-        
+        zapGameState = .freezeDuringZap
     }
 
     // Clear electric arcs
     private func clearArcs() {
+        guard let renderer = gameManager.renderer else { return }
         renderer.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
     }
 
@@ -79,6 +67,7 @@ class ZapGame {
 
     // Clear bonuses on the board
     private func clearPreviousBonuses() {
+        guard let renderer = gameManager.renderer else { return }
         // Check if bonuses are present, apply them, and remove them
         renderer.objectsLayer.meshes.removeAll()
     }
@@ -89,9 +78,11 @@ class ZapGame {
 
     // Handle falling tiles
     private func fallTiles() {
+        zapGameState = .fallingTiles
     }
 
     // Add bonuses after tiles have fallen
     private func addBonuses() {
+        zapGameState = .fallingBonuses
     }
 }

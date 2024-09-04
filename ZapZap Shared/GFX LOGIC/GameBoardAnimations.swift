@@ -147,9 +147,15 @@ class AnimationManager {
                 freezeFrame.cleanup()
                 freezeFrameAnimations.removeFirst()
                 AnimationPools.freezeFrameAnimationPool.releaseObject(freezeFrame)
-                // after the last freeze frame completes, remove the arcs
-                if freezeFrameAnimations.isEmpty {
-                    gameManager!.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
+
+                // normally after a freeze frame, tiles will be falling
+                gameManager!.zapGameState = .fallingTiles
+                if gameManager!.zapGameState == .freezeDuringZap {
+                    // after the last freeze frame completes, remove the arcs
+                    if freezeFrameAnimations.isEmpty {
+                        gameManager!.clearElectricArcs()
+                    }
+                } else if gameManager!.zapGameState == .freezeDuringBomb {
                 }
             }
             // and don't do anything else until they are over
@@ -172,16 +178,19 @@ class AnimationManager {
         guard let gameManager = gameManager else { return }
         rotateAnimations.removeAll { animation in
             if animation.isFinished {
+                // rotating tile animation completed
+                // get tile position for this animation
                 let tilePosition = animation.tilePosition
 
+                // mark this tile as not connecting
                 gameManager.gameBoard?.connectMarkings[tilePosition.x][tilePosition.y] = .none
                 gameManager.gameBoard?.checkConnections()
-                gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
+                // remove electric arcs
+                gameManager.clearElectricArcs()
                 // remake the arcs only if there's no falling tiles
+                // on
                 if fallAnimations.isEmpty {
-                    gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
-                    gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
-                    gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+                    gameManager.addElectricArcs()
                     // ok so we also need to check for bonuses now
                     // Collect bonuses to be removed
                     var bonusesToRemove: [GameObject] = []
@@ -256,12 +265,13 @@ class AnimationManager {
             return false
         }
         
+        // this marks the end of the falling animations
         if removedOne && fallAnimations.isEmpty {
+            gameManager.zapGameState = .waitingForInput
             gameManager.gameBoard?.checkConnections()
-            gameManager.renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
-            gameManager.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
-            gameManager.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
-            gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+            gameManager.clearElectricArcs()
+            gameManager.addElectricArcs()
+            // TODO - MISSING HERE - check for connection
         }
 
     }
@@ -290,13 +300,20 @@ class AnimationManager {
             animation.update()
         }
         
+        var removedOne = false
         // remove the completed animation objects from the list
         objectFallAnimations.removeAll { animation in
             if animation.isFinished {
                 animation.cleanup()
+                removedOne = true
                 return true
             }
             return false
+        }
+        
+        // this marks the end of the falling objects
+        if removedOne && objectFallAnimations.isEmpty {
+            gameManager?.zapGameState = .waitingForInput
         }
     }
     
@@ -538,7 +555,6 @@ class FallAnimation: Animation, Poolable {
 
         if quad.position.y >= targetY {
             quad.position.y = targetY
-//            SoundManager.shared.playSoundEffect(filename: "buzz")
         }
     }
 

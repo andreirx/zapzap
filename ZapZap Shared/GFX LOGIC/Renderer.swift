@@ -189,6 +189,7 @@ class Renderer: NSObject, MTKViewDelegate {
     }
     
     func initializeGameScreen() {
+        guard let animationManager = gameMgr.animationManager else { return }
         let textureNames = ["arrows", "base_tiles", "stars"]
         Renderer.textures = ResourceTextures(device: Renderer.device, textureNames: textureNames)
         
@@ -207,6 +208,7 @@ class Renderer: NSObject, MTKViewDelegate {
         objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         
+//        zapGame = ZapGame(gameManager: gameMgr, animationManager: animationManager, renderer: self)
         createBaseLayer(fromGameManager: gameMgr)
     }
 

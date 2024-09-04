@@ -16,6 +16,7 @@ import simd
 
 let boardWidth = 12
 let boardHeight = 12
+let defaultMissingLinks = 3
 let tileSize: Float = 50.0
 
 let boardW = Float(boardWidth + 3) * tileSize
@@ -23,6 +24,7 @@ let boardH = Float(boardHeight + 1) * tileSize
 
 let needW = Float(boardWidth + 9) * tileSize
 let needH = Float(boardHeight + 1) * tileSize
+
 
 enum GameScreen: Int {
     case loading = 0
@@ -32,11 +34,22 @@ enum GameScreen: Int {
     case options = 4
 }
 
+enum ZapGameState: Int {
+    case waitingForInput = 0
+    case rotatingTile
+    case fallingTiles
+    case fallingBonuses
+    case freezeDuringZap
+    case freezeDuringBomb
+    case waitingForOrange
+    case waitingForIndigo
+}
+
 
 class GameManager {
     // might or might not have
     var gameBoard: GameBoard?
-    var renderer: Renderer?
+    weak var renderer: Renderer?
     var animationManager: AnimationManager?
     var tileQuads: [[QuadMesh?]]
     var lastInput: CGPoint?
@@ -46,14 +59,15 @@ class GameManager {
     var rightScore: Int = 0
     var scoreRightMesh: TextQuadMesh? = nil
     
+    public var zapGameState: ZapGameState = .waitingForInput
+
     // these are the correct texture positions (to be divided by 16.0) based on the connection code
     let grid_codep: [Float] = [
         0.0, 12.0, 15.0, 5.0, 14.0, 1.0, 4.0, 7.0, 13.0, 6.0, 2.0, 8.0, 3.0, 9.0, 10.0, 11.0
     ]
 
     init() {
-        // TODO: fix the missing links do not leave it magic like this
-        gameBoard = GameBoard(width: boardWidth, height: boardHeight, missingLinks: 4)
+        gameBoard = GameBoard(width: boardWidth, height: boardHeight, missingLinks: defaultMissingLinks)
         self.lastInput = nil
 
         // Initialize tileQuads array with nil values
@@ -147,6 +161,19 @@ class GameManager {
         }
     }
     
+    // Clear electric arcs
+    func clearElectricArcs() {
+        guard let renderer = self.renderer else { return }
+        renderer.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
+    }
+
+    // Add electric arcs
+    func addElectricArcs() {
+        remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
+        remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
+        remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+    }
+
     // function to create ALL tileQuads when initializing
     func createTiles() {
         for i in 0..<boardWidth + 2 {
@@ -158,6 +185,15 @@ class GameManager {
         updateScoreMeshes()
     }
     
+    // Initialize a local or multiplayer game
+    func startNewGame(isMultiplayer: Bool) {
+        gameBoard?.resetTable(percentMissingLinks: defaultMissingLinks)
+        leftScore = 0
+        rightScore = 0
+        createTiles()
+        zapGameState = .waitingForInput
+    }
+
     // method to apply the "bombing" on the table
     func bombTable(ati: Int, atj: Int) {
         // make sure we're not bombing outside
@@ -239,7 +275,9 @@ class GameManager {
                 }
             }
         }
+        zapGameState = .freezeDuringBomb
         animationManager?.addFreezeFrameAnimation(duration: 1.0, drop1s: 1, drop2s: 1, drop5s: 1)
+        clearElectricArcs()
     }
 
     // method to update tileQuads based on the new connections table
@@ -352,6 +390,9 @@ class GameManager {
         // remake the connection markings
         _ = gameBoard?.checkConnections()
         
+        // put the game in falling objects state
+        zapGameState = .fallingBonuses
+        
         if many1 > 0 {
             for _ in 0..<many1 {
                 animationManager?.createFallingObject(objectType: Bonus1.self)
@@ -413,7 +454,9 @@ class GameManager {
         // ...
         // check for input
         var tapped = false
-        if self.lastInput != nil {
+        if self.lastInput != nil && zapGameState == .waitingForInput {
+            // input to process
+            // but only if we're waiting for input
             SoundManager.shared.playSoundEffect(filename: "bop")
             // converting from screen coordinates to game coordinates
             let screenW = Float(renderer.view.drawableSize.width)
@@ -441,6 +484,9 @@ class GameManager {
             }
             self.lastInput = nil
             tapped = true
+        } else if self.lastInput != nil {
+            // if the player tapped but we weren't waiting for input, discard
+            self.lastInput = nil
         }
         // move those animations
         animationManager?.updateAnimations()
@@ -450,6 +496,7 @@ class GameManager {
             print ("left pins connected: ", gameBoard.leftPinsConnect)
             print ("right pins connected: ", gameBoard.rightPinsConnect)
             
+            // TODO - put the bonus generating logic into a separate function
             var many1s = 2
             var many2s = 0
             var many5s = 0
@@ -485,6 +532,7 @@ class GameManager {
             // set up attractor down below for particles
             Particle.attractor = SIMD2<Float> (0.0, 2.0 * tileSize * Float(boardHeight))
             // stop everything mid air for the player to see the bolt
+            zapGameState = .freezeDuringZap
             animationManager?.addFreezeFrameAnimation(duration: 2.0, drop1s: many1s, drop2s: many2s, drop5s: many5s)
             // remake the meshes
             updateScoreMeshes()
