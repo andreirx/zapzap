@@ -78,6 +78,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var currentScreen: Screen?
 
     var backgroundLayer: GraphicsLayer!
+    var menuLayer: GraphicsLayer!
     var baseLayer: GameBoardLayer? // this one won't be ready at creation time, will have to add it later after getting a GameManager
     var objectsLayer: GraphicsLayer!
     var textLayer: GraphicsLayer!
@@ -179,16 +180,9 @@ class Renderer: NSObject, MTKViewDelegate {
         gameMgr.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
         gameMgr.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
         gameMgr.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
-        
-        // add layers to game screen
-        gameScreen.addLayer(backgroundLayer)
-        gameScreen.addLayer(baseLayer!)
-        gameScreen.addLayer(effectsLayer)
-        gameScreen.addLayer(textLayer)
-        gameScreen.addLayer(objectsLayer)
     }
     
-    func initializeGameScreen() {
+    func initializeGameScreens() {
         guard let animationManager = gameMgr.animationManager else { return }
         let textureNames = ["arrows", "base_tiles", "stars"]
         Renderer.textures = ResourceTextures(device: Renderer.device, textureNames: textureNames)
@@ -198,6 +192,7 @@ class Renderer: NSObject, MTKViewDelegate {
         objectsLayer = GraphicsLayer()
         effectsLayer = EffectsLayer()
         textLayer = GraphicsLayer()
+        menuLayer = GraphicsLayer()
 
         gameMgr.createTiles()
 //        createBaseLayer(fromGameManager: gameMgr)
@@ -207,9 +202,49 @@ class Renderer: NSObject, MTKViewDelegate {
         backgroundLayer.texture = Renderer.textures.getTexture(named: "stars")
         objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
+        menuLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
         
 //        zapGame = ZapGame(gameManager: gameMgr, animationManager: animationManager, renderer: self)
         createBaseLayer(fromGameManager: gameMgr)
+
+        // add layers to game screen
+        gameScreen.addLayer(backgroundLayer)
+        gameScreen.addLayer(baseLayer!)
+        gameScreen.addLayer(effectsLayer)
+        gameScreen.addLayer(textLayer)
+        gameScreen.addLayer(objectsLayer)
+        
+        // add layers to menu screen
+        mainMenuScreen.addLayer(menuLayer)
+//        mainMenuScreen.addLayer(effectsLayer)
+//        gameScreen.addLayer(textLayer)
+        
+        // add buttons to menuLayer
+        var buttonLocal = ButtonMesh.createUnlitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        var button1v1 = ButtonMesh.createLitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        var buttonBuyCoffee = ButtonMesh.createRedButton(innerWidth: 9.6 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        // put them in their correct positions
+        buttonLocal.position.y = -0.8 * tileSize
+        buttonBuyCoffee.position.y = 2.0 * tileSize
+        button1v1.position.y = 4.8 * tileSize
+        // add them to the layer
+        menuLayer.meshes.append(buttonLocal)
+        menuLayer.meshes.append(buttonBuyCoffee)
+        menuLayer.meshes.append(button1v1)
+        // make texts for the buttons
+        let textSize = CGSize(width: 512, height: 64)
+        let font = Font.systemFont(ofSize: 40)
+        var textLocal = TextQuadMesh(text: "Local Play", font: font, color: Color.white, size: textSize)
+        var text1v1 = TextQuadMesh(text: "Multiplayer 1v1", font: font, color: Color.white, size: textSize)
+        var textBuyCoffee = TextQuadMesh(text: "Let's Have (Digital) Coffee", font: font, color: Color.white, size: textSize)
+        // put them in their correct positions
+        textLocal.position.y = -0.8 * tileSize + 6
+        textBuyCoffee.position.y = 2.0 * tileSize + 6
+        text1v1.position.y = 4.8 * tileSize + 6
+        // add them to the layer
+        menuLayer.meshes.append(textLocal)
+        menuLayer.meshes.append(textBuyCoffee)
+        menuLayer.meshes.append(text1v1)
     }
 
     func setCurrentScreen(_ screen: Screen) {
@@ -260,7 +295,7 @@ class Renderer: NSObject, MTKViewDelegate {
             
             if frameIndex == 5 { // at exactly frame 5
                 print ("this is frame 5")
-                initializeGameScreen()
+                initializeGameScreens()
             }
 
             if let logoQuad = logoScreen.layers.first?.meshes.first as? QuadMesh {
@@ -274,10 +309,11 @@ class Renderer: NSObject, MTKViewDelegate {
             }
             if elapsedTime >= 2.0 {
                 // Proceed to load textures and initialize other screens
-                setCurrentScreen(gameScreen)
+                setCurrentScreen(mainMenuScreen)
             }
         }
 
+        // game screen updates
         if currentScreen === gameScreen {
             gameMgr.update()
             // update the GameObjects in the objectLayer
@@ -287,6 +323,19 @@ class Renderer: NSObject, MTKViewDelegate {
                         gameObject.update()
                     }
                 }
+            }
+        }
+        
+        // main menu screen updates
+        if currentScreen === mainMenuScreen {
+            // just update the animations, whatever they are
+            // arcs and particles
+            gameMgr.animationManager?.updateAnimations()
+            // check user input
+            if gameMgr.lastInput != nil {
+                gameMgr.zapGameState = .waitingForInput
+                setCurrentScreen(gameScreen)
+                gameMgr.lastInput = nil
             }
         }
     }

@@ -447,50 +447,16 @@ class GameManager {
             return nil
         }
     }
-
-    // function that handles frame by frame updates
-    func update() {
+    
+    // function that updates the score, generates bonuses,
+    // sets animations in motion
+    // everything that needs to be done when connecting from left to right
+    func checkConnectionsAndStartZap() {
         guard let gameBoard = gameBoard, let renderer = renderer else { return }
-        // ...
-        // check for input
-        var tapped = false
-        if self.lastInput != nil && zapGameState == .waitingForInput {
-            // input to process
-            // but only if we're waiting for input
-            SoundManager.shared.playSoundEffect(filename: "bop")
-            // converting from screen coordinates to game coordinates
-            let screenW = Float(renderer.view.drawableSize.width)
-            let screenH = Float(renderer.view.drawableSize.height)
-            let horizRatio = screenW / needW
-            let vertRatio = screenH / needH
-            var gameX: Float
-            var gameY: Float
-            if horizRatio < vertRatio {
-                gameX = (Float(self.lastInput!.x) - (screenW / 2.0)) / horizRatio
-                gameY = (Float(self.lastInput!.y) - (screenH / 2.0)) / horizRatio
-            } else {
-                gameX = (Float(self.lastInput!.x) - (screenW / 2.0)) / vertRatio
-                gameY = (Float(self.lastInput!.y) - (screenH / 2.0)) / vertRatio
-            }
-            // and then convert to tile coordinates to check if the user is interacting with the board
-            let quadX = Int(round((gameX + boardW / 2.0) / tileSize) - 1)
-            let quadY = Int(round((gameY + boardH / 2.0) / tileSize) - 1)
-            if quadX >= 0 && quadX < boardWidth + 2 && quadY >= 0 && quadY < boardWidth {
-//                tileQuads[quadY][quadX]?.position = SIMD2<Float>(gameX, gameY)
-                if quadX >= 1 && quadX < boardWidth + 1 {
-                    print ("hit the board at ", quadX - 1, quadY)
-                    tapTile(i: quadX - 1, j: quadY)
-                }
-            }
-            self.lastInput = nil
-            tapped = true
-        } else if self.lastInput != nil {
-            // if the player tapped but we weren't waiting for input, discard
-            self.lastInput = nil
+        // only when waiting for input
+        if zapGameState != .waitingForInput {
+            return
         }
-        // move those animations
-        animationManager?.updateAnimations()
-        // check connections
         if gameBoard.checkConnections() != 0 {
             // wait, who gets the points?
             print ("left pins connected: ", gameBoard.leftPinsConnect)
@@ -558,9 +524,55 @@ class GameManager {
 
             // remove the connecting tiles, make new ones, and make them fall from above
             zapRemoveConnectionsCreateNewAndMakeThemFall()
-        } else if tapped {
-            // wait there was no connection left to right, but we still need to check for bonuses after tap
         }
+    }
+
+    // function that handles frame by frame updates
+    func update() {
+        guard let gameBoard = gameBoard, let renderer = renderer else { return }
+        // ...
+        // check for input
+        var tapped = false
+        if self.lastInput != nil && zapGameState == .waitingForInput {
+            // input to process
+            // but only if we're waiting for input
+            SoundManager.shared.playSoundEffect(filename: "bop")
+            // converting from screen coordinates to game coordinates
+            let screenW = Float(renderer.view.drawableSize.width)
+            let screenH = Float(renderer.view.drawableSize.height)
+            let horizRatio = screenW / needW
+            let vertRatio = screenH / needH
+            var gameX: Float
+            var gameY: Float
+            if horizRatio < vertRatio {
+                gameX = (Float(self.lastInput!.x) - (screenW / 2.0)) / horizRatio
+                gameY = (Float(self.lastInput!.y) - (screenH / 2.0)) / horizRatio
+            } else {
+                gameX = (Float(self.lastInput!.x) - (screenW / 2.0)) / vertRatio
+                gameY = (Float(self.lastInput!.y) - (screenH / 2.0)) / vertRatio
+            }
+            // and then convert to tile coordinates to check if the user is interacting with the board
+            let quadX = Int(round((gameX + boardW / 2.0) / tileSize) - 1)
+            let quadY = Int(round((gameY + boardH / 2.0) / tileSize) - 1)
+            if quadX >= 0 && quadX < boardWidth + 2 && quadY >= 0 && quadY < boardWidth {
+//                tileQuads[quadY][quadX]?.position = SIMD2<Float>(gameX, gameY)
+                if quadX >= 1 && quadX < boardWidth + 1 {
+                    print ("hit the board at ", quadX - 1, quadY)
+                    tapTile(i: quadX - 1, j: quadY)
+                }
+            }
+            self.lastInput = nil
+            tapped = true
+        } else if self.lastInput != nil {
+            // if the player tapped but we weren't waiting for input, discard
+            self.lastInput = nil
+        }
+        // move those animations
+        animationManager?.updateAnimations()
+        // check connections and ZAP if needed
+        // TODO - this is done in ANY game state - this is not right
+        checkConnectionsAndStartZap()
+
     }
 
     // function to clean up and remake electric arcs when the board changes
