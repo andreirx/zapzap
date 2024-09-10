@@ -525,6 +525,8 @@ class GameManager {
             // stop everything mid air for the player to see the bolt
             zapGameState = .freezeDuringZap
             animationManager?.addFreezeFrameAnimation(duration: 2.0, drop1s: many1s, drop2s: many2s, drop5s: many5s)
+            // write ZAP ZAP but outside the board
+            renderer.makeMenuArcs(shiftx1: -boardW / 2.0 + tileSize / 2.0, shifty1: tileSize * 2.0 - 25.0, shiftx2: boardW / 2.0 - tileSize / 2.0, shifty2: tileSize * 2.0 - 50.0)
             // remake the meshes
             updateScoreMeshes()
             

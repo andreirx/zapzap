@@ -525,7 +525,7 @@ class SimpleRotateAnimation: Animation {
         if elapsedTime <= fingerDuration {
             tempQuad?.alpha = 0.0
             let progress = elapsedTime / fingerDuration
-            fingerQuad.alpha = min(1.0, Float(progress)) // Fade in
+            fingerQuad.alpha = sin(min(1.0, Float(progress)) * (.pi / 2.0)) // Fade in
             fingerQuad.position.x = quad.position.x + tileSize * 4.0 - progress * tileSize * 2.0
             fingerQuad.position.y = quad.position.y + tileSize * 4.0 - progress * tileSize * 2.0
         } else {
@@ -535,7 +535,7 @@ class SimpleRotateAnimation: Animation {
             tempQuad?.alpha = 1.0
             // Once fade-in is done, start fading out
             let fadeOutProgress = (elapsedTime - fingerDuration) / rotateDuration
-            fingerQuad.alpha = max(0.0, Float(1.0 - fadeOutProgress)) // Fade out
+            fingerQuad.alpha = sin(max(0.0, Float(1.0 - fadeOutProgress)) * (.pi / 2.0)) // Fade out
             fingerQuad.position.x = quad.position.x + tileSize * 2.0 + fadeOutProgress * tileSize * 2.0
             fingerQuad.position.y = quad.position.y + tileSize * 2.0 + fadeOutProgress * tileSize * 2.0
             // Once the finger phase is complete, start the rotation
@@ -805,7 +805,7 @@ class ObjectFallAnimation: Animation {
 
 class TextAnimation: Animation {
     private let textQuadMesh: TextQuadMesh
-    private let startAlpha: Float = 3.0
+    private let startAlpha: Float = 4.0
     private let startScale: Float = 1.0
     private let alphaDecreaseRate: Float = 0.02 // Controls how quickly alpha decreases
     private let startPosition: SIMD2<Float>
