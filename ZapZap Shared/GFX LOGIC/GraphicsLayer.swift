@@ -110,11 +110,17 @@ class GameBoardLayer: GraphicsLayer {
             encoder.setFragmentTexture(texture, index: 0)
         }
         
+        // draw the quads
         for row in gameMgr.tileQuads {
             for quad in row {
                 guard let mesh = quad else { continue }
                 mesh.draw(encoder: encoder)
             }
+        }
+
+        // draw any additional meshes such as buttons
+        for (index, mesh) in meshes.enumerated() {
+            mesh.draw(encoder: encoder)
         }
     }
 }

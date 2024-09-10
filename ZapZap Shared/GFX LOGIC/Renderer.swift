@@ -69,6 +69,7 @@ class Renderer: NSObject, MTKViewDelegate {
 
     static var textures: ResourceTextures!
     
+    // screens
     var logoScreen: Screen!
     var titleScreen: Screen!
     var mainMenuScreen: Screen!
@@ -77,13 +78,23 @@ class Renderer: NSObject, MTKViewDelegate {
     
     var currentScreen: Screen?
 
+    // buttons
+    var buttonLocal: ButtonMesh?
+    var button1v1: ButtonMesh?
+    var buttonBuyCoffee: ButtonMesh?
+    var buttonPause: ButtonMesh?
+    var buttonBack: ButtonMesh?
+    
+    // layers
     var backgroundLayer: GraphicsLayer!
     var menuLayer: GraphicsLayer!
+    var fingerLayer: GraphicsLayer!
     var baseLayer: GameBoardLayer? // this one won't be ready at creation time, will have to add it later after getting a GameManager
     var objectsLayer: GraphicsLayer!
     var textLayer: GraphicsLayer!
     var effectsLayer: EffectsLayer!
     
+    // internal renderer stuff
     private var constantBuffer: MTLBuffer!
     static let constantsSize: Int = MemoryLayout<matrix_float4x4>.size
     static let constantsStride: Int = align(constantsSize, upTo: 256)
@@ -93,9 +104,9 @@ class Renderer: NSObject, MTKViewDelegate {
     var modelMatrix: matrix_float4x4 = matrix_float4x4()
 
     let inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
-    private var frameIndex: Int = 0
+    var frameIndex: Int = 0
 
-    
+    // init the renderer
     init?(metalKitView: MTKView, gameManager: GameManager) {
         guard let device = Renderer.device else {
             print("Renderer init... No device to render on...")
@@ -148,6 +159,7 @@ class Renderer: NSObject, MTKViewDelegate {
         setCurrentScreen(logoScreen)
     }
     
+    // initialize logo screen separately because we need it immediately
     private func setupLogoScreen() {
         let logoTexture = ["companylogo"]
         let logoTextures = ResourceTextures(device: Renderer.device, textureNames: logoTexture)
@@ -162,6 +174,7 @@ class Renderer: NSObject, MTKViewDelegate {
         logoScreen.addLayer(logoLayer)
     }
 
+    // this function is important because the game manager needs it to function properly
     func createBaseLayer(fromGameManager: GameManager) {
         gameMgr = fromGameManager
         baseLayer = GameBoardLayer(gameManager: fromGameManager)
@@ -182,6 +195,7 @@ class Renderer: NSObject, MTKViewDelegate {
         gameMgr.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
     }
     
+    // function does what it says - sets up game screens, with their layers and contents
     func initializeGameScreens() {
         guard let animationManager = gameMgr.animationManager else { return }
         let textureNames = ["arrows", "base_tiles", "stars"]
@@ -193,6 +207,7 @@ class Renderer: NSObject, MTKViewDelegate {
         effectsLayer = EffectsLayer()
         textLayer = GraphicsLayer()
         menuLayer = GraphicsLayer()
+        fingerLayer = GraphicsLayer()
 
         gameMgr.createTiles()
 //        createBaseLayer(fromGameManager: gameMgr)
@@ -203,6 +218,11 @@ class Renderer: NSObject, MTKViewDelegate {
         objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         menuLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
+        fingerLayer.texture = Renderer.textures.getTexture(named: "arrows")
+
+        // have the finger on the finger layer
+        // remember we created it invisible
+        fingerLayer.meshes.append(animationManager.fingerQuad)
         
 //        zapGame = ZapGame(gameManager: gameMgr, animationManager: animationManager, renderer: self)
         createBaseLayer(fromGameManager: gameMgr)
@@ -216,41 +236,168 @@ class Renderer: NSObject, MTKViewDelegate {
         
         // add layers to menu screen
         mainMenuScreen.addLayer(menuLayer)
-//        mainMenuScreen.addLayer(effectsLayer)
+        mainMenuScreen.addLayer(fingerLayer)
+        mainMenuScreen.addLayer(effectsLayer)
 //        gameScreen.addLayer(textLayer)
         
+        // put some random tiles in there on the menu screen
+        for i in stride(from: -boardWidth/2 - 2, through: boardWidth*3/2 + 4, by: 2) {
+            for j in stride(from:-2, through: boardHeight+4, by: 2) {
+                if j < 1 {
+                    menuLayer.meshes.append(gameMgr.createUnrelatedTileQuad(i: i, j: j)!)
+                } else {
+                    if i < 2 || i > boardWidth {
+                        menuLayer.meshes.append(gameMgr.createUnrelatedTileQuad(i: i, j: j)!)
+                    }
+                }
+            }
+        }
+        
         // add buttons to menuLayer
-        var buttonLocal = ButtonMesh.createUnlitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
-        var button1v1 = ButtonMesh.createLitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
-        var buttonBuyCoffee = ButtonMesh.createRedButton(innerWidth: 9.6 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        buttonLocal = ButtonMesh.createUnlitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        buttonLocal!.alpha = 1.0
+        button1v1 = ButtonMesh.createUnlitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        button1v1!.alpha = 1.0
+        buttonBuyCoffee = ButtonMesh.createLitButton(innerWidth: 11.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        buttonBuyCoffee!.alpha = 1.0
+        // also create pause button
+        buttonPause = ButtonMesh.createPauseButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
+        buttonPause!.position.x = boardW / 2.0 + tileSize * 4.0
+        buttonPause!.position.y = -boardH / 2.0 + tileSize
+        baseLayer!.meshes.append(buttonPause!)
         // put them in their correct positions
-        buttonLocal.position.y = -0.8 * tileSize
-        buttonBuyCoffee.position.y = 2.0 * tileSize
-        button1v1.position.y = 4.8 * tileSize
+        buttonLocal!.position.y = -1.5 * tileSize
+        buttonBuyCoffee!.position.y = 1.0 * tileSize
+        button1v1!.position.y = 3.5 * tileSize
         // add them to the layer
-        menuLayer.meshes.append(buttonLocal)
-        menuLayer.meshes.append(buttonBuyCoffee)
-        menuLayer.meshes.append(button1v1)
+        menuLayer.meshes.append(buttonLocal!)
+        menuLayer.meshes.append(buttonBuyCoffee!)
+        menuLayer.meshes.append(button1v1!)
         // make texts for the buttons
         let textSize = CGSize(width: 512, height: 64)
-        let font = Font.systemFont(ofSize: 40)
-        var textLocal = TextQuadMesh(text: "Local Play", font: font, color: Color.white, size: textSize)
+        var font = Font.systemFont(ofSize: 40)
+        var textLocal = TextQuadMesh(text: "Practice Zapping", font: font, color: Color.white, size: textSize)
         var text1v1 = TextQuadMesh(text: "Multiplayer 1v1", font: font, color: Color.white, size: textSize)
         var textBuyCoffee = TextQuadMesh(text: "Let's Have (Digital) Coffee", font: font, color: Color.white, size: textSize)
         // put them in their correct positions
-        textLocal.position.y = -0.8 * tileSize + 6
-        textBuyCoffee.position.y = 2.0 * tileSize + 6
-        text1v1.position.y = 4.8 * tileSize + 6
+        textLocal.position.y = -1.5 * tileSize + 6
+        textBuyCoffee.position.y = 1.0 * tileSize + 6
+        text1v1.position.y = 3.5 * tileSize + 6
         // add them to the layer
         menuLayer.meshes.append(textLocal)
         menuLayer.meshes.append(textBuyCoffee)
         menuLayer.meshes.append(text1v1)
+        
+        // now some license info
+        let licenseInfo = """
+        "Itty Bitty 8 Bit" Kevin MacLeod (incompetech.com)
+        Licensed under Creative Commons: By Attribution 4.0 License
+        http://creativecommons.org/licenses/by/4.0/
+        """
+        font = Font.systemFont(ofSize: 16)
+        var textLicense = TextQuadMesh(text: licenseInfo, font: font, color: Color.white, size: textSize)
+        textLicense.position.y = 5.5 * tileSize
+        menuLayer.meshes.append(textLicense)
     }
 
+    // function to handle transitions to various screens
     func setCurrentScreen(_ screen: Screen) {
         currentScreen = screen
+        if currentScreen === mainMenuScreen {
+            gameMgr.clearElectricArcs()
+            maxArcDisplacement = 0.1
+            makeMenuArcs()
+        }
+        if currentScreen === gameScreen {
+            gameMgr.clearElectricArcs()
+            maxArcDisplacement = 0.2
+            gameMgr.addElectricArcs()
+        }
+        gameMgr.lastInput = nil
     }
-    
+
+    // helper function to generate arcs based on segments list
+    func generateArcs(from segments: [Segment], color: SegmentColor, width: Float, powerOfTwo: Int) {
+        for segment in segments {
+            let arc = ElectricArcMesh(startPoint: segment.startPoint, endPoint: segment.endPoint, powerOfTwo: powerOfTwo, width: width, color: color)
+            effectsLayer.meshes.append(arc)
+        }
+    }
+
+    // function to write ZAPZAP in the main manu, with electric arcs
+    func makeMenuArcs() {
+        // Segments for letter Z1
+        let zSegments1 = [
+            Segment(startPoint: SIMD2<Float>(-300.0-50.0, -250.0-25.0),
+                    endPoint: SIMD2<Float>(-200.0-50.0, -250.0-25.0)),
+            Segment(startPoint: SIMD2<Float>(-200.0-50.0, -250.0-25.0),
+                    endPoint: SIMD2<Float>(-300.0-50.0, -150.0-25.0)),
+            Segment(startPoint: SIMD2<Float>(-300.0-50.0, -150.0-25.0),
+                    endPoint: SIMD2<Float>(-200.0-50.0, -150.0-25.0))
+        ]
+        generateArcs(from: zSegments1, color: .orange, width: 8, powerOfTwo: 4)
+
+        // Segments for letter A1
+        let aSegments1 = [
+            Segment(startPoint: SIMD2<Float>(-150.0-30.0, -250.0-25.0),
+                    endPoint: SIMD2<Float>(-200.0-30.0, -150.0-25.0)),
+            Segment(startPoint: SIMD2<Float>(-150.0-30.0, -250.0-25.0),
+                    endPoint: SIMD2<Float>(-100.0-30.0, -150.0-25.0)),
+            Segment(startPoint: SIMD2<Float>(-175.0-30.0, -200.0-25.0),
+                    endPoint: SIMD2<Float>(-125.0-30.0, -200.0-25.0))
+        ]
+        generateArcs(from: aSegments1, color: .orange, width: 8, powerOfTwo: 4)
+
+        // Segments for letter P1
+        let pSegments1 = [
+            Segment(startPoint: SIMD2<Float>(-100.0-10.0, -250.0-25.0),
+                    endPoint: SIMD2<Float>(0.0-10.0, -250.0-25.0)),
+            Segment(startPoint: SIMD2<Float>(-100.0-10.0, -250.0-25.0),
+                    endPoint: SIMD2<Float>(-100.0-10.0, -150.0-25.0)),
+            Segment(startPoint: SIMD2<Float>(0.0-10.0, -250.0-25.0),
+                    endPoint: SIMD2<Float>(0.0-10.0, -200.0-25.0)),
+            Segment(startPoint: SIMD2<Float>(-100.0-10.0, -200.0-25.0),
+                    endPoint: SIMD2<Float>(0.0-10.0, -200.0-25.0))
+        ]
+        generateArcs(from: pSegments1, color: .orange, width: 8, powerOfTwo: 4)
+
+        // Segments for letter Z2
+        let zSegments2 = [
+            Segment(startPoint: SIMD2<Float>(0.0+10.0, -250.0),
+                    endPoint: SIMD2<Float>(100.0+10.0, -250.0)),
+            Segment(startPoint: SIMD2<Float>(100.0+10.0, -250.0),
+                    endPoint: SIMD2<Float>(0.0+10.0, -150.0)),
+            Segment(startPoint: SIMD2<Float>(0.0+10.0, -150.0),
+                    endPoint: SIMD2<Float>(100.0+10.0, -150.0))
+        ]
+        generateArcs(from: zSegments2, color: .indigo, width: 8, powerOfTwo: 4)
+
+        // Segments for letter A2
+        let aSegments2 = [
+            Segment(startPoint: SIMD2<Float>(150.0+30.0, -250.0),
+                    endPoint: SIMD2<Float>(100.0+30.0, -150.0)),
+            Segment(startPoint: SIMD2<Float>(150.0+30.0, -250.0),
+                    endPoint: SIMD2<Float>(200.0+30.0, -150.0)),
+            Segment(startPoint: SIMD2<Float>(125.0+30.0, -200.0),
+                    endPoint: SIMD2<Float>(175.0+30.0, -200.0))
+        ]
+        generateArcs(from: aSegments2, color: .indigo, width: 8, powerOfTwo: 4)
+
+        // Segments for letter P2
+        let pSegments2 = [
+            Segment(startPoint: SIMD2<Float>(200.0+50.0, -250.0),
+                    endPoint: SIMD2<Float>(300.0+50.0, -250.0)),
+            Segment(startPoint: SIMD2<Float>(200.0+50.0, -250.0),
+                    endPoint: SIMD2<Float>(200.0+50.0, -150.0)),
+            Segment(startPoint: SIMD2<Float>(300.0+50.0, -250.0),
+                    endPoint: SIMD2<Float>(300.0+50.0, -200.0)),
+            Segment(startPoint: SIMD2<Float>(200.0+50.0, -200.0),
+                    endPoint: SIMD2<Float>(300.0+50.0, -200.0))
+        ]
+        generateArcs(from: pSegments2, color: .indigo, width: 8, powerOfTwo: 4)
+    }
+
+    // this sets up the screen projection matrix
     private func updateConstants() {
         // viewport aspect ratio
         let screenAspectRatio = Float(view.drawableSize.width / view.drawableSize.height)
@@ -287,14 +434,50 @@ class Renderer: NSObject, MTKViewDelegate {
         constants.copyMemory(from: &transformMatrix, byteCount: Renderer.constantsSize)
     }
     
+    // Function to start a random tile rotation in the menu
+    func startRandomTileRotation() {
+        guard let animationManager = gameMgr.animationManager else { return }
+        if animationManager.simpleRotateAnimations.isEmpty && Int.random(in: 0...40) == 0 {
+            // Randomly pick a QuadMesh from the menuLayer
+            if let randomQuad = menuLayer.meshes.randomElement() as? QuadMesh {
+                // Create and add a simple rotate animation for the picked quad
+                let rotateAnimation = SimpleRotateAnimation(quad: randomQuad, fingerQuad: animationManager.fingerQuad, duration: 1.0, effectsLayer: effectsLayer)
+                
+                // Add the animation to a list to be updated every frame
+                animationManager.addSimpleRotation(rotateAnimation)
+            }  
+        }
+    }
+
+    // function to convert from viewport CGPoint to game model coordinates
+    func getGameXY(fromPoint: CGPoint) -> SIMD2<Float> {
+        // converting from screen coordinates to game coordinates
+        let screenW = Float(self.view.drawableSize.width)
+        let screenH = Float(self.view.drawableSize.height)
+        let horizRatio = screenW / needW
+        let vertRatio = screenH / needH
+        var gameX: Float
+        var gameY: Float
+        if horizRatio < vertRatio {
+            gameX = (Float(fromPoint.x) - (screenW / 2.0)) / horizRatio
+            gameY = (Float(fromPoint.y) - (screenH / 2.0)) / horizRatio
+        } else {
+            gameX = (Float(fromPoint.x) - (screenW / 2.0)) / vertRatio
+            gameY = (Float(fromPoint.y) - (screenH / 2.0)) / vertRatio
+        }
+//        print("converted to GAME COORDINATES: ", gameX, ", ", gameY)
+        return SIMD2(gameX, gameY)
+    }
+
+    // function that updates everything depending on the screen
     func update() {
         // logo screen updates
         if currentScreen === logoScreen {
             // Update elapsed time
             let elapsedTime = Float(frameIndex) / 60.0 // Assuming 60 FPS
             
-            if frameIndex == 5 { // at exactly frame 5
-                print ("this is frame 5")
+            if frameIndex == 65 { // at exactly frame X
+                print ("this is frame 65")
                 initializeGameScreens()
             }
 
@@ -315,6 +498,14 @@ class Renderer: NSObject, MTKViewDelegate {
 
         // game screen updates
         if currentScreen === gameScreen {
+            // verify pause button first
+            if gameMgr.lastInput != nil {
+                if buttonPause!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    // temporarily go back to main menu
+                    // TODO go to pause menu screen
+                    setCurrentScreen(mainMenuScreen)
+                }
+            }
             gameMgr.update()
             // update the GameObjects in the objectLayer
             if objectsLayer != nil {
@@ -328,18 +519,24 @@ class Renderer: NSObject, MTKViewDelegate {
         
         // main menu screen updates
         if currentScreen === mainMenuScreen {
+            // make some tile in the background rotate
+            startRandomTileRotation()
             // just update the animations, whatever they are
             // arcs and particles
             gameMgr.animationManager?.updateAnimations()
             // check user input
             if gameMgr.lastInput != nil {
-                gameMgr.zapGameState = .waitingForInput
-                setCurrentScreen(gameScreen)
+                if buttonLocal!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    gameMgr.zapGameState = .waitingForInput
+                    setCurrentScreen(gameScreen)
+                }
                 gameMgr.lastInput = nil
             }
         }
     }
 
+    // this is the main draw function for the application
+    // better to not modify it, use rendering of layers, meshes, set up various screens
     func draw(in view: MTKView) {
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
         

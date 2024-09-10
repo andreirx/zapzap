@@ -10,8 +10,15 @@ import Metal
 import simd
 
 class ButtonMesh: Mesh {
+    private var halfWidth: Float
+    private var halfHeight: Float
+    
     init(innerWidth: Float, innerHeight: Float, borderWidth: Float, u1: Float, v1: Float, u2: Float, v2: Float) {
         let (vertices, indices) = ButtonMesh.generateVerticesAndIndices(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: u1, v1: v1, u2: u2, v2: v2)
+
+        // initialize button sizes
+        self.halfWidth = innerWidth / 2.0 + borderWidth
+        self.halfHeight = innerHeight / 2.0 + borderWidth
         
         // Call the Mesh initializer with generated vertices and indices
         super.init(vertices: vertices, indices: indices, primitiveType: .triangle)
@@ -104,6 +111,63 @@ class ButtonMesh: Mesh {
     // function to create a new "red" button with texcoords 11/16, 3/8, 12/16, 4/8
     static func createRedButton(innerWidth: Float, innerHeight: Float, borderWidth: Float) -> ButtonMesh {
         return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 11.0/16.0, v1: 3.0/8.0, u2: 12.0/16.0, v2: 4.0/8.0)
+    }
+    
+    // function to create a new "thin outline" button with texcoords 4/8, 5/8, 0/4, 1/4
+    static func createThinOutlineButton(innerWidth: Float, innerHeight: Float, borderWidth: Float) -> ButtonMesh {
+        return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 4.0/8.0, v1: 0.0/4.0, u2: 5.0/8.0, v2: 1.0/4.0)
+    }
+
+    // function to create a new "thick outline" button with texcoords 6/8, 7/8, 0/4, 1/4
+    static func createThickOutlineButton(innerWidth: Float, innerHeight: Float, borderWidth: Float) -> ButtonMesh {
+        return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 6.0/8.0, v1: 0.0/4.0, u2: 7.0/8.0, v2: 1.0/4.0)
+    }
+
+    // function to create a new "pause" button with texcoords 0/8, 1/8, 0/4, 1/4
+    static func createPauseButton(innerWidth: Float, innerHeight: Float, borderWidth: Float) -> ButtonMesh {
+        return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 0.0/8.0, v1: 0.0/4.0, u2: 1.0/8.0, v2: 1.0/4.0)
+    }
+
+    // function to create a new "coffee" button with texcoords 1/8, 2/8, 0/4, 1/4
+    static func createCoffeeButton(innerWidth: Float, innerHeight: Float, borderWidth: Float) -> ButtonMesh {
+        return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 1.0/8.0, v1: 0.0/4.0, u2: 2.0/8.0, v2: 1.0/4.0)
+    }
+
+    // function to create a new "back" button with texcoords 2/8, 3/8, 0/4, 1/4
+    static func createBackButton(innerWidth: Float, innerHeight: Float, borderWidth: Float) -> ButtonMesh {
+        return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 2.0/8.0, v1: 0.0/4.0, u2: 3.0/8.0, v2: 1.0/4.0)
+    }
+
+    // function to create a new "switch" button with texcoords 3/8, 4/8, 0/4, 1/4
+    static func createSwitchButton(innerWidth: Float, innerHeight: Float, borderWidth: Float) -> ButtonMesh {
+        return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 3.0/8.0, v1: 0.0/4.0, u2: 4.0/8.0, v2: 1.0/4.0)
+    }
+
+    // function to create a new "uncheck" button with texcoords 4/8, 5/8, 0/4, 1/4
+    static func createUncheckButton(innerWidth: Float, innerHeight: Float, borderWidth: Float) -> ButtonMesh {
+        return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 4.0/8.0, v1: 0.0/4.0, u2: 5.0/8.0, v2: 1.0/4.0)
+    }
+
+    // function to create a new "check" button with texcoords 5/8, 6/8, 0/4, 1/4
+    static func createCheckButton(innerWidth: Float, innerHeight: Float, borderWidth: Float) -> ButtonMesh {
+        return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 5.0/8.0, v1: 0.0/4.0, u2: 6.0/8.0, v2: 1.0/4.0)
+    }
+
+    // function to create a new "cancel" button with texcoords 7/8, 8/8, 0/4, 1/4
+    static func createCancelButton(innerWidth: Float, innerHeight: Float, borderWidth: Float) -> ButtonMesh {
+        return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 7.0/8.0, v1: 0.0/4.0, u2: 8.0/8.0, v2: 1.0/4.0)
+    }
+
+    // function to check whether input point is inside the button or not
+    func tappedInside(point: SIMD2<Float>) -> Bool {
+        let x = (point.x)
+        let y = (point.y)
+        if x > position.x - halfWidth && x < position.x + halfWidth &&
+            y > position.y - halfHeight && y < position.y + halfHeight {
+            return true
+        } else {
+            return false
+        }
     }
 }
 

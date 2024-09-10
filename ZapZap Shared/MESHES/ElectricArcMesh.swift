@@ -10,7 +10,13 @@ import MetalKit
 import Foundation
 import Metal
 
-let maxArcDisplacement: Float = 0.2
+var maxArcDisplacement: Float = 0.2
+
+struct Segment {
+    let startPoint: SIMD2<Float>
+    let endPoint: SIMD2<Float>
+}
+
 
 // // // // // // // // // // // // // // // // // // // // //
 //

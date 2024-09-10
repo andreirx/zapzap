@@ -22,7 +22,7 @@ let tileSize: Float = 50.0
 let boardW = Float(boardWidth + 3) * tileSize
 let boardH = Float(boardHeight + 1) * tileSize
 
-let needW = Float(boardWidth + 9) * tileSize
+let needW = Float(boardWidth + 13) * tileSize
 let needH = Float(boardHeight + 1) * tileSize
 
 
@@ -133,10 +133,35 @@ class GameManager {
         return quad
     }
 
+    // function to create ONE tile quad based on a position but NO gameBoard connections
+    func createUnrelatedTileQuad(i: Int, j: Int) -> QuadMesh? {
+        let textureUnitX: Float = 1.0 / 16.0
+        let textureUnitY: Float = 1.0 / 8.0
+
+        let textureX: Float
+        let textureY: Float
+        let gridIndex = Int.random(in: 1...15)
+        textureX = getTextureX(gridConnections: gridIndex)
+        textureY = 3.0 * textureUnitY
+
+        let topLeftUV = SIMD2<Float>(textureX, textureY)
+        let bottomRightUV = SIMD2<Float>(textureX + textureUnitX, textureY + textureUnitY)
+
+        let quad = QuadMesh(size: tileSize, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV)
+        // appropriate positions for the tile
+        quad.position = SIMD2<Float>(Float(i) * tileSize - Float(boardWidth + 2) / 2.0 * tileSize,
+                                     Float(j) * tileSize - Float(boardHeight) / 2.0 * tileSize)
+        quad.rotation = .pi / 4.0
+        quad.scale = 1.42
+        quad.alpha = 0.5
+        
+        return quad
+    }
+
     // function to remake the score meshes
     func updateScoreMeshes() {
         // create text meshes for keeping score
-        var text = "INDIGO\n\(leftScore) points"
+        var text = "INDIGO\n\(leftScore)\npoints"
         let font = Font.systemFont(ofSize: 32)
 
         if (renderer != nil) {
@@ -148,10 +173,10 @@ class GameManager {
 
         let textSize = CGSize(width: 256, height: 128)
         scoreLeftMesh = TextQuadMesh(text: text, font: font, color: Color.magenta, size: textSize)
-        scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 + tileSize * 1.75, -needH / 2.0 + tileSize * 2.0)
-        text = "ORANGE\n\(rightScore) points"
+        scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 + tileSize * 2.5, 0.0)
+        text = "ORANGE\n\(rightScore)\npoints"
         scoreRightMesh = TextQuadMesh(text: text, font: font, color: Color.orange, size: textSize)
-        scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 - tileSize * 1.75, -needH / 2.0 + tileSize * 2.0)
+        scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 - tileSize * 2.5, 0.0)
         
         if (renderer != nil) {
             if renderer!.textLayer != nil {
@@ -526,7 +551,7 @@ class GameManager {
             zapRemoveConnectionsCreateNewAndMakeThemFall()
         }
     }
-
+    
     // function that handles frame by frame updates
     func update() {
         guard let gameBoard = gameBoard, let renderer = renderer else { return }

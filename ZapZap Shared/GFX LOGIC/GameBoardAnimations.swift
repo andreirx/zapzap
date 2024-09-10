@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import simd
 
 // // // // // // // // // // // // // // // // // // // // //
 //
@@ -13,17 +14,26 @@ import Foundation
 //
 
 class AnimationManager {
-
+    var simpleRotateAnimations: [SimpleRotateAnimation] = []
     var rotateAnimations: [RotateAnimation] = []
     var fallAnimations: [FallAnimation] = []
     var particleAnimations: [ParticleAnimation] = []
     var freezeFrameAnimations: [FreezeFrameAnimation] = []
     var objectFallAnimations: [ObjectFallAnimation] = []
     var textAnimations: [TextAnimation] = []
+    
+    var fingerQuad: QuadMesh!
 
     weak var gameManager: GameManager? // Use weak reference to avoid retain cycles
     
     init(gameManager: GameManager) {
+        // there will be only one finger on the screen ;)
+        fingerQuad = QuadMesh(size: 5.0 * tileSize, topLeftUV: SIMD2<Float>(1.0/4.0, 5.0/8.0), bottomRightUV: SIMD2<Float>(3.0/4.0, 8.0/8.0))
+        // but we start by hiding it
+        fingerQuad.alpha = 0.0
+        fingerQuad.position.x = 0.0
+        fingerQuad.position.y = 0.0
+        
         self.gameManager = gameManager
     }
     
@@ -63,6 +73,24 @@ class AnimationManager {
         freezeFrameAnimations.append(animation)
     }
     
+    // Add a simple rotation animation to the list
+    func addSimpleRotation(_ animation: SimpleRotateAnimation) {
+        if simpleRotateAnimations.isEmpty {
+            // only ONE AT A TIME
+            simpleRotateAnimations.append(animation)
+        }
+    }
+
+    // Update all simple rotate animations each frame
+    func updateSimpleRotateAnimations() {
+        for animation in simpleRotateAnimations {
+            animation.update()
+        }
+        
+        // Remove finished animations
+        simpleRotateAnimations.removeAll { $0.isFinished }
+    }
+
     // function to check whether there are objects on this tile
     func anythingOnThisTile(i: Int, j: Int) -> Bool {
         guard let gameManager = gameManager else { return false }
@@ -138,6 +166,10 @@ class AnimationManager {
     func updateAnimations() {
         // only the text animations can go even during the freeze frames
         updateTextAnimations()
+        updateSimpleRotateAnimations()
+        
+        // finger update
+//        fingerQuad.alpha = 0.5 + 0.5 * sin(Float(gameManager!.renderer!.frameIndex) / 60.0)
         
         // do the freeze frame animations first
         if let freezeFrame = freezeFrameAnimations.first {
@@ -150,11 +182,9 @@ class AnimationManager {
 
                 // normally after a freeze frame, tiles will be falling
                 gameManager!.zapGameState = .fallingTiles
+                gameManager!.clearElectricArcs()
                 if gameManager!.zapGameState == .freezeDuringZap {
                     // after the last freeze frame completes, remove the arcs
-                    if freezeFrameAnimations.isEmpty {
-                        gameManager!.clearElectricArcs()
-                    }
                 } else if gameManager!.zapGameState == .freezeDuringBomb {
                 }
             }
@@ -271,7 +301,6 @@ class AnimationManager {
             gameManager.gameBoard?.checkConnections()
             gameManager.clearElectricArcs()
             gameManager.addElectricArcs()
-            // TODO - MISSING HERE - check for connection
         }
 
     }
@@ -388,7 +417,7 @@ class RotateAnimation: Animation, Poolable {
         self.objectsLayer = objectsLayer
         self.effectsLayer = effectsLayer
 
-        let tempQuad = QuadMesh(size: 100.0, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(0.25, 0.25))
+        let tempQuad = QuadMesh(size: tileSize * 2.5, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(0.25, 0.25))
         tempQuad.position = quad.position
         tempQuad.rotation = quad.rotation
         effectsLayer.meshes.append(tempQuad)
@@ -430,6 +459,110 @@ class RotateAnimation: Animation, Poolable {
         }
     }
 }
+
+// // // // // // // // // // // // // // // // // // // // //
+//
+// SimpleRotateAnimation - class defining and managing a rotating unrelated quad animation
+//
+
+class SimpleRotateAnimation: Animation {
+    var tilePosition: (x: Int, y: Int)
+    
+    private var quad: QuadMesh
+    private var fingerQuad: QuadMesh
+    private var duration: Float
+    private var elapsedTime: Float = 0.0
+    private var startRotation: Float
+    private var endRotation: Float
+    private var tempQuad: QuadMesh?
+    private weak var effectsLayer: EffectsLayer?
+
+    // Duration for each phase
+    private var fingerDuration: Float
+    private var rotateDuration: Float
+
+    // Initialize with the QuadMesh to rotate, the finger quad, and the duration of the animation
+    init(quad: QuadMesh, fingerQuad: QuadMesh, duration: Float, effectsLayer: EffectsLayer) {
+        self.quad = quad
+        self.fingerQuad = fingerQuad
+        self.duration = duration
+        self.startRotation = quad.rotation
+        self.endRotation = quad.rotation - (.pi / 2) // Rotate by 90 degrees
+        self.tilePosition = (-1, -1)
+        self.effectsLayer = effectsLayer
+        
+        self.fingerDuration = duration * 0.4  // 40% of the total duration for finger fade in/out
+        self.rotateDuration = duration * 0.6  // 60% for tile rotation
+        
+        // Create the temp quad that follows the rotation
+        let tempQuad = QuadMesh(size: 100.0, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(0.25, 0.25))
+        tempQuad.position = quad.position
+        tempQuad.rotation = quad.rotation
+        tempQuad.scale = quad.scale
+        tempQuad.alpha = 0.0
+        self.tempQuad = tempQuad
+
+        // Position and reset finger quad
+        fingerQuad.position = quad.position
+        fingerQuad.position.x += tileSize * 4.0
+        fingerQuad.position.y += tileSize * 4.0
+        fingerQuad.alpha = 0.0
+//        effectsLayer.meshes.append(fingerQuad)
+    }
+    
+    // Check if the animation is finished
+    var isFinished: Bool {
+        return elapsedTime >= duration
+    }
+
+    // Update the animation progress
+    func update() {
+        guard !isFinished else { return }
+        
+        elapsedTime += 1.0 / 60.0 // Assuming 60 FPS update rate
+
+        // Handle finger phase (fading in and out)
+        if elapsedTime <= fingerDuration {
+            tempQuad?.alpha = 0.0
+            let progress = elapsedTime / fingerDuration
+            fingerQuad.alpha = min(1.0, Float(progress)) // Fade in
+            fingerQuad.position.x = quad.position.x + tileSize * 4.0 - progress * tileSize * 2.0
+            fingerQuad.position.y = quad.position.y + tileSize * 4.0 - progress * tileSize * 2.0
+        } else {
+            if tempQuad?.alpha == 0.0 {
+                effectsLayer!.meshes.append(tempQuad!)
+            }
+            tempQuad?.alpha = 1.0
+            // Once fade-in is done, start fading out
+            let fadeOutProgress = (elapsedTime - fingerDuration) / rotateDuration
+            fingerQuad.alpha = max(0.0, Float(1.0 - fadeOutProgress)) // Fade out
+            fingerQuad.position.x = quad.position.x + tileSize * 2.0 + fadeOutProgress * tileSize * 2.0
+            fingerQuad.position.y = quad.position.y + tileSize * 2.0 + fadeOutProgress * tileSize * 2.0
+            // Once the finger phase is complete, start the rotation
+            let rotateProgress = (elapsedTime - fingerDuration) / rotateDuration
+            let rotationProgress = min(rotateProgress, 1.0)
+
+            // Interpolate the rotation between startRotation and endRotation
+            let newRotation = startRotation + (endRotation - startRotation) * Float(rotationProgress)
+            quad.rotation = newRotation
+            tempQuad?.rotation = newRotation
+
+            // Once finished, make sure it's exactly the end rotation
+            if rotationProgress >= 1.0 {
+                quad.rotation = endRotation
+                tempQuad?.rotation = endRotation
+                cleanup()
+            }
+        }
+    }
+
+    // Cleanup the temporary quad and finger from the effects layer once the animation is finished
+    func cleanup() {
+        effectsLayer?.meshes.removeAll { $0 === tempQuad || $0 === fingerQuad }
+    }
+}
+
+
 
 // // // // // // // // // // // // // // // // // // // // //
 //
