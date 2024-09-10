@@ -66,6 +66,8 @@
 		18BEF3C22C64958800A4D753 /* ObjectPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3C02C64958800A4D753 /* ObjectPool.swift */; };
 		18BEF3C42C73AE3200A4D753 /* GameObjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3C32C73AE3200A4D753 /* GameObjects.swift */; };
 		18BEF3C52C73AE3200A4D753 /* GameObjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3C32C73AE3200A4D753 /* GameObjects.swift */; };
+		18D0AF052C9072B800D8B055 /* MultiplayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D0AF042C9072B800D8B055 /* MultiplayerManager.swift */; };
+		18D0AF062C9072B800D8B055 /* MultiplayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D0AF042C9072B800D8B055 /* MultiplayerManager.swift */; };
 		18D313132C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 		18D313142C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 /* End PBXBuildFile section */
@@ -107,6 +109,7 @@
 		18BEF3BD2C63F1AE00A4D753 /* DungeonLevel.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = DungeonLevel.mp3; sourceTree = "<group>"; };
 		18BEF3C02C64958800A4D753 /* ObjectPool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectPool.swift; sourceTree = "<group>"; };
 		18BEF3C32C73AE3200A4D753 /* GameObjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameObjects.swift; sourceTree = "<group>"; };
+		18D0AF042C9072B800D8B055 /* MultiplayerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiplayerManager.swift; sourceTree = "<group>"; };
 		18D313122C8986B700423697 /* UIMeshes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIMeshes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -203,6 +206,7 @@
 				18BEF3882C4F7BA400A4D753 /* GameBoardLogic.swift */,
 				18BEF38E2C4FE4B100A4D753 /* GameManager.swift */,
 				18BEF3C32C73AE3200A4D753 /* GameObjects.swift */,
+				18D0AF042C9072B800D8B055 /* MultiplayerManager.swift */,
 			);
 			path = "GAME LOGIC";
 			sourceTree = "<group>";
@@ -365,6 +369,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18BEF3862C4A9C9500A4D753 /* GraphicsLayer.swift in Sources */,
+				18D0AF052C9072B800D8B055 /* MultiplayerManager.swift in Sources */,
 				18BEF39F2C5E175D00A4D753 /* SegmentStripeMesh.swift in Sources */,
 				18D313132C8986B700423697 /* UIMeshes.swift in Sources */,
 				18BEF38F2C4FE4B100A4D753 /* GameManager.swift in Sources */,
@@ -390,6 +395,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18BEF3872C4A9C9500A4D753 /* GraphicsLayer.swift in Sources */,
+				18D0AF062C9072B800D8B055 /* MultiplayerManager.swift in Sources */,
 				18BEF3A02C5E175D00A4D753 /* SegmentStripeMesh.swift in Sources */,
 				18D313142C8986B700423697 /* UIMeshes.swift in Sources */,
 				18BEF3902C4FE4B100A4D753 /* GameManager.swift in Sources */,

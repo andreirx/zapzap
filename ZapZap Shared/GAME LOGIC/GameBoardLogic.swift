@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GameplayKit
 
 enum Connection: UInt8 {
     case animating = 4
@@ -21,7 +22,11 @@ enum AnimationMarking: UInt8 {
     case none = 0
 }
 
-class Tile {
+// // // //
+// just one basic element of our board
+//
+
+class Tile: Codable {
     // Using 4-bit representation for connections
     var connections: UInt8
     
@@ -42,6 +47,22 @@ class Tile {
     }
 }
 
+// // // //
+// this defines the current state of the board
+//
+
+class BoardConnections: Codable {
+    let width: Int
+    let height: Int
+    var connections: [[Tile?]] // this is just an array of pointers...
+
+    init(width: Int, height: Int) {
+        self.width = width
+        self.height = height
+        self.connections = Array(repeating: Array(repeating: nil, count: width), count: height)
+    }
+}
+
 struct Direction: OptionSet {
     let rawValue: UInt8
     
@@ -54,9 +75,12 @@ struct Direction: OptionSet {
 class GameBoard {
     let width: Int
     let height: Int
-    var connections: [[Tile?]]
+    var connections: BoardConnections
     var connectMarkings: [[Connection]]
     var animationMarkings: [[AnimationMarking]]
+    
+    var rngSeed: UInt64 = UInt64.random(in: 0...UInt64.max)
+    private var rng: GKMersenneTwisterRandomSource // Seedable RNG
 
     var leftPinsConnect: Int = 0
     var leftConquered: Int = 0
@@ -66,19 +90,38 @@ class GameBoard {
     private var missingLinks: Int = 0
     private var newElements: Int = 0
     private var missingLinkElements: Int = 0
-    
+
+    // init with random seed
     init(width: Int, height: Int, missingLinks: Int) {
+        // Initialize the RNG with the seed
+        self.rng = GKMersenneTwisterRandomSource(seed: rngSeed)
+        //
         self.width = width
         self.height = height
         self.missingLinks = missingLinks
-        self.connections = Array(repeating: Array(repeating: nil, count: width), count: height)
+        self.connections = BoardConnections(width: width, height: height)
+        self.connectMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
+        self.animationMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
+        self.resetTable(percentMissingLinks: missingLinks)
+    }
+    
+    // init with specified seed
+    init(width: Int, height: Int, missingLinks: Int, seed: UInt64) {
+        // Initialize the RNG with the seed
+        rngSeed = seed
+        self.rng = GKMersenneTwisterRandomSource(seed: rngSeed)
+        //
+        self.width = width
+        self.height = height
+        self.missingLinks = missingLinks
+        self.connections = BoardConnections(width: width, height: height)
         self.connectMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
         self.animationMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
         self.resetTable(percentMissingLinks: missingLinks)
     }
     
     func setTile(at x: Int, y: Int, tile: Tile) {
-        connections[x][y] = tile
+        connections.connections[x][y] = tile
     }
 
     // internal function used in checkConnections
@@ -96,7 +139,7 @@ class GameBoard {
         
         // mark the current tile with the current marker, then explore around
         // check wire going from this tile, and wire coming from the other tile, to mark a connection
-        if let currentTile = connections[cx][cy], currentTile.hasConnection(direction: ctype) {
+        if let currentTile = connections.connections[cx][cy], currentTile.hasConnection(direction: ctype) {
             connectMarkings[cx][cy] = marker
             
             // look from this tile to the left
@@ -144,14 +187,14 @@ class GameBoard {
         
         // check connections from the rightmost pins
         for j in 0..<height {
-            if let tile = connections[width - 1][j], tile.hasConnection(direction: .right) {
+            if let tile = connections.connections[width - 1][j], tile.hasConnection(direction: .right) {
                 expandConnectionsMarkings(cx: width - 1, cy: j, ctype: .right, marker: .right)
             }
         }
         
         // check connections from the leftmost pins
         for j in 0..<height {
-            if let tile = connections[0][j], tile.hasConnection(direction: .left) {
+            if let tile = connections.connections[0][j], tile.hasConnection(direction: .left) {
                 // if you encounter markings from the right, start marking as "ok"
                 // which means both sides connect
                 // otherwise continue marking as "left"
@@ -164,7 +207,7 @@ class GameBoard {
         }
         // see if both sides connect and count the "score"
         for j in 0..<height {
-            if let tile = connections[0][j], tile.hasConnection(direction: .left) {
+            if let tile = connections.connections[0][j], tile.hasConnection(direction: .left) {
                 // if any of the connections are "ok" then both sides connect
                 if connectMarkings[0][j] == .ok {
                     rVal = 1
@@ -173,7 +216,7 @@ class GameBoard {
                     leftPinsConnect += 1
                 }
             }
-            if let tile = connections[width - 1][j], tile.hasConnection(direction: .right) {
+            if let tile = connections.connections[width - 1][j], tile.hasConnection(direction: .right) {
                 // count one more connecting pin from this side
                 // (RIGHT)
                 if connectMarkings[width - 1][j] == .ok {
@@ -221,17 +264,17 @@ class GameBoard {
                     if y >= 1 {
                         for shiftY in (1...y).reversed() {
                             // remember to compensate copying position by shiftedItems
-                            connections[x][shiftY + shiftedItems] = connections[x][shiftY + shiftedItems - 1]
+                            connections.connections[x][shiftY + shiftedItems] = connections.connections[x][shiftY + shiftedItems - 1]
                         }
                     }
                     // Create new tile at the top
-                    connections[x][0] = Tile(connections: getNewElement())
+                    connections.connections[x][0] = Tile(connections: getNewElement())
                     // one more disappeared so far
                     shiftedItems += 1
                 }
                 // make new ones
                 for y in (0..<shiftedItems).reversed() {
-                    connections[x][y] = Tile(connections: getNewElement())
+                    connections.connections[x][y] = Tile(connections: getNewElement())
                 }
             }
 //            print("GBL column ", x, " shifted: ", shiftedItems, " connections")
@@ -275,17 +318,17 @@ class GameBoard {
                 if y >= 1 {
                     for shiftY in (1...y).reversed() {
                         // remember to compensate copying position by shiftedItems
-                        connections[x][shiftY + shiftedItems] = connections[x][shiftY + shiftedItems - 1]
+                        connections.connections[x][shiftY + shiftedItems] = connections.connections[x][shiftY + shiftedItems - 1]
                     }
                 }
                 // Create new tile at the top
-                connections[x][0] = Tile(connections: getNewElement())
+                connections.connections[x][0] = Tile(connections: getNewElement())
                 // one more disappeared so far
                 shiftedItems += 1
             }
             // make new ones
             for y in (0..<shiftedItems).reversed() {
-                connections[x][y] = Tile(connections: getNewElement())
+                connections.connections[x][y] = Tile(connections: getNewElement())
             }
         }
     }
@@ -299,7 +342,7 @@ class GameBoard {
         for i in 0..<width {
             for j in 0..<height {
                 let newConnection = getNewElement()
-                connections[i][j] = Tile(connections: newConnection)
+                connections.connections[i][j] = Tile(connections: newConnection)
                 connectMarkings[i][j] = .none
             }
         }

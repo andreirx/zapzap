@@ -256,7 +256,7 @@ class Renderer: NSObject, MTKViewDelegate {
         // add buttons to menuLayer
         buttonLocal = ButtonMesh.createUnlitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
         buttonLocal!.alpha = 1.0
-        button1v1 = ButtonMesh.createUnlitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        button1v1 = ButtonMesh.createUnlitButton(innerWidth: 10.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
         button1v1!.alpha = 1.0
         buttonBuyCoffee = ButtonMesh.createLitButton(innerWidth: 11.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
         buttonBuyCoffee!.alpha = 1.0
@@ -277,7 +277,7 @@ class Renderer: NSObject, MTKViewDelegate {
         let textSize = CGSize(width: 512, height: 64)
         var font = Font.systemFont(ofSize: 40)
         var textLocal = TextQuadMesh(text: "Practice Zapping", font: font, color: Color.white, size: textSize)
-        var text1v1 = TextQuadMesh(text: "Multiplayer 1v1", font: font, color: Color.white, size: textSize)
+        var text1v1 = TextQuadMesh(text: "1v1 Make Most Points", font: font, color: Color.white, size: textSize)
         var textBuyCoffee = TextQuadMesh(text: "Let's Have (Digital) Coffee", font: font, color: Color.white, size: textSize)
         // put them in their correct positions
         textLocal.position.y = -1.5 * tileSize + 6
@@ -325,74 +325,74 @@ class Renderer: NSObject, MTKViewDelegate {
     }
 
     // function to write ZAPZAP in the main manu, with electric arcs
-    func makeMenuArcs() {
+    func makeMenuArcs(shiftx1: Float = 0.0, shifty1: Float = 0.0, shiftx2: Float = 0.0, shifty2: Float = 0.0) {
         // Segments for letter Z1
         let zSegments1 = [
-            Segment(startPoint: SIMD2<Float>(-300.0-50.0, -250.0-25.0),
-                    endPoint: SIMD2<Float>(-200.0-50.0, -250.0-25.0)),
-            Segment(startPoint: SIMD2<Float>(-200.0-50.0, -250.0-25.0),
-                    endPoint: SIMD2<Float>(-300.0-50.0, -150.0-25.0)),
-            Segment(startPoint: SIMD2<Float>(-300.0-50.0, -150.0-25.0),
-                    endPoint: SIMD2<Float>(-200.0-50.0, -150.0-25.0))
+            Segment(startPoint: SIMD2<Float>(-300.0-50.0 + shiftx1, -250.0-25.0 + shifty1),
+                    endPoint: SIMD2<Float>(-200.0-50.0 + shiftx1  , -250.0-25.0 + shifty1)),
+            Segment(startPoint: SIMD2<Float>(-200.0-50.0 + shiftx1, -250.0-25.0 + shifty1),
+                    endPoint: SIMD2<Float>(-300.0-50.0 + shiftx1  , -150.0-25.0 + shifty1)),
+            Segment(startPoint: SIMD2<Float>(-300.0-50.0 + shiftx1, -150.0-25.0 + shifty1),
+                    endPoint: SIMD2<Float>(-200.0-50.0 + shiftx1  , -150.0-25.0 + shifty1))
         ]
         generateArcs(from: zSegments1, color: .orange, width: 8, powerOfTwo: 4)
 
         // Segments for letter A1
         let aSegments1 = [
-            Segment(startPoint: SIMD2<Float>(-150.0-30.0, -250.0-25.0),
-                    endPoint: SIMD2<Float>(-200.0-30.0, -150.0-25.0)),
-            Segment(startPoint: SIMD2<Float>(-150.0-30.0, -250.0-25.0),
-                    endPoint: SIMD2<Float>(-100.0-30.0, -150.0-25.0)),
-            Segment(startPoint: SIMD2<Float>(-175.0-30.0, -200.0-25.0),
-                    endPoint: SIMD2<Float>(-125.0-30.0, -200.0-25.0))
+            Segment(startPoint: SIMD2<Float>(-150.0-30.0 + shiftx1, -250.0-25.0 + shifty1),
+                    endPoint: SIMD2<Float>(-200.0-30.0 + shiftx1  , -150.0-25.0 + shifty1)),
+            Segment(startPoint: SIMD2<Float>(-150.0-30.0 + shiftx1, -250.0-25.0 + shifty1),
+                    endPoint: SIMD2<Float>(-100.0-30.0 + shiftx1  , -150.0-25.0 + shifty1)),
+            Segment(startPoint: SIMD2<Float>(-175.0-30.0 + shiftx1, -200.0-25.0 + shifty1),
+                    endPoint: SIMD2<Float>(-125.0-30.0 + shiftx1  , -200.0-25.0 + shifty1))
         ]
         generateArcs(from: aSegments1, color: .orange, width: 8, powerOfTwo: 4)
 
         // Segments for letter P1
         let pSegments1 = [
-            Segment(startPoint: SIMD2<Float>(-100.0-10.0, -250.0-25.0),
-                    endPoint: SIMD2<Float>(0.0-10.0, -250.0-25.0)),
-            Segment(startPoint: SIMD2<Float>(-100.0-10.0, -250.0-25.0),
-                    endPoint: SIMD2<Float>(-100.0-10.0, -150.0-25.0)),
-            Segment(startPoint: SIMD2<Float>(0.0-10.0, -250.0-25.0),
-                    endPoint: SIMD2<Float>(0.0-10.0, -200.0-25.0)),
-            Segment(startPoint: SIMD2<Float>(-100.0-10.0, -200.0-25.0),
-                    endPoint: SIMD2<Float>(0.0-10.0, -200.0-25.0))
+            Segment(startPoint: SIMD2<Float>(-100.0-10.0 + shiftx1, -250.0-25.0 + shifty1),
+                    endPoint: SIMD2<Float>(0.0-10.0 + shiftx1     , -250.0-25.0 + shifty1)),
+            Segment(startPoint: SIMD2<Float>(-100.0-10.0 + shiftx1, -250.0-25.0 + shifty1),
+                    endPoint: SIMD2<Float>(-100.0-10.0 + shiftx1  , -150.0-25.0 + shifty1)),
+            Segment(startPoint: SIMD2<Float>(0.0-10.0 + shiftx1   , -250.0-25.0 + shifty1),
+                    endPoint: SIMD2<Float>(0.0-10.0 + shiftx1     , -200.0-25.0 + shifty1)),
+            Segment(startPoint: SIMD2<Float>(-100.0-10.0 + shiftx1, -200.0-25.0 + shifty1),
+                    endPoint: SIMD2<Float>(0.0-10.0 + shiftx1     , -200.0-25.0 + shifty1))
         ]
         generateArcs(from: pSegments1, color: .orange, width: 8, powerOfTwo: 4)
 
         // Segments for letter Z2
         let zSegments2 = [
-            Segment(startPoint: SIMD2<Float>(0.0+10.0, -250.0),
-                    endPoint: SIMD2<Float>(100.0+10.0, -250.0)),
-            Segment(startPoint: SIMD2<Float>(100.0+10.0, -250.0),
-                    endPoint: SIMD2<Float>(0.0+10.0, -150.0)),
-            Segment(startPoint: SIMD2<Float>(0.0+10.0, -150.0),
-                    endPoint: SIMD2<Float>(100.0+10.0, -150.0))
+            Segment(startPoint: SIMD2<Float>(0.0+10.0 + shiftx2  , -250.0 + shifty2),
+                    endPoint: SIMD2<Float>(100.0+10.0 + shiftx2  , -250.0 + shifty2)),
+            Segment(startPoint: SIMD2<Float>(100.0+10.0 + shiftx2, -250.0 + shifty2),
+                    endPoint: SIMD2<Float>(0.0+10.0 + shiftx2    , -150.0 + shifty2)),
+            Segment(startPoint: SIMD2<Float>(0.0+10.0 + shiftx2  , -150.0 + shifty2),
+                    endPoint: SIMD2<Float>(100.0+10.0 + shiftx2  , -150.0 + shifty2))
         ]
         generateArcs(from: zSegments2, color: .indigo, width: 8, powerOfTwo: 4)
 
         // Segments for letter A2
         let aSegments2 = [
-            Segment(startPoint: SIMD2<Float>(150.0+30.0, -250.0),
-                    endPoint: SIMD2<Float>(100.0+30.0, -150.0)),
-            Segment(startPoint: SIMD2<Float>(150.0+30.0, -250.0),
-                    endPoint: SIMD2<Float>(200.0+30.0, -150.0)),
-            Segment(startPoint: SIMD2<Float>(125.0+30.0, -200.0),
-                    endPoint: SIMD2<Float>(175.0+30.0, -200.0))
+            Segment(startPoint: SIMD2<Float>(150.0+30.0 + shiftx2, -250.0 + shifty2),
+                    endPoint: SIMD2<Float>(100.0+30.0 + shiftx2  , -150.0 + shifty2)),
+            Segment(startPoint: SIMD2<Float>(150.0+30.0 + shiftx2, -250.0 + shifty2),
+                    endPoint: SIMD2<Float>(200.0+30.0 + shiftx2  , -150.0 + shifty2)),
+            Segment(startPoint: SIMD2<Float>(125.0+30.0 + shiftx2, -200.0 + shifty2),
+                    endPoint: SIMD2<Float>(175.0+30.0 + shiftx2  , -200.0 + shifty2))
         ]
         generateArcs(from: aSegments2, color: .indigo, width: 8, powerOfTwo: 4)
 
         // Segments for letter P2
         let pSegments2 = [
-            Segment(startPoint: SIMD2<Float>(200.0+50.0, -250.0),
-                    endPoint: SIMD2<Float>(300.0+50.0, -250.0)),
-            Segment(startPoint: SIMD2<Float>(200.0+50.0, -250.0),
-                    endPoint: SIMD2<Float>(200.0+50.0, -150.0)),
-            Segment(startPoint: SIMD2<Float>(300.0+50.0, -250.0),
-                    endPoint: SIMD2<Float>(300.0+50.0, -200.0)),
-            Segment(startPoint: SIMD2<Float>(200.0+50.0, -200.0),
-                    endPoint: SIMD2<Float>(300.0+50.0, -200.0))
+            Segment(startPoint: SIMD2<Float>(200.0+50.0 + shiftx2, -250.0 + shifty2),
+                    endPoint: SIMD2<Float>(300.0+50.0 + shiftx2  , -250.0 + shifty2)),
+            Segment(startPoint: SIMD2<Float>(200.0+50.0 + shiftx2, -250.0 + shifty2),
+                    endPoint: SIMD2<Float>(200.0+50.0 + shiftx2  , -150.0 + shifty2)),
+            Segment(startPoint: SIMD2<Float>(300.0+50.0 + shiftx2, -250.0 + shifty2),
+                    endPoint: SIMD2<Float>(300.0+50.0 + shiftx2  , -200.0 + shifty2)),
+            Segment(startPoint: SIMD2<Float>(200.0+50.0 + shiftx2, -200.0 + shifty2),
+                    endPoint: SIMD2<Float>(300.0+50.0 + shiftx2  , -200.0 + shifty2))
         ]
         generateArcs(from: pSegments2, color: .indigo, width: 8, powerOfTwo: 4)
     }
