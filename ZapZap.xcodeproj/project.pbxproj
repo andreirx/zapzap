@@ -110,6 +110,7 @@
 		18BEF3C02C64958800A4D753 /* ObjectPool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectPool.swift; sourceTree = "<group>"; };
 		18BEF3C32C73AE3200A4D753 /* GameObjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameObjects.swift; sourceTree = "<group>"; };
 		18D0AF042C9072B800D8B055 /* MultiplayerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiplayerManager.swift; sourceTree = "<group>"; };
+		18D0AF072C92B65500D8B055 /* ZapZap iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ZapZap iOS.entitlements"; sourceTree = "<group>"; };
 		18D313122C8986B700423697 /* UIMeshes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIMeshes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -169,6 +170,7 @@
 		18BEF35C2C4A824B00A4D753 /* ZapZap iOS */ = {
 			isa = PBXGroup;
 			children = (
+				18D0AF072C92B65500D8B055 /* ZapZap iOS.entitlements */,
 				18BEF35D2C4A824B00A4D753 /* AppDelegate.swift */,
 				18BEF35F2C4A824B00A4D753 /* GameViewController.swift */,
 				18BEF3612C4A824B00A4D753 /* Main.storyboard */,
@@ -565,6 +567,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "ZapZap iOS/ZapZap iOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PTN74UT4G3;
@@ -596,6 +599,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "ZapZap iOS/ZapZap iOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PTN74UT4G3;

@@ -115,7 +115,7 @@ class GameManager {
             textureX = 14.0 / 16.0
             textureY = 3.0 * textureUnitY
         } else {
-            let gridIndex = Int(gameBoard.connections[i - 1][j]!.connections)
+            let gridIndex = Int(gameBoard.connections.connections[i - 1][j]!.connections)
             textureX = getTextureX(gridConnections: gridIndex)
             textureY = 1.0 * textureUnitY
         }
@@ -374,7 +374,7 @@ class GameManager {
         // play that sound
         SoundManager.shared.playSoundEffect(filename: "rotate")
         
-        gameBoard?.connections[i][j]?.rotate()
+        gameBoard?.connections.connections[i][j]?.rotate()
         let newQuad = createNewTileQuad(i: i + 1, j: j)
         tileQuads[j][i + 1] = newQuad
         animationManager?.addRotateAnimation(quad: newQuad!, duration: 0.2, tilePosition: (x: i, y: j), objectsLayer: renderer!.objectsLayer, effectsLayer: renderer!.effectsLayer)
@@ -434,7 +434,7 @@ class GameManager {
             }
         }
         // randomly add a bomb
-        if 0 == Int.random(in: 0..<1) {
+        if 0 == Int.random(in: 0..<5) {
             animationManager?.createFallingObject(objectType: Bomb.self)
         }
 
@@ -534,14 +534,14 @@ class GameManager {
             // and on the right
             for y in 0..<gameBoard.height {
                 if .ok == gameBoard.connectMarkings[0][y] {
-                    if let tile = gameBoard.connections[0][y] {
+                    if let tile = gameBoard.connections.connections[0][y] {
                         if tile.hasConnection(direction: .left) {
                             animationManager?.createTextAnimation(text: "+1", font: Font.systemFont(ofSize: 24), color: .purple, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: -1), getIdealTilePositionY(j: y)), textLayer: renderer.textLayer)
                         }
                     }
                 }
                 if .ok == gameBoard.connectMarkings[gameBoard.width - 1][y] {
-                    if let tile = gameBoard.connections[gameBoard.width - 1][y] {
+                    if let tile = gameBoard.connections.connections[gameBoard.width - 1][y] {
                         if tile.hasConnection(direction: .right) {
                             animationManager?.createTextAnimation(text: "+1", font: Font.systemFont(ofSize: 24), color: .orange, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: gameBoard.width + 2), getIdealTilePositionY(j: y)), textLayer: renderer.textLayer)
                         }
@@ -617,7 +617,7 @@ class GameManager {
             }
             // check leftmost connections with the pins
             if forMarker == gameBoard.connectMarkings[0][y] {
-                if let tile = gameBoard.connections[0][y] {
+                if let tile = gameBoard.connections.connections[0][y] {
                     if tile.hasConnection(direction: .left) {
                         let start = tileQuads[y][0]!.position
                         let end = tileQuads[y][1]!.position
@@ -628,7 +628,7 @@ class GameManager {
             }
             // check rightmost connections with the pins
             if forMarker == gameBoard.connectMarkings[gameBoard.width - 1][y] {
-                if let tile = gameBoard.connections[gameBoard.width - 1][y] {
+                if let tile = gameBoard.connections.connections[gameBoard.width - 1][y] {
                     if tile.hasConnection(direction: .right) {
                         let start = tileQuads[y][gameBoard.width]!.position
                         let end = tileQuads[y][gameBoard.width + 1]!.position
@@ -639,12 +639,12 @@ class GameManager {
             }
             // check the rest of the table
             for x in 0..<gameBoard.width {
-                if let tile = gameBoard.connections[x][y] {
+                if let tile = gameBoard.connections.connections[x][y] {
                     if forMarker == gameBoard.connectMarkings[x][y] {
                         // For each connection direction, create an arc if connected
                         // right-to-left
                         if tile.hasConnection(direction: .right), x < gameBoard.width - 1 {
-                            if let rightTile = gameBoard.connections[x + 1][y], rightTile.hasConnection(direction: .left) {
+                            if let rightTile = gameBoard.connections.connections[x + 1][y], rightTile.hasConnection(direction: .left) {
                                 let start = tileQuads[y][x + 1]!.position
                                 let end = tileQuads[y][x + 2]!.position
                                 let arc = ElectricArcMesh(startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
@@ -653,7 +653,7 @@ class GameManager {
                         }
                         // top-to-bottom
                         if tile.hasConnection(direction: .down), y < gameBoard.height - 1 {
-                            if let downTile = gameBoard.connections[x][y + 1], downTile.hasConnection(direction: .up) {
+                            if let downTile = gameBoard.connections.connections[x][y + 1], downTile.hasConnection(direction: .up) {
                                 let start = tileQuads[y][x + 1]!.position
                                 let end = tileQuads[y + 1][x + 1]!.position
                                 let arc = ElectricArcMesh(startPoint: start, endPoint: end, powerOfTwo: po2, width: andWidth, color: withColor)
