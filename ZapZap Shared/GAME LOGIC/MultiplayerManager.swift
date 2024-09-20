@@ -9,19 +9,88 @@ import Foundation
 import GameKit
 import GameplayKit
 
-class MultiplayerManager: NSObject, GKMatchDelegate {
+class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchDelegate {
+    
+    var errorMsg: String = ""
+    
     var match: GKMatch?
     var gameBoard: GameBoard?
+    
+    func isHost() -> Bool {
+        guard let match = self.match else { return false }
+        // The player with the lowest index in the match's player array is considered the host
+        if let firstPlayer = match.players.first {
+            return GKLocalPlayer.local == firstPlayer
+        }
+        return false
+    }
+
+    // MARK: - GKMatchmakerViewControllerDelegate methods
+
+    // Called when a match is found
+    func matchmakerViewController(_ viewController: GKMatchmakerViewController, didFind match: GKMatch) {
+        viewController.dismiss(true)
+        self.match = match
+        match.delegate = self
+
+        print("Match found: \(match)")
+        if match.expectedPlayerCount == 0 {
+            startMatchWithSeed()
+        } else {
+            print("Waiting for other players to join...")
+        }
+    }
+
+    // Called when matchmaking is cancelled by the user
+    func matchmakerViewControllerWasCancelled(_ viewController: GKMatchmakerViewController) {
+        viewController.dismiss(true)
+        print("Player cancelled matchmaking")
+    }
+
+    // Called when matchmaking fails due to an error
+    func matchmakerViewController(_ viewController: GKMatchmakerViewController, didFailWithError error: Error) {
+        viewController.dismiss(true)
+        showError(error: error)
+    }
+
+    // Show errors based on the situation
+    func showError(error: Error) {
+        // Handle known GKError codes
+        if let gkError = error as? GKError {
+            switch gkError.code {
+            case .notAuthenticated:
+                errorMsg = "You are not signed into Game Center."
+            case .communicationsFailure:
+                errorMsg = "Network is unavailable. Please check your internet connection."
+            case .connectionTimeout:
+                errorMsg = "Matchmaking timed out."
+            case .cancelled:
+                errorMsg = "Matchmaking was cancelled."
+            case .notAuthorized:
+                errorMsg = "You are not authorized to do this."
+            default:
+                errorMsg = "An unknown error occurred: \(gkError.localizedDescription)"
+            }
+        } else {
+            errorMsg = "An unknown error occurred: \(error.localizedDescription)"
+        }
+    }
+    
+    // MARK: start game, send, receive data
 
     func startMatchWithSeed() {
-        // Host generates the seed
-        let seed = UInt64.random(in: 0...UInt64.max)
-        
-        // Send the seed to the opponent
-        sendSeed(seed: seed)
-
-        // Initialize the game board with the seed
-        // TODO actual code
+        if isHost() {
+            print("You are the host! Generating seed...")
+            let seed = UInt64.random(in: 0...UInt64.max)
+            sendSeed(seed: seed)
+            // Initialize game board with seed
+            // TODO actual code
+        } else {
+            print("You are the guest! Waiting for host's seed...")
+            // TODO actual code
+            errorMsg = "Waiting for the other player..."
+            // or just wait
+        }
     }
 
     // send the entire board to the other player for verification
