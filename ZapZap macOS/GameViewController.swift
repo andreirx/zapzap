@@ -51,6 +51,7 @@ class GameViewController: NSViewController {
         }
         print ("created a Renderer")
 
+        newRenderer.viewController = self
         renderer = newRenderer
         gameManager.renderer = newRenderer
 

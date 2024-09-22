@@ -12,9 +12,13 @@ import GameplayKit
 class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchDelegate {
     
     var errorMsg: String = ""
+    var playerName: String = "not authenticated"
     
     var match: GKMatch?
+
     var gameBoard: GameBoard?
+    var renderer: Renderer?
+    
     
     func isHost() -> Bool {
         guard let match = self.match else { return false }
@@ -25,11 +29,80 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
         return false
     }
 
+    // MARK: - local player authentication and related stuff
+
+    // Call this to authenticate the player
+    func authenticatePlayer() {
+        let localPlayer = GKLocalPlayer.local
+        
+        localPlayer.authenticateHandler = { viewController, error in
+            if let vc = viewController {
+                // Present the Game Center login view controller
+                if let rootVC = self.renderer?.viewController {
+                    #if os(iOS)
+                    // iOS: Present the view controller with animation
+                    rootVC.present(vc, animated: true, completion: nil)
+                    #elseif os(macOS)
+                    // macOS: Present the view controller with a custom animator
+                    rootVC.present(vc, animator: CustomAnimator())
+                    #endif
+                }
+            } else if localPlayer.isAuthenticated {
+                print("Player authenticated with Game Center. Name: \(localPlayer.displayName)")
+                // Now you can use the player's display name
+                self.playerAuthenticated()
+            } else {
+                if let error = error {
+                    self.errorMsg = "Game Center authentication failed: \(error.localizedDescription)"
+                    print(self.errorMsg)
+                } else {
+                    self.errorMsg = "Game Center is not available."
+                    print(self.errorMsg)
+                }
+            }
+        }
+    }
+
+    // Called when the player is authenticated
+    func playerAuthenticated() {
+        playerName = GKLocalPlayer.local.displayName
+        print("Authenticated as: \(playerName)")
+        // Here you can update the UI or notify the game that the player is authenticated.
+        // For example, pass this information to your game screens or store it for future use
+    }
+
     // MARK: - GKMatchmakerViewControllerDelegate methods
+
+    // Present the Game Center matchmaking UI
+    func presentGameCenterMatchmaking() {
+        let request = GKMatchRequest()
+        request.minPlayers = 2
+        request.maxPlayers = 2
+
+        // Create and configure the matchmaking UI
+        let matchmakerVC = GKMatchmakerViewController(matchRequest: request)
+        matchmakerVC?.matchmakerDelegate = self // Set self as the delegate
+
+        // Present the matchmaking UI (handled by Game Center)
+        if let rootVC = renderer?.viewController {
+            #if os(iOS)
+            // iOS: Present with animation
+            rootVC.present(matchmakerVC!, animated: true, completion: nil)
+            #elseif os(macOS)
+            // macOS: Present with a custom animator
+            rootVC.present(matchmakerVC!, animator: CustomAnimator())
+            #endif
+        }
+    }
 
     // Called when a match is found
     func matchmakerViewController(_ viewController: GKMatchmakerViewController, didFind match: GKMatch) {
-        viewController.dismiss(true)
+        #if os(iOS)
+        viewController.dismiss(animated: true, completion: nil)
+        #elseif os(macOS)
+        viewController.dismiss(nil)
+        #endif
+        
         self.match = match
         match.delegate = self
 
@@ -43,13 +116,22 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
 
     // Called when matchmaking is cancelled by the user
     func matchmakerViewControllerWasCancelled(_ viewController: GKMatchmakerViewController) {
-        viewController.dismiss(true)
-        print("Player cancelled matchmaking")
+        #if os(iOS)
+        viewController.dismiss(animated: true, completion: nil)
+        #elseif os(macOS)
+        viewController.dismiss(nil)
+        #endif
+        self.errorMsg = "Player cancelled matchmaking"
+        print(self.errorMsg)
     }
 
     // Called when matchmaking fails due to an error
     func matchmakerViewController(_ viewController: GKMatchmakerViewController, didFailWithError error: Error) {
-        viewController.dismiss(true)
+        #if os(iOS)
+        viewController.dismiss(animated: true, completion: nil)
+        #elseif os(macOS)
+        viewController.dismiss(nil)
+        #endif
         showError(error: error)
     }
 
@@ -186,3 +268,31 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
         print("DEBUG multiplayer received: ", data)
     }
 }
+
+
+// MARK: custom animator for macOS GameScreen popups
+
+#if os(macOS)
+import Cocoa
+
+class CustomAnimator: NSObject, NSViewControllerPresentationAnimator {
+    func animatePresentation(of viewController: NSViewController, from fromViewController: NSViewController) {
+        fromViewController.view.addSubview(viewController.view)
+        viewController.view.frame = fromViewController.view.bounds
+        viewController.view.alphaValue = 0.0
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.25
+            viewController.view.animator().alphaValue = 1.0
+        })
+    }
+
+    func animateDismissal(of viewController: NSViewController, from fromViewController: NSViewController) {
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.25
+            viewController.view.animator().alphaValue = 0.0
+        }, completionHandler: {
+            viewController.view.removeFromSuperview()
+        })
+    }
+}
+#endif

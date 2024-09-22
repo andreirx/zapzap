@@ -62,10 +62,18 @@ class ResourceTextures {
 
 class Renderer: NSObject, MTKViewDelegate {
     var gameMgr: GameManager
+    var multiMgr: MultiplayerManager
+
     static var device: MTLDevice!
     let commandQueue: MTLCommandQueue
     let view: MTKView
     var samplerState: MTLSamplerState?
+    
+#if os(iOS)
+    var viewController: UIViewController?
+#elseif os(macOS)
+    var viewController: NSViewController?
+#endif
 
     static var textures: ResourceTextures!
     
@@ -142,9 +150,12 @@ class Renderer: NSObject, MTKViewDelegate {
         self.constantBuffer = device.makeBuffer(length: constantBufferSize, options: .storageModeShared)
         self.constantBuffer.label = "Dynamic Constant Buffer"
         print("Renderer init created constant buffer")
+        
+        multiMgr = MultiplayerManager()
 
         super.init()
         self.view.delegate = self
+        self.multiMgr.renderer = self
 
         logoScreen = Screen()
         titleScreen = Screen()
@@ -307,6 +318,7 @@ class Renderer: NSObject, MTKViewDelegate {
             gameMgr.clearElectricArcs()
             maxArcDisplacement = 0.1
             makeMenuArcs()
+            multiMgr.authenticatePlayer()
         }
         if currentScreen === gameScreen {
             gameMgr.clearElectricArcs()

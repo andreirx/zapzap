@@ -48,6 +48,7 @@ class GameViewController: UIViewController {
             return
         }
 
+        newRenderer.viewController = self
         renderer = newRenderer
         gameManager.renderer = newRenderer
         renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
