@@ -81,6 +81,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var logoScreen: Screen!
     var titleScreen: Screen!
     var mainMenuScreen: Screen!
+    var multiplayerScreen: Screen!
     var gameScreen: Screen!
     var pauseScreen: Screen!
     
@@ -96,6 +97,8 @@ class Renderer: NSObject, MTKViewDelegate {
     // layers
     var backgroundLayer: GraphicsLayer!
     var menuLayer: GraphicsLayer!
+    var mainButtonsLayer: GraphicsLayer!
+    var multiplayerButtonsLayer: GraphicsLayer!
     var fingerLayer: GraphicsLayer!
     var baseLayer: GameBoardLayer? // this one won't be ready at creation time, will have to add it later after getting a GameManager
     var objectsLayer: GraphicsLayer!
@@ -160,6 +163,7 @@ class Renderer: NSObject, MTKViewDelegate {
         logoScreen = Screen()
         titleScreen = Screen()
         mainMenuScreen = Screen()
+        multiplayerScreen = Screen()
         gameScreen = Screen()
         pauseScreen = Screen()
 
@@ -183,6 +187,30 @@ class Renderer: NSObject, MTKViewDelegate {
         logoLayer.meshes.append(logoQuad)
         
         logoScreen.addLayer(logoLayer)
+    }
+    
+    // Helper function to update text meshes with inout to modify the passed mesh reference
+    static func updateText(mesh: inout TextQuadMesh?, onLayer: GraphicsLayer, withText: String, fontSize: CGFloat, color: Color, size: CGSize) {
+        let font = Font.systemFont(ofSize: fontSize)
+        
+        // Remove the old mesh from the layer if it exists
+        if let existingMesh = mesh {
+            onLayer.meshes.removeAll { $0 === existingMesh }
+        }
+        
+        // Create a new mesh with the updated text
+        let newMesh = TextQuadMesh(text: withText, font: font, color: color, size: size)
+        
+        // Set position based on the existing mesh (if any)
+        if let existingMesh = mesh {
+            newMesh.position = existingMesh.position
+        }
+        
+        // Add the new mesh to the layer
+        onLayer.meshes.append(newMesh)
+        
+        // Update the reference to point to the new mesh
+        mesh = newMesh
     }
 
     // this function is important because the game manager needs it to function properly
@@ -218,6 +246,8 @@ class Renderer: NSObject, MTKViewDelegate {
         effectsLayer = EffectsLayer()
         textLayer = GraphicsLayer()
         menuLayer = GraphicsLayer()
+        mainButtonsLayer = GraphicsLayer()
+        multiplayerButtonsLayer = GraphicsLayer()
         fingerLayer = GraphicsLayer()
 
         gameMgr.createTiles()
@@ -229,6 +259,8 @@ class Renderer: NSObject, MTKViewDelegate {
         objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         menuLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
+        mainButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
+        multiplayerButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
         fingerLayer.texture = Renderer.textures.getTexture(named: "arrows")
 
         // have the finger on the finger layer
@@ -247,10 +279,17 @@ class Renderer: NSObject, MTKViewDelegate {
         
         // add layers to menu screen
         mainMenuScreen.addLayer(menuLayer)
+        mainMenuScreen.addLayer(mainButtonsLayer)
         mainMenuScreen.addLayer(fingerLayer)
         mainMenuScreen.addLayer(effectsLayer)
 //        gameScreen.addLayer(textLayer)
         
+        // add layers to multiplayer screen
+        multiplayerScreen.addLayer(menuLayer)
+        multiplayerScreen.addLayer(multiplayerButtonsLayer)
+        multiplayerScreen.addLayer(fingerLayer)
+        multiplayerScreen.addLayer(effectsLayer)
+
         // put some random tiles in there on the menu screen
         for i in stride(from: -boardWidth/2 - 2, through: boardWidth*3/2 + 4, by: 2) {
             for j in stride(from:-2, through: boardHeight+4, by: 2) {
@@ -275,15 +314,22 @@ class Renderer: NSObject, MTKViewDelegate {
         buttonPause = ButtonMesh.createPauseButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
         buttonPause!.position.x = boardW / 2.0 + tileSize * 4.0
         buttonPause!.position.y = -boardH / 2.0 + tileSize
+        // pause button goes on a game screen layer
         baseLayer!.meshes.append(buttonPause!)
+        // also create back button
+        buttonBack = ButtonMesh.createBackButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
+        buttonBack!.position.x = -boardW / 2.0 + tileSize * 3.0
+        buttonBack!.position.y = -boardH / 2.0 + tileSize * 3.0
+        // back button goes to a multiplayer screen lauyer
+        multiplayerButtonsLayer.meshes.append(buttonBack!)
         // put them in their correct positions
         buttonLocal!.position.y = -1.5 * tileSize
         buttonBuyCoffee!.position.y = 1.0 * tileSize
         button1v1!.position.y = 3.5 * tileSize
         // add them to the layer
-        menuLayer.meshes.append(buttonLocal!)
-        menuLayer.meshes.append(buttonBuyCoffee!)
-        menuLayer.meshes.append(button1v1!)
+        mainButtonsLayer.meshes.append(buttonLocal!)
+        mainButtonsLayer.meshes.append(buttonBuyCoffee!)
+        mainButtonsLayer.meshes.append(button1v1!)
         // make texts for the buttons
         let textSize = CGSize(width: 512, height: 64)
         var font = Font.systemFont(ofSize: 40)
@@ -295,9 +341,9 @@ class Renderer: NSObject, MTKViewDelegate {
         textBuyCoffee.position.y = 1.0 * tileSize + 6
         text1v1.position.y = 3.5 * tileSize + 6
         // add them to the layer
-        menuLayer.meshes.append(textLocal)
-        menuLayer.meshes.append(textBuyCoffee)
-        menuLayer.meshes.append(text1v1)
+        mainButtonsLayer.meshes.append(textLocal)
+        mainButtonsLayer.meshes.append(textBuyCoffee)
+        mainButtonsLayer.meshes.append(text1v1)
         
         // now some license info
         let licenseInfo = """
@@ -325,7 +371,10 @@ class Renderer: NSObject, MTKViewDelegate {
             maxArcDisplacement = 0.2
             gameMgr.addElectricArcs()
         }
-        gameMgr.lastInput = nil
+        if currentScreen === multiplayerScreen {
+            gameMgr.clearElectricArcs()
+            // TODO: show the game center stuff
+        }
     }
 
     // helper function to generate arcs based on segments list
@@ -540,11 +589,31 @@ class Renderer: NSObject, MTKViewDelegate {
             if gameMgr.lastInput != nil {
                 if buttonLocal!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
                     gameMgr.zapGameState = .waitingForInput
+                    // TODO: reset the game - right now it goes to the already existing game
                     setCurrentScreen(gameScreen)
                 }
-                gameMgr.lastInput = nil
+                if button1v1!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    setCurrentScreen(multiplayerScreen)
+                    // TODO: maybe here show the game center stuff?
+                }
             }
         }
+        
+        // multiplayer screen updates
+        if currentScreen === multiplayerScreen {
+            // same stuff with the tiles in the back
+            startRandomTileRotation()
+            // just update the animations, whatever they are
+            // arcs and particles
+            gameMgr.animationManager?.updateAnimations()
+            // check user input -- back button goes to the main menu
+            if gameMgr.lastInput != nil {
+                if buttonBack!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    setCurrentScreen(mainMenuScreen)
+                }
+            }
+        }
+        gameMgr.lastInput = nil
     }
 
     // this is the main draw function for the application

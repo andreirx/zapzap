@@ -10,15 +10,50 @@ import GameKit
 import GameplayKit
 
 class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchDelegate {
+
+    // error messages get written into the multiStatusMesh every time they change
+    var errorMsg: String = "" {
+        didSet {
+            Renderer.updateText(mesh: &multiStatusMesh, onLayer: renderer!.multiplayerButtonsLayer, withText: errorMsg, fontSize: 32, color: Color.yellow, size: CGSize(width: 512, height: 512))
+            multiStatusMesh?.position = SIMD2<Float>(0.0, 1.0 * tileSize)
+        }
+    }
+    var playerName: String = "not authenticated" {
+        didSet {
+            Renderer.updateText(mesh: &playerMesh, onLayer: renderer!.multiplayerButtonsLayer, withText: "Hello, \(playerName)", fontSize: 32, color: Color.white, size: CGSize(width: 256, height: 64))
+            playerMesh?.position = SIMD2<Float>(1.0 * tileSize, -boardH / 2.0 + tileSize * 3.25)
+        }
+    }
     
-    var errorMsg: String = ""
-    var playerName: String = "not authenticated"
-    
+    var multiStatusMesh: TextQuadMesh? = nil
+    var playerMesh: TextQuadMesh? = nil
+
     var match: GKMatch?
 
     var gameBoard: GameBoard?
     var renderer: Renderer?
     
+    func updateStatusMesh() {
+        // create text meshes for keeping score
+        var text = errorMsg
+        let font = Font.systemFont(ofSize: 32)
+
+        if (renderer != nil) {
+            if renderer!.multiplayerButtonsLayer != nil {
+                renderer!.multiplayerButtonsLayer.meshes.removeAll { $0 === multiStatusMesh }
+            }
+        }
+
+        let textSize = CGSize(width: 512, height: 512)
+        multiStatusMesh = TextQuadMesh(text: text, font: font, color: Color.yellow, size: textSize)
+        multiStatusMesh?.position = SIMD2<Float>(0.0, 1.0 * tileSize)
+        
+        if (renderer != nil) {
+            if renderer!.multiplayerButtonsLayer != nil {
+                renderer!.multiplayerButtonsLayer.meshes.append(multiStatusMesh!)
+            }
+        }
+    }
     
     func isHost() -> Bool {
         guard let match = self.match else { return false }
@@ -66,7 +101,7 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
     // Called when the player is authenticated
     func playerAuthenticated() {
         playerName = GKLocalPlayer.local.displayName
-        print("Authenticated as: \(playerName)")
+        print("Hello, \(playerName)")
         // Here you can update the UI or notify the game that the player is authenticated.
         // For example, pass this information to your game screens or store it for future use
     }
