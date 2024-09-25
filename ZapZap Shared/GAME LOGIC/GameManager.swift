@@ -212,10 +212,20 @@ class GameManager {
     
     // Initialize a local or multiplayer game
     func startNewGame(isMultiplayer: Bool) {
+        // remove effects
+        clearElectricArcs()
+        // remove animations
+        animationManager!.removeAllGameplayAnimations()
+        // remove all objects
+        renderer!.objectsLayer.meshes.removeAll()
+        // create new tiles
         gameBoard?.resetTable(percentMissingLinks: defaultMissingLinks)
+        // reset the score
         leftScore = 0
         rightScore = 0
+        // create new meshes corresponding to the underlying tiles
         createTiles()
+        // wait for user input
         zapGameState = .waitingForInput
     }
 

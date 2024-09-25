@@ -14,8 +14,8 @@
             filePath = "ZapZap Shared/GFX LOGIC/GameBoardAnimations.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "80"
-            endingLineNumber = "80"
+            startingLineNumber = "140"
+            endingLineNumber = "140"
             landmarkName = "addSimpleRotation(_:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -30,8 +30,8 @@
             filePath = "ZapZap Shared/GAME LOGIC/MultiplayerManager.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "23"
-            endingLineNumber = "23"
+            startingLineNumber = "24"
+            endingLineNumber = "24"
             landmarkName = "playerName"
             landmarkType = "24">
          </BreakpointContent>
@@ -46,10 +46,10 @@
             filePath = "ZapZap Shared/GFX LOGIC/Renderer.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "375"
-            endingLineNumber = "375"
-            landmarkName = "setCurrentScreen(_:)"
-            landmarkType = "7">
+            startingLineNumber = "378"
+            endingLineNumber = "378"
+            landmarkName = "show the game center stuff"
+            landmarkType = "19">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

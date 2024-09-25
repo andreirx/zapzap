@@ -72,6 +72,66 @@ class AnimationManager {
 
         freezeFrameAnimations.append(animation)
     }
+
+    // this will remove all gameplay animations - in a graceful way
+    // that means also cleanup any associated objects
+    // and put them back into their pools if they come from pools
+    func removeAllGameplayAnimations() {
+        // just remove the object falling animations, they don't go to pools
+        objectFallAnimations.removeAll()
+
+        // iterate through all text animations
+        for animation in textAnimations {
+            // cleanup to remove the text itself not just the animation
+            animation.cleanup()
+        }
+        // just remove the text animations, they don't go to pools either
+        textAnimations.removeAll()
+
+        // Iterate through all freeze frame animations
+        for freezeFrame in freezeFrameAnimations {
+            // Call cleanup to ensure resources are freed properly
+            freezeFrame.cleanup()
+
+            // Return the animation object to the pool
+            AnimationPools.freezeFrameAnimationPool.releaseObject(freezeFrame)
+        }
+        // Clear the array after releasing all objects
+        freezeFrameAnimations.removeAll()
+
+        // Iterate through all particle animations
+        for animation in particleAnimations {
+            // Call cleanup to ensure resources are freed properly
+            animation.cleanup()
+
+            // Return the animation object to the pool
+            AnimationPools.particleAnimationPool.releaseObject(animation)
+        }
+        // Clear the array after releasing all objects
+        particleAnimations.removeAll()
+
+        // Iterate through all rotate animations
+        for animation in rotateAnimations {
+            // Call cleanup to ensure resources are freed properly
+            animation.cleanup()
+
+            // Return the animation object to the pool
+            AnimationPools.rotateAnimationPool.releaseObject(animation)
+        }
+        // Clear the array after releasing all objects
+        rotateAnimations.removeAll()
+
+        // Iterate through all fall animations
+        for fallAnimation in fallAnimations {
+            // Call cleanup to ensure resources are freed properly
+            fallAnimation.cleanup()
+
+            // Return the animation object to the pool
+            AnimationPools.fallAnimationPool.releaseObject(fallAnimation)
+        }
+        // Clear the array after releasing all objects
+        fallAnimations.removeAll()
+    }
     
     // Add a simple rotation animation to the list
     func addSimpleRotation(_ animation: SimpleRotateAnimation) {

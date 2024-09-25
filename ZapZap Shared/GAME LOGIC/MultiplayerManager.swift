@@ -9,15 +9,16 @@ import Foundation
 import GameKit
 import GameplayKit
 
-class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchDelegate {
+class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchDelegate, GKLocalPlayerListener {
 
     // error messages get written into the multiStatusMesh every time they change
     var errorMsg: String = "" {
         didSet {
-            Renderer.updateText(mesh: &multiStatusMesh, onLayer: renderer!.multiplayerButtonsLayer, withText: errorMsg, fontSize: 32, color: Color.yellow, size: CGSize(width: 512, height: 512))
-            multiStatusMesh?.position = SIMD2<Float>(0.0, 1.0 * tileSize)
+            Renderer.updateText(mesh: &multiStatusMesh, onLayer: renderer!.multiplayerButtonsLayer, withText: errorMsg, fontSize: 32, color: Color.yellow, size: CGSize(width: 512, height: 256))
+            multiStatusMesh?.position = SIMD2<Float>(0.0, 3.0 * tileSize)
         }
     }
+    // player name gets written into mesh every time it's updated
     var playerName: String = "not authenticated" {
         didSet {
             Renderer.updateText(mesh: &playerMesh, onLayer: renderer!.multiplayerButtonsLayer, withText: "Hello, \(playerName)", fontSize: 32, color: Color.white, size: CGSize(width: 256, height: 64))
@@ -33,28 +34,8 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
     var gameBoard: GameBoard?
     var renderer: Renderer?
     
-    func updateStatusMesh() {
-        // create text meshes for keeping score
-        var text = errorMsg
-        let font = Font.systemFont(ofSize: 32)
 
-        if (renderer != nil) {
-            if renderer!.multiplayerButtonsLayer != nil {
-                renderer!.multiplayerButtonsLayer.meshes.removeAll { $0 === multiStatusMesh }
-            }
-        }
-
-        let textSize = CGSize(width: 512, height: 512)
-        multiStatusMesh = TextQuadMesh(text: text, font: font, color: Color.yellow, size: textSize)
-        multiStatusMesh?.position = SIMD2<Float>(0.0, 1.0 * tileSize)
-        
-        if (renderer != nil) {
-            if renderer!.multiplayerButtonsLayer != nil {
-                renderer!.multiplayerButtonsLayer.meshes.append(multiStatusMesh!)
-            }
-        }
-    }
-    
+    // function that determines whether the local player is the host
     func isHost() -> Bool {
         guard let match = self.match else { return false }
         // The player with the lowest index in the match's player array is considered the host
@@ -62,6 +43,36 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
             return GKLocalPlayer.local == firstPlayer
         }
         return false
+    }
+
+    // Call this method after authenticating the player
+    func registerInvitationHandler() {
+        GKLocalPlayer.local.register(self)
+    }
+
+    // MARK: - GKLocalPlayerListener methods
+
+    // This method is called when an invitation is received
+    func player(_ player: GKPlayer, didAccept invite: GKInvite) {
+        print("WOW got an invite")
+        errorMsg = "got an invite but don't know how to handle it"
+        let matchmakerVC = GKMatchmakerViewController(invite: invite)
+        matchmakerVC?.matchmakerDelegate = self
+        if let rootVC = renderer?.viewController {
+            #if os(iOS)
+            // iOS: Present the view controller with animation
+            rootVC.present(matchmakerVC!, animated: true, completion: nil)
+            #elseif os(macOS)
+            // macOS: Present the view controller with a custom animator
+            rootVC.present(matchmakerVC!, animator: CustomAnimator())
+            #endif
+        }
+    }
+
+    // This method is called when a player receives a match request (such as auto-matching)
+    func player(_ player: GKPlayer, didRequestMatchWithRecipients recipientPlayers: [GKPlayer]) {
+        errorMsg = "Match requested with players: \(recipientPlayers)"
+        print(errorMsg)
     }
 
     // MARK: - local player authentication and related stuff
@@ -86,6 +97,7 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
                 print("Player authenticated with Game Center. Name: \(localPlayer.displayName)")
                 // Now you can use the player's display name
                 self.playerAuthenticated()
+                self.registerInvitationHandler()
             } else {
                 if let error = error {
                     self.errorMsg = "Game Center authentication failed: \(error.localizedDescription)"
@@ -110,10 +122,15 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
 
     // Present the Game Center matchmaking UI
     func presentGameCenterMatchmaking() {
+        errorMsg = "waiting for players to join"
+
         let request = GKMatchRequest()
         request.minPlayers = 2
         request.maxPlayers = 2
 
+        // Enable invitations
+        request.inviteMessage = "Join my game!"
+        
         // Create and configure the matchmaking UI
         let matchmakerVC = GKMatchmakerViewController(matchRequest: request)
         matchmakerVC?.matchmakerDelegate = self // Set self as the delegate
@@ -141,7 +158,8 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
         self.match = match
         match.delegate = self
 
-        print("Match found: \(match)")
+        errorMsg = "Match found: \(match)"
+        print(errorMsg)
         if match.expectedPlayerCount == 0 {
             startMatchWithSeed()
         } else {
