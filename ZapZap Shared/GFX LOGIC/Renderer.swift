@@ -368,7 +368,10 @@ class Renderer: NSObject, MTKViewDelegate {
         }
         if currentScreen === gameScreen {
             gameMgr.clearElectricArcs()
+            // MARK: starting new LOCAL game
+            gameMgr.startNewGame(isMultiplayer: false)
             maxArcDisplacement = 0.2
+            gameMgr.gameBoard?.checkConnections()
             gameMgr.addElectricArcs()
         }
         if currentScreen === multiplayerScreen {
@@ -555,6 +558,7 @@ class Renderer: NSObject, MTKViewDelegate {
                 // Proceed to load textures and initialize other screens
                 setCurrentScreen(mainMenuScreen)
             }
+            gameMgr.lastInput = nil
         }
 
         // game screen updates
@@ -576,15 +580,16 @@ class Renderer: NSObject, MTKViewDelegate {
                     }
                 }
             }
+            gameMgr.lastInput = nil
         }
         
         // main menu screen updates
         if currentScreen === mainMenuScreen {
             // make some tile in the background rotate
             startRandomTileRotation()
-            // just update the animations, whatever they are
-            // arcs and particles
-            gameMgr.animationManager?.updateAnimations()
+            // only update the simple rotations in the main menu
+            gameMgr.animationManager?.updateSimpleRotateAnimations()
+//            gameMgr.animationManager?.updateAnimations()
             // check user input
             if gameMgr.lastInput != nil {
                 if buttonLocal!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
@@ -595,25 +600,27 @@ class Renderer: NSObject, MTKViewDelegate {
                 if button1v1!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
                     setCurrentScreen(multiplayerScreen)
                     // TODO: maybe here show the game center stuff?
+                    multiMgr.presentGameCenterMatchmaking()
                 }
             }
+            gameMgr.lastInput = nil
         }
         
         // multiplayer screen updates
         if currentScreen === multiplayerScreen {
             // same stuff with the tiles in the back
             startRandomTileRotation()
-            // just update the animations, whatever they are
-            // arcs and particles
-            gameMgr.animationManager?.updateAnimations()
+            // only update the simple rotations in the main menu
+            gameMgr.animationManager?.updateSimpleRotateAnimations()
+//            gameMgr.animationManager?.updateAnimations()
             // check user input -- back button goes to the main menu
             if gameMgr.lastInput != nil {
                 if buttonBack!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
                     setCurrentScreen(mainMenuScreen)
                 }
             }
+            gameMgr.lastInput = nil
         }
-        gameMgr.lastInput = nil
     }
 
     // this is the main draw function for the application
