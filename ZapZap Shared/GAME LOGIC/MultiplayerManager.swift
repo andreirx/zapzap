@@ -14,8 +14,8 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
     // error messages get written into the multiStatusMesh every time they change
     var errorMsg: String = "" {
         didSet {
-            Renderer.updateText(mesh: &multiStatusMesh, onLayer: renderer!.multiplayerButtonsLayer, withText: errorMsg, fontSize: 32, color: Color.yellow, size: CGSize(width: 512, height: 256))
-            multiStatusMesh?.position = SIMD2<Float>(0.0, 3.0 * tileSize)
+            Renderer.updateText(mesh: &multiStatusMesh, onLayer: renderer!.multiplayerButtonsLayer, withText: errorMsg, fontSize: 24, color: Color.yellow, size: CGSize(width: 512, height: 256))
+            multiStatusMesh?.position = SIMD2<Float>(0.0, -0.5 * tileSize)
         }
     }
     // player name gets written into mesh every time it's updated
@@ -34,6 +34,10 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
     var gameBoard: GameBoard?
     var renderer: Renderer?
     
+    // just report the highest score to game center
+    func reportScoreToGameCenter(score: Int) {
+        GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: ["MaxPoints"], completionHandler: {_ in })
+    }
 
     // function that determines whether the local player is the host
     func isHost() -> Bool {
@@ -48,14 +52,16 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
     // Call this method after authenticating the player
     func registerInvitationHandler() {
         GKLocalPlayer.local.register(self)
+        errorMsg = errorMsg + "\nregistered invitation handler"
+        print("registered invitation handler")
     }
 
     // MARK: - GKLocalPlayerListener methods
 
     // This method is called when an invitation is received
     func player(_ player: GKPlayer, didAccept invite: GKInvite) {
-        print("WOW got an invite")
-        errorMsg = "got an invite but don't know how to handle it"
+        print("WOW Got an invite from \(player.displayName)")
+        errorMsg = errorMsg + "\nGot an invite from \(player.displayName)"
         let matchmakerVC = GKMatchmakerViewController(invite: invite)
         matchmakerVC?.matchmakerDelegate = self
         if let rootVC = renderer?.viewController {
@@ -71,7 +77,7 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
 
     // This method is called when a player receives a match request (such as auto-matching)
     func player(_ player: GKPlayer, didRequestMatchWithRecipients recipientPlayers: [GKPlayer]) {
-        errorMsg = "Match requested with players: \(recipientPlayers)"
+        errorMsg = errorMsg + "\nMatch requested with players: \(recipientPlayers)"
         print(errorMsg)
     }
 
@@ -100,10 +106,10 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
                 self.registerInvitationHandler()
             } else {
                 if let error = error {
-                    self.errorMsg = "Game Center authentication failed: \(error.localizedDescription)"
+                    self.errorMsg = self.errorMsg + "\nGame Center authentication failed: \(error.localizedDescription)"
                     print(self.errorMsg)
                 } else {
-                    self.errorMsg = "Game Center is not available."
+                    self.errorMsg = self.errorMsg + "\nGame Center is not available."
                     print(self.errorMsg)
                 }
             }
@@ -122,14 +128,41 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
 
     // Present the Game Center matchmaking UI
     func presentGameCenterMatchmaking() {
-        errorMsg = "waiting for players to join"
+        errorMsg = errorMsg + "\nwaiting for players to join"
 
         let request = GKMatchRequest()
         request.minPlayers = 2
         request.maxPlayers = 2
 
         // Enable invitations
-        request.inviteMessage = "Join my game!"
+        request.inviteMessage = "Let's play Zap Zap!"
+
+        // Set the recipient response handler
+        request.recipientResponseHandler = { [weak self] player, response in
+            switch response {
+            case .accepted:
+                print("Player \(player.displayName) accepted the invite")
+                self?.errorMsg = "\(player.displayName) has accepted the invite."
+            case .declined:
+                print("Player \(player.displayName) declined the invite")
+                self?.errorMsg = "\(player.displayName) has declined the invite."
+            case .failed:
+                print("Failed to invite player \(player.displayName)")
+                self?.errorMsg = "Failed to invite \(player.displayName)."
+            case .incompatible:
+                print("Player \(player.displayName) is incompatible")
+                self?.errorMsg = "\(player.displayName) is incompatible."
+            case .unableToConnect:
+                print("Player \(player.displayName) is unable to connect")
+                self?.errorMsg = "\(player.displayName) is unable to connect."
+            case .noAnswer:
+                print("Player \(player.displayName) did not respond in time")
+                self?.errorMsg = "\(player.displayName) did not respond in time."
+            @unknown default:
+                print("Unknown response from player \(player.displayName)")
+                self?.errorMsg = "Unknown response from \(player.displayName)."
+            }
+        }
         
         // Create and configure the matchmaking UI
         let matchmakerVC = GKMatchmakerViewController(matchRequest: request)
@@ -158,7 +191,7 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
         self.match = match
         match.delegate = self
 
-        errorMsg = "Match found: \(match)"
+        errorMsg = errorMsg + "\nMatch found: \(match)"
         print(errorMsg)
         if match.expectedPlayerCount == 0 {
             startMatchWithSeed()
@@ -174,7 +207,7 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
         #elseif os(macOS)
         viewController.dismiss(nil)
         #endif
-        self.errorMsg = "Player cancelled matchmaking"
+        self.errorMsg = errorMsg + "\nPlayer cancelled matchmaking"
         print(self.errorMsg)
     }
 
@@ -194,24 +227,32 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
         if let gkError = error as? GKError {
             switch gkError.code {
             case .notAuthenticated:
-                errorMsg = "You are not signed into Game Center."
+                errorMsg = errorMsg + "\nYou are not signed into Game Center."
             case .communicationsFailure:
-                errorMsg = "Network is unavailable. Please check your internet connection."
+                errorMsg = errorMsg + "\nNetwork is unavailable. Please check your internet connection."
             case .connectionTimeout:
-                errorMsg = "Matchmaking timed out."
+                errorMsg = errorMsg + "\nMatchmaking timed out."
             case .cancelled:
-                errorMsg = "Matchmaking was cancelled."
+                errorMsg = errorMsg + "\nMatchmaking was cancelled."
             case .notAuthorized:
-                errorMsg = "You are not authorized to do this."
+                errorMsg = errorMsg + "\nYou are not authorized to do this."
             default:
-                errorMsg = "An unknown error occurred: \(gkError.localizedDescription)"
+                errorMsg = errorMsg + "\nAn unknown error occurred: \(gkError.localizedDescription)"
             }
         } else {
-            errorMsg = "An unknown error occurred: \(error.localizedDescription)"
+            errorMsg = errorMsg + "\nAn unknown error occurred: \(error.localizedDescription)"
         }
     }
     
     // MARK: start game, send, receive data
+
+    func match(_ match: GKMatch, player playerID: GKPlayer, didChange state: GKPlayerConnectionState) {
+        if state == .connected && match.expectedPlayerCount == 0 {
+            startMatchWithSeed()
+        } else if state == .disconnected {
+            errorMsg = errorMsg + "\n\(playerID.displayName) disconnected."
+        }
+    }
 
     func startMatchWithSeed() {
         if isHost() {
@@ -219,11 +260,11 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
             let seed = UInt64.random(in: 0...UInt64.max)
             sendSeed(seed: seed)
             // Initialize game board with seed
-            // TODO actual code
+            // TODO: actual code
         } else {
             print("You are the guest! Waiting for host's seed...")
-            // TODO actual code
-            errorMsg = "Waiting for the other player..."
+            // TODO: actual code
+            errorMsg = errorMsg + "\nWaiting for the other player..."
             // or just wait
         }
     }

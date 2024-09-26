@@ -377,6 +377,7 @@ class Renderer: NSObject, MTKViewDelegate {
         if currentScreen === multiplayerScreen {
             gameMgr.clearElectricArcs()
             // TODO: show the game center stuff
+//            multiMgr.errorMsg = ""
         }
     }
 
@@ -567,7 +568,12 @@ class Renderer: NSObject, MTKViewDelegate {
             if gameMgr.lastInput != nil {
                 if buttonPause!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
                     // temporarily go back to main menu
-                    // TODO go to pause menu screen
+                    // TODO: go to pause menu screen
+                    if gameMgr.leftScore > gameMgr.rightScore {
+                        multiMgr.reportScoreToGameCenter(score: gameMgr.leftScore)
+                    } else {
+                        multiMgr.reportScoreToGameCenter(score: gameMgr.rightScore)
+                    }
                     setCurrentScreen(mainMenuScreen)
                 }
             }
