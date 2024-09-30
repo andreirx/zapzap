@@ -68,6 +68,8 @@
 		18BEF3C52C73AE3200A4D753 /* GameObjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18BEF3C32C73AE3200A4D753 /* GameObjects.swift */; };
 		18D0AF052C9072B800D8B055 /* MultiplayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D0AF042C9072B800D8B055 /* MultiplayerManager.swift */; };
 		18D0AF062C9072B800D8B055 /* MultiplayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D0AF042C9072B800D8B055 /* MultiplayerManager.swift */; };
+		18D0AF092CA71FAB00D8B055 /* nope.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF082CA71FAA00D8B055 /* nope.wav */; };
+		18D0AF0A2CA71FAB00D8B055 /* nope.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF082CA71FAA00D8B055 /* nope.wav */; };
 		18D313132C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 		18D313142C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 /* End PBXBuildFile section */
@@ -111,6 +113,7 @@
 		18BEF3C32C73AE3200A4D753 /* GameObjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameObjects.swift; sourceTree = "<group>"; };
 		18D0AF042C9072B800D8B055 /* MultiplayerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiplayerManager.swift; sourceTree = "<group>"; };
 		18D0AF072C92B65500D8B055 /* ZapZap iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ZapZap iOS.entitlements"; sourceTree = "<group>"; };
+		18D0AF082CA71FAA00D8B055 /* nope.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = nope.wav; sourceTree = "<group>"; };
 		18D313122C8986B700423697 /* UIMeshes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIMeshes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -234,6 +237,7 @@
 				185F389D2C7C582000141850 /* bomb.wav */,
 				18BEF3BA2C63722500A4D753 /* IttyBitty.mp3 */,
 				18BEF3AB2C611D7800A4D753 /* explode.wav */,
+				18D0AF082CA71FAA00D8B055 /* nope.wav */,
 				185F38972C78C28D00141850 /* coindrop.wav */,
 				18BEF3AA2C611D7700A4D753 /* powerup.wav */,
 				18BEF3A92C611D7600A4D753 /* rotate.wav */,
@@ -340,6 +344,7 @@
 				18BEF3AC2C611D7800A4D753 /* bop.wav in Resources */,
 				18BEF3662C4A824B00A4D753 /* Base in Resources */,
 				18BEF3B42C611D7800A4D753 /* explode.wav in Resources */,
+				18D0AF092CA71FAB00D8B055 /* nope.wav in Resources */,
 				185F389E2C7C582100141850 /* bomb.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -348,6 +353,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18D0AF0A2CA71FAB00D8B055 /* nope.wav in Resources */,
 				185F389F2C7C582100141850 /* bomb.wav in Resources */,
 				18BEF3B52C611D7800A4D753 /* explode.wav in Resources */,
 				18BEF3B32C611D7800A4D753 /* powerup.wav in Resources */,
@@ -569,7 +575,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "ZapZap iOS/ZapZap iOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 7S282Q4JN2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -601,7 +607,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "ZapZap iOS/ZapZap iOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 7S282Q4JN2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -635,7 +641,7 @@
 				CODE_SIGN_ENTITLEMENTS = "ZapZap macOS/ZapZap_macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 7S282Q4JN2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -666,7 +672,7 @@
 				CODE_SIGN_ENTITLEMENTS = "ZapZap macOS/ZapZap_macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 7S282Q4JN2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;

@@ -14,15 +14,19 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
     // error messages get written into the multiStatusMesh every time they change
     var errorMsg: String = "" {
         didSet {
-            Renderer.updateText(mesh: &multiStatusMesh, onLayer: renderer!.multiplayerButtonsLayer, withText: errorMsg, fontSize: 24, color: Color.yellow, size: CGSize(width: 512, height: 256))
-            multiStatusMesh?.position = SIMD2<Float>(0.0, -0.5 * tileSize)
+            DispatchQueue.main.async { [self] in
+                Renderer.updateText(mesh: &multiStatusMesh, onLayer: renderer!.multiplayerButtonsLayer, withText: errorMsg, fontSize: 24, color: Color.yellow, size: CGSize(width: 512, height: 256))
+                multiStatusMesh?.position = SIMD2<Float>(0.0, -0.5 * tileSize)
+            }
         }
     }
     // player name gets written into mesh every time it's updated
     var playerName: String = "not authenticated" {
         didSet {
-            Renderer.updateText(mesh: &playerMesh, onLayer: renderer!.multiplayerButtonsLayer, withText: "Hello, \(playerName)", fontSize: 32, color: Color.white, size: CGSize(width: 256, height: 64))
-            playerMesh?.position = SIMD2<Float>(1.0 * tileSize, -boardH / 2.0 + tileSize * 3.25)
+            DispatchQueue.main.async { [self] in
+                Renderer.updateText(mesh: &playerMesh, onLayer: renderer!.multiplayerButtonsLayer, withText: "Hello, \(playerName)", fontSize: 32, color: Color.white, size: CGSize(width: 256, height: 64))
+                playerMesh?.position = SIMD2<Float>(1.0 * tileSize, -boardH / 2.0 + tileSize * 3.25)
+            }
         }
     }
     
@@ -30,6 +34,7 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
     var playerMesh: TextQuadMesh? = nil
 
     var match: GKMatch?
+    var currentMatchmakerViewController: GKMatchmakerViewController? = nil
 
     var gameBoard: GameBoard?
     var renderer: Renderer?
@@ -62,23 +67,32 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
     func player(_ player: GKPlayer, didAccept invite: GKInvite) {
         print("WOW Got an invite from \(player.displayName)")
         errorMsg = errorMsg + "\nGot an invite from \(player.displayName)"
-        let matchmakerVC = GKMatchmakerViewController(invite: invite)
-        matchmakerVC?.matchmakerDelegate = self
-        if let rootVC = renderer?.viewController {
-            #if os(iOS)
-            // iOS: Present the view controller with animation
-            rootVC.present(matchmakerVC!, animated: true, completion: nil)
-            #elseif os(macOS)
-            // macOS: Present the view controller with a custom animator
-            rootVC.present(matchmakerVC!, animator: CustomAnimator())
-            #endif
-        }
+        presentMatchmakerViewController(with: invite)
     }
 
-    // This method is called when a player receives a match request (such as auto-matching)
-    func player(_ player: GKPlayer, didRequestMatchWithRecipients recipientPlayers: [GKPlayer]) {
-        errorMsg = errorMsg + "\nMatch requested with players: \(recipientPlayers)"
-        print(errorMsg)
+    // show the matchmaking view controller with invite
+    func presentMatchmakerViewController(with invite: GKInvite) {
+        DispatchQueue.main.async {
+            if self.currentMatchmakerViewController != nil {
+                self.dismissMatchmakerVC(viewController: self.currentMatchmakerViewController!)
+                self.currentMatchmakerViewController = nil
+            }
+            if let matchmakerVC = GKMatchmakerViewController(invite: invite) {
+                matchmakerVC.matchmakerDelegate = self
+                self.currentMatchmakerViewController = matchmakerVC
+
+                if let rootVC = self.renderer?.viewController {
+                    #if os(iOS)
+                    rootVC.present(matchmakerVC, animated: true, completion: nil)
+                    #elseif os(macOS)
+                    rootVC.present(matchmakerVC, animator: CustomAnimator())
+                    #endif
+                }
+            } else {
+                print("Failed to create matchmaker view controller from invite.")
+                self.errorMsg += "\nFailed to create matchmaker view controller from invite."
+            }
+        }
     }
 
     // MARK: - local player authentication and related stuff
@@ -91,13 +105,15 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
             if let vc = viewController {
                 // Present the Game Center login view controller
                 if let rootVC = self.renderer?.viewController {
-                    #if os(iOS)
-                    // iOS: Present the view controller with animation
-                    rootVC.present(vc, animated: true, completion: nil)
-                    #elseif os(macOS)
-                    // macOS: Present the view controller with a custom animator
-                    rootVC.present(vc, animator: CustomAnimator())
-                    #endif
+                    DispatchQueue.main.async {
+#if os(iOS)
+                        // iOS: Present the view controller with animation
+                        rootVC.present(vc, animated: true, completion: nil)
+#elseif os(macOS)
+                        // macOS: Present the view controller with a custom animator
+                        rootVC.present(vc, animator: CustomAnimator())
+#endif
+                    }
                 }
             } else if localPlayer.isAuthenticated {
                 print("Player authenticated with Game Center. Name: \(localPlayer.displayName)")
@@ -167,31 +183,30 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
         // Create and configure the matchmaking UI
         let matchmakerVC = GKMatchmakerViewController(matchRequest: request)
         matchmakerVC?.matchmakerDelegate = self // Set self as the delegate
+        self.currentMatchmakerViewController = matchmakerVC
 
         // Present the matchmaking UI (handled by Game Center)
         if let rootVC = renderer?.viewController {
-            #if os(iOS)
-            // iOS: Present with animation
-            rootVC.present(matchmakerVC!, animated: true, completion: nil)
-            #elseif os(macOS)
-            // macOS: Present with a custom animator
-            rootVC.present(matchmakerVC!, animator: CustomAnimator())
-            #endif
+            DispatchQueue.main.async {
+#if os(iOS)
+                // iOS: Present with animation
+                rootVC.present(matchmakerVC!, animated: true, completion: nil)
+#elseif os(macOS)
+                // macOS: Present with a custom animator
+                rootVC.present(matchmakerVC!, animator: CustomAnimator())
+#endif
+            }
         }
     }
 
     // Called when a match is found
     func matchmakerViewController(_ viewController: GKMatchmakerViewController, didFind match: GKMatch) {
-        #if os(iOS)
-        viewController.dismiss(animated: true, completion: nil)
-        #elseif os(macOS)
-        viewController.dismiss(nil)
-        #endif
+        dismissMatchmakerVC(viewController: viewController)
         
         self.match = match
         match.delegate = self
 
-        errorMsg = errorMsg + "\nMatch found: \(match)"
+        errorMsg = errorMsg + "\nMatch found!"
         print(errorMsg)
         if match.expectedPlayerCount == 0 {
             startMatchWithSeed()
@@ -199,25 +214,26 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
             print("Waiting for other players to join...")
         }
     }
-
-    // Called when matchmaking is cancelled by the user
-    func matchmakerViewControllerWasCancelled(_ viewController: GKMatchmakerViewController) {
+    
+    func dismissMatchmakerVC(viewController: GKMatchmakerViewController) {
         #if os(iOS)
         viewController.dismiss(animated: true, completion: nil)
         #elseif os(macOS)
         viewController.dismiss(nil)
         #endif
+    }
+
+    // Called when matchmaking is cancelled by the user
+    func matchmakerViewControllerWasCancelled(_ viewController: GKMatchmakerViewController) {
+        dismissMatchmakerVC(viewController: viewController)
         self.errorMsg = errorMsg + "\nPlayer cancelled matchmaking"
         print(self.errorMsg)
     }
 
     // Called when matchmaking fails due to an error
     func matchmakerViewController(_ viewController: GKMatchmakerViewController, didFailWithError error: Error) {
-        #if os(iOS)
-        viewController.dismiss(animated: true, completion: nil)
-        #elseif os(macOS)
-        viewController.dismiss(nil)
-        #endif
+        dismissMatchmakerVC(viewController: viewController)
+
         showError(error: error)
     }
 
@@ -246,15 +262,32 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
     
     // MARK: start game, send, receive data
 
-    func match(_ match: GKMatch, player playerID: GKPlayer, didChange state: GKPlayerConnectionState) {
+    func match(_ match: GKMatch, player: GKPlayer, didChange state: GKPlayerConnectionState) {
         if state == .connected && match.expectedPlayerCount == 0 {
             startMatchWithSeed()
         } else if state == .disconnected {
-            errorMsg = errorMsg + "\n\(playerID.displayName) disconnected."
+            errorMsg = errorMsg + "\n\(player.displayName) disconnected."
+        } else {
+            errorMsg = errorMsg + "\nPlayer \(player.displayName) event"
+        }
+    }
+
+    func match(_ match: GKMatch, didFailWithError error: Error?) {
+        if self.currentMatchmakerViewController != nil {
+            dismissMatchmakerVC(viewController: self.currentMatchmakerViewController!)
+        }
+        if let error = error {
+            errorMsg = errorMsg + "\nmatch failed: \(error.localizedDescription)"
+            print("Match failed with error: \(error.localizedDescription)")
+        } else {
+            print("Match failed with an unknown error.")
         }
     }
 
     func startMatchWithSeed() {
+        if self.currentMatchmakerViewController != nil {
+            dismissMatchmakerVC(viewController: self.currentMatchmakerViewController!)
+        }
         if isHost() {
             print("You are the host! Generating seed...")
             let seed = UInt64.random(in: 0...UInt64.max)
@@ -264,7 +297,7 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
         } else {
             print("You are the guest! Waiting for host's seed...")
             // TODO: actual code
-            errorMsg = errorMsg + "\nWaiting for the other player..."
+            errorMsg = errorMsg + "\nWaiting for the game seed..."
             // or just wait
         }
     }
@@ -296,10 +329,13 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
         let seedBytes = withUnsafeBytes(of: seed) { Data($0) }
         seedData.append(seedBytes)
         
+        errorMsg = errorMsg + "\nSending seed: \(seed)"
+
         do {
             try match.sendData(toAllPlayers: seedData, with: .reliable)
         } catch {
             print("Error sending seed: \(error)")
+            errorMsg = errorMsg + "\nError sending seed"
         }
     }
 
@@ -333,6 +369,7 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
             // TODO actual code
 
             print("Received seed: \(seed)")
+            errorMsg = errorMsg + "\nReceived seed: \(seed)"
         } else if messageType == "TAP@" {
             // Handle receiving a tap
             let tapData = data.dropFirst(4)
