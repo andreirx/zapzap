@@ -15,14 +15,14 @@ import Foundation
 import simd
 
 let boardWidth = 12
-let boardHeight = 12
+let boardHeight = 10
 let defaultMissingLinks = 3
 let tileSize: Float = 50.0
 
 let boardW = Float(boardWidth + 3) * tileSize
 let boardH = Float(boardHeight + 1) * tileSize
 
-let needW = Float(boardWidth + 13) * tileSize
+let needW = Float(boardWidth + 9) * tileSize
 let needH = Float(boardHeight + 1) * tileSize
 
 
@@ -43,6 +43,8 @@ enum ZapGameState: Int {
     case freezeDuringBomb
     case waitingForOrange
     case waitingForIndigo
+    case superheroBeforeDrop
+    case superheroAfterDrop
 }
 
 
@@ -53,6 +55,9 @@ class GameManager {
     var animationManager: AnimationManager?
     var tileQuads: [[QuadMesh?]]
     var lastInput: CGPoint?
+    
+    var superheroLeft: QuadMesh?
+    var superheroRight: QuadMesh?
 
     var leftScore: Int = 0
     var scoreLeftMesh: TextQuadMesh? = nil
@@ -109,12 +114,15 @@ class GameManager {
         let textureX: Float
         let textureY: Float
         if i == 0 {
+            // first row is left pins
             textureX = 12.0 / 16.0
             textureY = 3.0 * textureUnitY
         } else if i == boardWidth + 1 {
+            // last row is right pins
             textureX = 14.0 / 16.0
             textureY = 3.0 * textureUnitY
         } else {
+            // remaining rows in between are the game table connections
             let gridIndex = Int(gameBoard.connections.connections[i - 1][j]!.connections)
             textureX = getTextureX(gridConnections: gridIndex)
             textureY = 1.0 * textureUnitY
@@ -218,6 +226,7 @@ class GameManager {
         animationManager!.removeAllGameplayAnimations()
         // remove all objects
         renderer!.objectsLayer.meshes.removeAll()
+        renderer!.effectsLayer.meshes.removeAll()
         // create new tiles
         gameBoard?.resetTable(percentMissingLinks: defaultMissingLinks)
         // reset the score
@@ -225,6 +234,29 @@ class GameManager {
         rightScore = 0
         // create new meshes corresponding to the underlying tiles
         createTiles()
+        // add the multiplier lights
+        for j in 0..<boardHeight {
+            // left
+            for i in 0..<(gameBoard?.multiplierLeft[j])! {
+                // multiplier should be 1, but let's go with this
+                let dx = tileSize / 10.0 + Float(i / 4) * tileSize / 5.0
+                let dy = 2.0 * tileSize / 10.0 + Float(i % 4) * tileSize / 5.0
+                let newLight = QuadMesh(size: tileSize / 4.0, topLeftUV: SIMD2(x: 1.0/32.0, y: 30.0/32.0), bottomRightUV: SIMD2(x: 2.0/32.0, y: 31.0/32.0))
+                newLight.position.x = getIdealTilePositionX(i: 0) - tileSize / 2.0 - dx
+                newLight.position.y = getIdealTilePositionY(j: j) - tileSize / 2.0 + dy
+                renderer!.effectsLayer.meshes.append(newLight)
+            }
+            // right
+            for i in 0..<(gameBoard?.multiplierRight[j])! {
+                // multiplier should be 1, but let's go with this
+                let dx = tileSize / 10.0 + Float(i / 4) * tileSize / 5.0
+                let dy = 2.0 * tileSize / 10.0 + Float(i % 4) * tileSize / 5.0
+                let newLight = QuadMesh(size: tileSize / 4.0, topLeftUV: SIMD2(x: 1.0/32.0, y: 28.0/32.0), bottomRightUV: SIMD2(x: 2.0/32.0, y: 29.0/32.0))
+                newLight.position.x = getIdealTilePositionX(i: boardWidth + 1) + tileSize / 2.0 + dx
+                newLight.position.y = getIdealTilePositionY(j: j) - tileSize / 2.0 + dy
+                renderer!.effectsLayer.meshes.append(newLight)
+            }
+        }
         // wait for user input
         zapGameState = .waitingForInput
     }
@@ -527,18 +559,13 @@ class GameManager {
             // remove existing bonuses
             renderer.objectsLayer.meshes.removeAll()
 
-            // increment scores
-            leftScore += gameBoard.leftPinsConnect
-            rightScore += gameBoard.rightPinsConnect
             // set up attractor down below for particles
             Particle.attractor = SIMD2<Float> (0.0, 2.0 * tileSize * Float(boardHeight))
             // stop everything mid air for the player to see the bolt
             zapGameState = .freezeDuringZap
             animationManager?.addFreezeFrameAnimation(duration: 2.0, drop1s: many1s, drop2s: many2s, drop5s: many5s)
             // write ZAP ZAP but outside the board
-            renderer.makeMenuArcs(shiftx1: -boardW / 2.0 + tileSize / 2.0, shifty1: tileSize * 2.0 - 25.0, shiftx2: boardW / 2.0 - tileSize / 2.0, shifty2: tileSize * 2.0 - 50.0)
-            // remake the meshes
-            updateScoreMeshes()
+//            renderer.makeMenuArcs(shiftx1: -boardW / 2.0 + tileSize / 2.0, shifty1: tileSize * 2.0 - 25.0, shiftx2: boardW / 2.0 - tileSize / 2.0, shifty2: tileSize * 2.0 - 50.0)
             
             // add score animations for each pin on the left
             // and on the right
@@ -546,18 +573,54 @@ class GameManager {
                 if .ok == gameBoard.connectMarkings[0][y] {
                     if let tile = gameBoard.connections.connections[0][y] {
                         if tile.hasConnection(direction: .left) {
-                            animationManager?.createTextAnimation(text: "+1", font: Font.systemFont(ofSize: 24), color: .purple, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: -1), getIdealTilePositionY(j: y)), textLayer: renderer.textLayer)
+                            let plusScore = gameBoard.multiplierLeft[y]
+                            leftScore += plusScore
+                            // add another charge
+                            gameBoard.multiplierLeft[y] += 1
+                            // left
+                            let j = y
+                            let i = gameBoard.multiplierLeft[y] - 1
+                            // multiplier should be 1, but let's go with this
+                            let dx = tileSize / 10.0 + Float(i / 4) * tileSize / 5.0
+                            let dy = 2.0 * tileSize / 10.0 + Float(i % 4) * tileSize / 5.0
+                            let newLight = QuadMesh(size: tileSize / 4.0, topLeftUV: SIMD2(x: 1.0/32.0, y: 30.0/32.0), bottomRightUV: SIMD2(x: 2.0/32.0, y: 31.0/32.0))
+                            newLight.position.x = getIdealTilePositionX(i: 0) - tileSize / 2.0 - dx
+                            newLight.position.y = getIdealTilePositionY(j: j) - tileSize / 2.0 + dy
+                            renderer.effectsLayer.meshes.append(newLight)
+                            // add animation
+                            animationManager?.createTextAnimation(text: "+\(plusScore)", font: Font.systemFont(ofSize: 24), color: .purple, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: -1), getIdealTilePositionY(j: y)), textLayer: renderer.textLayer)
                         }
                     }
                 }
                 if .ok == gameBoard.connectMarkings[gameBoard.width - 1][y] {
                     if let tile = gameBoard.connections.connections[gameBoard.width - 1][y] {
                         if tile.hasConnection(direction: .right) {
-                            animationManager?.createTextAnimation(text: "+1", font: Font.systemFont(ofSize: 24), color: .orange, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: gameBoard.width + 2), getIdealTilePositionY(j: y)), textLayer: renderer.textLayer)
+                            let plusScore = gameBoard.multiplierRight[y]
+                            rightScore += plusScore
+                            // add another charge
+                            gameBoard.multiplierRight[y] += 1
+                            // right
+                            let j = y
+                            let i = gameBoard.multiplierRight[y] - 1
+                            // multiplier should be 1, but let's go with this
+                            let dx = tileSize / 10.0 + Float(i / 4) * tileSize / 5.0
+                            let dy = 2.0 * tileSize / 10.0 + Float(i % 4) * tileSize / 5.0
+                            let newLight = QuadMesh(size: tileSize / 4.0, topLeftUV: SIMD2(x: 1.0/32.0, y: 28.0/32.0), bottomRightUV: SIMD2(x: 2.0/32.0, y: 29.0/32.0))
+                            newLight.position.x = getIdealTilePositionX(i: boardWidth + 1) + tileSize / 2.0 + dx
+                            newLight.position.y = getIdealTilePositionY(j: j) - tileSize / 2.0 + dy
+                            renderer.effectsLayer.meshes.append(newLight)
+                            // add animation
+                            animationManager?.createTextAnimation(text: "+\(plusScore)", font: Font.systemFont(ofSize: 24), color: .orange, size: CGSize(width: 64, height: 32), startPosition: SIMD2<Float>(getIdealTilePositionX(i: gameBoard.width + 2), getIdealTilePositionY(j: y)), textLayer: renderer.textLayer)
                         }
                     }
                 }
             }
+
+            // increment scores
+//            leftScore += gameBoard.leftPinsConnect
+//            rightScore += gameBoard.rightPinsConnect
+            // remake the meshes
+            updateScoreMeshes()
 
             // remove the connecting tiles, make new ones, and make them fall from above
             zapRemoveConnectionsCreateNewAndMakeThemFall()

@@ -104,6 +104,8 @@ class Renderer: NSObject, MTKViewDelegate {
     var objectsLayer: GraphicsLayer!
     var textLayer: GraphicsLayer!
     var effectsLayer: EffectsLayer!
+    var superheroLayer: GraphicsLayer!
+    
     
     // internal renderer stuff
     private var constantBuffer: MTLBuffer!
@@ -237,7 +239,7 @@ class Renderer: NSObject, MTKViewDelegate {
     // function does what it says - sets up game screens, with their layers and contents
     func initializeGameScreens() {
         guard let animationManager = gameMgr.animationManager else { return }
-        let textureNames = ["arrows", "base_tiles", "stars"]
+        let textureNames = ["arrows", "base_tiles", "stars", "superhero"]
         Renderer.textures = ResourceTextures(device: Renderer.device, textureNames: textureNames)
         
         // Set up layers and initialize game screen
@@ -249,6 +251,7 @@ class Renderer: NSObject, MTKViewDelegate {
         mainButtonsLayer = GraphicsLayer()
         multiplayerButtonsLayer = GraphicsLayer()
         fingerLayer = GraphicsLayer()
+        superheroLayer = GraphicsLayer()
 
         gameMgr.createTiles()
 //        createBaseLayer(fromGameManager: gameMgr)
@@ -262,6 +265,7 @@ class Renderer: NSObject, MTKViewDelegate {
         mainButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
         multiplayerButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
         fingerLayer.texture = Renderer.textures.getTexture(named: "arrows")
+        superheroLayer.texture = Renderer.textures.getTexture(named: "superhero")
 
         // have the finger on the finger layer
         // remember we created it invisible
@@ -276,6 +280,7 @@ class Renderer: NSObject, MTKViewDelegate {
         gameScreen.addLayer(effectsLayer)
         gameScreen.addLayer(textLayer)
         gameScreen.addLayer(objectsLayer)
+        gameScreen.addLayer(superheroLayer)
         
         // add layers to menu screen
         mainMenuScreen.addLayer(menuLayer)
@@ -308,11 +313,11 @@ class Renderer: NSObject, MTKViewDelegate {
         buttonLocal!.alpha = 1.0
         button1v1 = ButtonMesh.createUnlitButton(innerWidth: 10.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
         button1v1!.alpha = 1.0
-        buttonBuyCoffee = ButtonMesh.createLitButton(innerWidth: 11.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        buttonBuyCoffee = ButtonMesh.createLitButton(innerWidth: 7.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
         buttonBuyCoffee!.alpha = 1.0
         // also create pause button
         buttonPause = ButtonMesh.createPauseButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
-        buttonPause!.position.x = boardW / 2.0 + tileSize * 4.0
+        buttonPause!.position.x = boardW / 2.0 + tileSize * 2.0
         buttonPause!.position.y = -boardH / 2.0 + tileSize
         // pause button goes on a game screen layer
         baseLayer!.meshes.append(buttonPause!)
@@ -333,9 +338,9 @@ class Renderer: NSObject, MTKViewDelegate {
         // make texts for the buttons
         let textSize = CGSize(width: 512, height: 64)
         var font = Font.systemFont(ofSize: 40)
-        var textLocal = TextQuadMesh(text: "Practice Zapping", font: font, color: Color.white, size: textSize)
+        var textLocal = TextQuadMesh(text: "Solo Zapping", font: font, color: Color.white, size: textSize)
         var text1v1 = TextQuadMesh(text: "1v1 Make Most Points", font: font, color: Color.white, size: textSize)
-        var textBuyCoffee = TextQuadMesh(text: "Let's Have (Digital) Coffee", font: font, color: Color.white, size: textSize)
+        var textBuyCoffee = TextQuadMesh(text: "Tutorial", font: font, color: Color.white, size: textSize)
         // put them in their correct positions
         textLocal.position.y = -1.5 * tileSize + 6
         textBuyCoffee.position.y = 1.0 * tileSize + 6
@@ -362,6 +367,7 @@ class Renderer: NSObject, MTKViewDelegate {
         currentScreen = screen
         if currentScreen === mainMenuScreen {
             gameMgr.clearElectricArcs()
+            effectsLayer.meshes.removeAll()
             maxArcDisplacement = 0.1
             makeMenuArcs()
             multiMgr.authenticatePlayer()

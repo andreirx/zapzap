@@ -59,7 +59,7 @@ class BoardConnections: Codable {
     init(width: Int, height: Int) {
         self.width = width
         self.height = height
-        self.connections = Array(repeating: Array(repeating: nil, count: width), count: height)
+        self.connections = Array(repeating: Array(repeating: nil, count: height), count: width)
     }
 }
 
@@ -78,9 +78,11 @@ class GameBoard {
     var connections: BoardConnections
     var connectMarkings: [[Connection]]
     var animationMarkings: [[AnimationMarking]]
+    var multiplierLeft: [Int]
+    var multiplierRight: [Int]
     
     var rngSeed: UInt64 = UInt64.random(in: 0...UInt64.max)
-    private var rng: GKMersenneTwisterRandomSource // Seedable RNG
+    var rng: GKMersenneTwisterRandomSource // Seedable RNG
 
     var leftPinsConnect: Int = 0
     var leftConquered: Int = 0
@@ -100,8 +102,11 @@ class GameBoard {
         self.height = height
         self.missingLinks = missingLinks
         self.connections = BoardConnections(width: width, height: height)
-        self.connectMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
-        self.animationMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
+        self.connectMarkings = Array(repeating: Array(repeating: .none, count: height), count: width)
+        self.animationMarkings = Array(repeating: Array(repeating: .none, count: height), count: width)
+        self.multiplierLeft = Array(repeating: 1, count: height)
+        self.multiplierRight = Array(repeating: 1, count: height)
+        //
         self.resetTable(percentMissingLinks: missingLinks)
     }
     
@@ -117,6 +122,9 @@ class GameBoard {
         self.connections = BoardConnections(width: width, height: height)
         self.connectMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
         self.animationMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
+        self.multiplierLeft = Array(repeating: 1, count: height)
+        self.multiplierRight = Array(repeating: 1, count: height)
+        //
         self.resetTable(percentMissingLinks: missingLinks)
     }
     
@@ -231,15 +239,16 @@ class GameBoard {
         return rVal
     }
     
+    // THE most important function - which generates random connections
     func getNewElement() -> UInt8 {
-        var k = UInt8((Int.random(in: 1...15)))
+        var k = UInt8(rng.nextInt(upperBound: 15) + 1)
         newElements += 1
         
         if (100 * missingLinkElements / newElements) > missingLinks {
             // if there are too many "missing links"
             // make sure the next onw is NOT one
             while k == 1 || k == 2 || k == 4 || k == 8 {
-                k = UInt8((Int.random(in: 1...15)))
+                k = UInt8(rng.nextInt(upperBound: 15) + 1)
             }
         }
         
@@ -339,12 +348,15 @@ class GameBoard {
         newElements = 0
         missingLinkElements = 0
         
-        for i in 0..<width {
-            for j in 0..<height {
+        for j in 0..<height {
+            for i in 0..<width {
                 let newConnection = getNewElement()
                 connections.connections[i][j] = Tile(connections: newConnection)
                 connectMarkings[i][j] = .none
             }
+            // also put the multipliers back to 1
+            multiplierLeft[j] = 1
+            multiplierRight[j] = 1
         }
     }
 }
