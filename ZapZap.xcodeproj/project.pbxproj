@@ -70,6 +70,8 @@
 		18D0AF062C9072B800D8B055 /* MultiplayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D0AF042C9072B800D8B055 /* MultiplayerManager.swift */; };
 		18D0AF092CA71FAB00D8B055 /* nope.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF082CA71FAA00D8B055 /* nope.wav */; };
 		18D0AF0A2CA71FAB00D8B055 /* nope.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF082CA71FAA00D8B055 /* nope.wav */; };
+		18D0AF0C2CAAD1CD00D8B055 /* superhero.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF0B2CAAD1CC00D8B055 /* superhero.wav */; };
+		18D0AF0D2CAAD1CD00D8B055 /* superhero.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF0B2CAAD1CC00D8B055 /* superhero.wav */; };
 		18D313132C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 		18D313142C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 /* End PBXBuildFile section */
@@ -114,6 +116,7 @@
 		18D0AF042C9072B800D8B055 /* MultiplayerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiplayerManager.swift; sourceTree = "<group>"; };
 		18D0AF072C92B65500D8B055 /* ZapZap iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ZapZap iOS.entitlements"; sourceTree = "<group>"; };
 		18D0AF082CA71FAA00D8B055 /* nope.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = nope.wav; sourceTree = "<group>"; };
+		18D0AF0B2CAAD1CC00D8B055 /* superhero.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = superhero.wav; sourceTree = "<group>"; };
 		18D313122C8986B700423697 /* UIMeshes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIMeshes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -235,6 +238,7 @@
 				18BEF3BD2C63F1AE00A4D753 /* DungeonLevel.mp3 */,
 				18BEF3A82C611D7500A4D753 /* buzz.wav */,
 				185F389D2C7C582000141850 /* bomb.wav */,
+				18D0AF0B2CAAD1CC00D8B055 /* superhero.wav */,
 				18BEF3BA2C63722500A4D753 /* IttyBitty.mp3 */,
 				18BEF3AB2C611D7800A4D753 /* explode.wav */,
 				18D0AF082CA71FAA00D8B055 /* nope.wav */,
@@ -339,6 +343,7 @@
 				18BEF3B22C611D7800A4D753 /* powerup.wav in Resources */,
 				18BEF3632C4A824B00A4D753 /* Base in Resources */,
 				18BEF37B2C4A824B00A4D753 /* Assets.xcassets in Resources */,
+				18D0AF0C2CAAD1CD00D8B055 /* superhero.wav in Resources */,
 				18BEF3AE2C611D7800A4D753 /* buzz.wav in Resources */,
 				18BEF3B02C611D7800A4D753 /* rotate.wav in Resources */,
 				18BEF3AC2C611D7800A4D753 /* bop.wav in Resources */,
@@ -361,6 +366,7 @@
 				18BEF3BF2C63F1AF00A4D753 /* DungeonLevel.mp3 in Resources */,
 				18BEF3AF2C611D7800A4D753 /* buzz.wav in Resources */,
 				18BEF3AD2C611D7800A4D753 /* bop.wav in Resources */,
+				18D0AF0D2CAAD1CD00D8B055 /* superhero.wav in Resources */,
 				18BEF3732C4A824B00A4D753 /* Base in Resources */,
 				18BEF3B12C611D7800A4D753 /* rotate.wav in Resources */,
 				18BEF37C2C4A824B00A4D753 /* Assets.xcassets in Resources */,

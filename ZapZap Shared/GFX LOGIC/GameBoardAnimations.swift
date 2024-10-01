@@ -21,6 +21,7 @@ class AnimationManager {
     var freezeFrameAnimations: [FreezeFrameAnimation] = []
     var objectFallAnimations: [ObjectFallAnimation] = []
     var textAnimations: [TextAnimation] = []
+    var superAnimations: SuperheroAnimation?
     
     var fingerQuad: QuadMesh!
 
@@ -71,6 +72,12 @@ class AnimationManager {
         gameManager.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
 
         freezeFrameAnimations.append(animation)
+    }
+
+    // this will animate the superheroes
+    func addSuperheroAnimation() {
+        SoundManager.shared.playSoundEffect(filename: "superhero")
+        superAnimations = SuperheroAnimation(sLeft: (gameManager?.superheroLeft)!, sRight: (gameManager?.superheroRight)!)
     }
 
     // this will remove all gameplay animations - in a graceful way
@@ -230,11 +237,17 @@ class AnimationManager {
         
         // finger update
 //        fingerQuad.alpha = 0.5 + 0.5 * sin(Float(gameManager!.renderer!.frameIndex) / 60.0)
+
+        // superheroes fly even during freeze frames
+        if superAnimations != nil {
+            superAnimations?.update()
+        }
         
         // do the freeze frame animations first
         if let freezeFrame = freezeFrameAnimations.first {
             freezeFrame.update()
             if freezeFrame.isFinished {
+                addSuperheroAnimation()
                 gameManager?.dropCoins(many1: freezeFrame.drop1, many2: freezeFrame.drop2, many5: freezeFrame.drop5)
                 freezeFrame.cleanup()
                 freezeFrameAnimations.removeFirst()
@@ -295,7 +308,9 @@ class AnimationManager {
                                 
                                 if let marking = gameManager.gameBoard?.connectMarkings[tileX][tileY] {
                                     if marking == .left {
-                                        gameManager.updateScoreLeft(byPoints: bonus.bonusPoints, atTile: (tileX + 1, tileY))
+                                        if bonus.bonusPoints != 0 {
+                                            gameManager.updateScoreLeft(byPoints: bonus.bonusPoints, atTile: (tileX + 1, tileY))
+                                        }
                                         bonusesToRemove.append(bonus)
                                         // play that sound
                                         SoundManager.shared.playSoundEffect(filename: bonus.sound)
@@ -305,7 +320,9 @@ class AnimationManager {
                                             didBomb = true
                                         }
                                     } else if marking == .right {
-                                        gameManager.updateScoreRight(byPoints: bonus.bonusPoints, atTile: (tileX + 1, tileY))
+                                        if bonus.bonusPoints != 0 {
+                                            gameManager.updateScoreRight(byPoints: bonus.bonusPoints, atTile: (tileX + 1, tileY))
+                                        }
                                         bonusesToRemove.append(bonus)
                                         // play that sound
                                         SoundManager.shared.playSoundEffect(filename: bonus.sound)
@@ -803,6 +820,49 @@ class FreezeFrameAnimation: Animation, Poolable {
     func cleanup() {
         // Cleanup logic if necessary
     }
+}
+
+class SuperheroAnimation: Animation {
+    private weak var superLeft: QuadMesh?
+    private weak var superRight: QuadMesh?
+    private let startAlpha: Float = 1.0
+    private let alphaDecreaseRate: Float = 0.01 // Controls how quickly alpha decreases
+
+    var isFinished: Bool {
+        return superLeft!.alpha <= 0.0
+    }
+
+    var tilePosition: (x: Int, y: Int) = (0, 0)
+    
+    init(sLeft: QuadMesh, sRight: QuadMesh) {
+        self.superLeft = sLeft
+        self.superRight = sRight
+        self.superLeft?.alpha = startAlpha
+        self.superLeft?.position.y = 0.0
+        self.superLeft?.scale = 1.5
+        self.superRight?.alpha = startAlpha
+        self.superRight?.position.y = 0.0
+        self.superRight?.scale = 1.5
+    }
+
+    func update() {
+        guard !isFinished else { cleanup();return }
+        guard superLeft != nil else { return }
+        guard superRight != nil else { return }
+
+        // Decrease alpha gradually
+        superLeft!.alpha -= alphaDecreaseRate
+        superRight!.alpha -= alphaDecreaseRate
+        superLeft!.position.y -= 2.0
+        superRight!.position.y -= 2.0
+    }
+    
+    func cleanup() {
+        // cleanup logic if necessary
+        superLeft?.alpha = 0.0
+        superRight?.alpha = 0.0
+    }
+    
 }
 
 // // // // // // // // // // // // // // // // // // // // //
