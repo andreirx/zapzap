@@ -100,3 +100,37 @@ class Bomb: GameObject {
         // Define the bomb explosion logic here
     }
 }
+
+// Cross object
+class Cross: GameObject {
+    init() {
+        let size = tileSize * 0.8
+        let topLeftUV = SIMD2<Float>(6.0 / 8.0, 0.0 / 8.0)
+        let bottomRightUV = SIMD2<Float>(7.0 / 8.0, 1.0 / 8.0)
+        super.init(size: size, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV, rotationSpeed: 0.0, pulseFreq: 0.03)
+        self.alpha = 3.0
+        self.bonusPoints = 0
+        self.sound = "powerup"
+    }
+    
+    func explode() {
+        // Define the bomb explosion logic here
+    }
+}
+
+// Arrow object
+class Arrow: GameObject {
+    init() {
+        let size = tileSize * 0.8
+        let topLeftUV = SIMD2<Float>(7.0 / 8.0, 0.0 / 8.0)
+        let bottomRightUV = SIMD2<Float>(8.0 / 8.0, 1.0 / 8.0)
+        super.init(size: size, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV, rotationSpeed: 0.0, pulseFreq: 0.03)
+        self.alpha = 3.0
+        self.bonusPoints = 0
+        self.sound = "powerup"
+    }
+    
+    func explode() {
+        // Define the bomb explosion logic here
+    }
+}

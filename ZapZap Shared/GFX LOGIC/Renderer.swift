@@ -105,7 +105,8 @@ class Renderer: NSObject, MTKViewDelegate {
     var textLayer: GraphicsLayer!
     var effectsLayer: EffectsLayer!
     var superheroLayer: GraphicsLayer!
-    
+    var superheroExtraLayer: EffectsLayer!
+
     
     // internal renderer stuff
     private var constantBuffer: MTLBuffer!
@@ -252,6 +253,7 @@ class Renderer: NSObject, MTKViewDelegate {
         multiplayerButtonsLayer = GraphicsLayer()
         fingerLayer = GraphicsLayer()
         superheroLayer = GraphicsLayer()
+        superheroExtraLayer = EffectsLayer()
 
         gameMgr.createTiles()
 //        createBaseLayer(fromGameManager: gameMgr)
@@ -266,6 +268,7 @@ class Renderer: NSObject, MTKViewDelegate {
         multiplayerButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
         fingerLayer.texture = Renderer.textures.getTexture(named: "arrows")
         superheroLayer.texture = Renderer.textures.getTexture(named: "superhero")
+        superheroExtraLayer.texture = Renderer.textures.getTexture(named: "superhero")
 
         // have the finger on the finger layer
         // remember we created it invisible
@@ -281,7 +284,8 @@ class Renderer: NSObject, MTKViewDelegate {
         gameScreen.addLayer(textLayer)
         gameScreen.addLayer(objectsLayer)
         gameScreen.addLayer(superheroLayer)
-        
+        gameScreen.addLayer(superheroExtraLayer)
+
         // add layers to menu screen
         mainMenuScreen.addLayer(menuLayer)
         mainMenuScreen.addLayer(mainButtonsLayer)

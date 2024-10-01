@@ -181,10 +181,10 @@ class GameManager {
 
         let textSize = CGSize(width: 256, height: 128)
         scoreLeftMesh = TextQuadMesh(text: text, font: font, color: Color.magenta, size: textSize)
-        scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 + tileSize * 2.5, 0.0)
+        scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 + tileSize * 1.5, 0.0)
         text = "ORANGE\n\(rightScore)\npoints"
         scoreRightMesh = TextQuadMesh(text: text, font: font, color: Color.orange, size: textSize)
-        scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 - tileSize * 2.5, 0.0)
+        scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 - tileSize * 1.5, 0.0)
         
         if (renderer != nil) {
             if renderer!.textLayer != nil {
@@ -257,6 +257,18 @@ class GameManager {
                 renderer!.effectsLayer.meshes.append(newLight)
             }
         }
+        // superheroes
+        superheroLeft = QuadMesh(size: boardW / 2.0, topLeftUV: SIMD2(x: 0.0, y: 0.0), bottomRightUV: SIMD2(x: 1.0, y: 1.0/4.0))
+        superheroLeft?.position.x = -boardW / 4.0
+        superheroLeft?.alpha = 0.0
+        renderer?.superheroLayer.meshes.append(superheroLeft!)
+        renderer?.superheroExtraLayer.meshes.append(superheroLeft!)
+        //
+        superheroRight = QuadMesh(size: boardW / 2.0, topLeftUV: SIMD2(x: 0.0, y: 1.0/4.0), bottomRightUV: SIMD2(x: 1.0, y: 2.0/4.0))
+        superheroRight?.position.x = boardW / 4.0
+        superheroRight?.alpha = 0.0
+        renderer?.superheroLayer.meshes.append(superheroRight!)
+        renderer?.superheroExtraLayer.meshes.append(superheroRight!)
         // wait for user input
         zapGameState = .waitingForInput
     }
@@ -476,6 +488,7 @@ class GameManager {
             }
         }
         // randomly add a bomb
+        // DEPENDING ON THE HERO
         if 0 == Int.random(in: 0..<5) {
             animationManager?.createFallingObject(objectType: Bomb.self)
         }

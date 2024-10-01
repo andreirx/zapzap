@@ -44,8 +44,9 @@ fragment float4 sprite_fragment_main(ColorInOut in [[stage_in]],
 }
 
 fragment float4 additive_fragment_main(ColorInOut in [[stage_in]],
-                                       texture2d<float> colorTexture [[texture(0)]]) {
+                                       texture2d<float> colorTexture [[texture(0)]],
+                                       constant UniformModel &uniformModel [[buffer(3)]]) {
     constexpr sampler textureSampler (mag_filter::linear, min_filter::linear);
     float4 color = colorTexture.sample(textureSampler, in.texCoord);
-    return color * 6.4; // increase brightness for additive blending
+    return color * 6.4 * uniformModel.alphaUniform; // increase brightness for additive blending
 }
