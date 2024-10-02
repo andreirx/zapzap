@@ -138,6 +138,11 @@ class ButtonMesh: Mesh {
         return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 2.0/8.0, v1: 0.0/4.0, u2: 3.0/8.0, v2: 1.0/4.0)
     }
 
+    // function to create a new "front" button with texcoords 3/8, 2/8, 0/4, 1/4
+    static func createFrontButton(innerWidth: Float, innerHeight: Float, borderWidth: Float) -> ButtonMesh {
+        return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 3.0/8.0, v1: 0.0/4.0, u2: 2.0/8.0, v2: 1.0/4.0)
+    }
+
     // function to create a new "switch" button with texcoords 3/8, 4/8, 0/4, 1/4
     static func createSwitchButton(innerWidth: Float, innerHeight: Float, borderWidth: Float) -> ButtonMesh {
         return ButtonMesh(innerWidth: innerWidth, innerHeight: innerHeight, borderWidth: borderWidth, u1: 3.0/8.0, v1: 0.0/4.0, u2: 4.0/8.0, v2: 1.0/4.0)

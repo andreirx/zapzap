@@ -1,0 +1,12 @@
+{
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "levels" : [
+    {
+      "filename" : "tutorials-3x2.jpg",
+      "mipmap-level" : "base"
+    }
+  ]
+}

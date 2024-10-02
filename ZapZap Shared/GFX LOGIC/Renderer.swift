@@ -16,6 +16,7 @@ let alignedUniformsSize = (MemoryLayout<matrix_float4x4>.size + 0xFF) & -0x100
 
 let maxBuffersInFlight = 3
 let MaxOutstandingFrameCount = 3
+let tutorialImages = 6
 
 
 // // // // // // // // // // // // // // // // // // // // //
@@ -83,6 +84,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var mainMenuScreen: Screen!
     var multiplayerScreen: Screen!
     var gameScreen: Screen!
+    var tutorialScreen: Screen!
     var pauseScreen: Screen!
     
     var currentScreen: Screen?
@@ -90,10 +92,25 @@ class Renderer: NSObject, MTKViewDelegate {
     // buttons
     var buttonLocal: ButtonMesh?
     var button1v1: ButtonMesh?
-    var buttonBuyCoffee: ButtonMesh?
+    var buttonTutorial: ButtonMesh?
     var buttonPause: ButtonMesh?
     var buttonBack: ButtonMesh?
     
+    var buttonPrev: ButtonMesh?
+    var buttonNext: ButtonMesh?
+    var buttonClose: ButtonMesh?
+    
+    var buttonLBomb: ButtonMesh?
+    var buttonLCross: ButtonMesh?
+    var buttonLArrow: ButtonMesh?
+    var buttonRBomb: ButtonMesh?
+    var buttonRCross: ButtonMesh?
+    var buttonRArrow: ButtonMesh?
+    
+    // tutorial image meshes - 6 of them
+    var tutMesh: [QuadMesh?] = Array(repeating: nil, count: tutorialImages)
+    var tutIndex: Int = 0
+
     // layers
     var backgroundLayer: GraphicsLayer!
     var menuLayer: GraphicsLayer!
@@ -106,6 +123,8 @@ class Renderer: NSObject, MTKViewDelegate {
     var effectsLayer: EffectsLayer!
     var superheroLayer: GraphicsLayer!
     var superheroExtraLayer: EffectsLayer!
+    var tutorialLayer: GraphicsLayer!
+    var tutButtonsLayer: GraphicsLayer!
 
     
     // internal renderer stuff
@@ -146,10 +165,7 @@ class Renderer: NSObject, MTKViewDelegate {
         
         let logoTexture = ["companylogo"]
         let tempTexture = ResourceTextures(device: Renderer.device, textureNames: logoTexture)
-/*
-        let textureNames = ["arrows", "base_tiles", "stars"]
-        Renderer.textures = ResourceTextures(device: Renderer.device, textureNames: textureNames)
-*/
+
         self.currentConstantBufferOffset = 0
         self.frameIndex = 0
         let constantBufferSize = Renderer.constantsStride * maxBuffersInFlight
@@ -169,6 +185,7 @@ class Renderer: NSObject, MTKViewDelegate {
         multiplayerScreen = Screen()
         gameScreen = Screen()
         pauseScreen = Screen()
+        tutorialScreen = Screen()
 
         // Setup logo screen
         setupLogoScreen()
@@ -240,7 +257,7 @@ class Renderer: NSObject, MTKViewDelegate {
     // function does what it says - sets up game screens, with their layers and contents
     func initializeGameScreens() {
         guard let animationManager = gameMgr.animationManager else { return }
-        let textureNames = ["arrows", "base_tiles", "stars", "superhero"]
+        let textureNames = ["arrows", "base_tiles", "stars", "superhero", "tutorials"]
         Renderer.textures = ResourceTextures(device: Renderer.device, textureNames: textureNames)
         
         // Set up layers and initialize game screen
@@ -254,11 +271,10 @@ class Renderer: NSObject, MTKViewDelegate {
         fingerLayer = GraphicsLayer()
         superheroLayer = GraphicsLayer()
         superheroExtraLayer = EffectsLayer()
+        tutorialLayer = GraphicsLayer()
+        tutButtonsLayer = GraphicsLayer()
 
         gameMgr.createTiles()
-//        createBaseLayer(fromGameManager: gameMgr)
-
-//        createBackgroundLayer()
         
         backgroundLayer.texture = Renderer.textures.getTexture(named: "stars")
         objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
@@ -269,6 +285,15 @@ class Renderer: NSObject, MTKViewDelegate {
         fingerLayer.texture = Renderer.textures.getTexture(named: "arrows")
         superheroLayer.texture = Renderer.textures.getTexture(named: "superhero")
         superheroExtraLayer.texture = Renderer.textures.getTexture(named: "superhero")
+        tutorialLayer.texture = Renderer.textures.getTexture(named: "tutorials")
+        tutButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
+        
+        for i in 0..<tutorialImages {
+            tutMesh[i] = QuadMesh(size: boardH - tileSize,
+              topLeftUV: SIMD2(x: Float(i % 3) / 3.0, y: Float(i / 3) / 2.0),
+              bottomRightUV: SIMD2(x: (0.995 + Float(i % 3)) / 3.0, y: (0.995 + Float(i / 3)) / 2.0))
+            tutMesh[i]?.alpha = 1.0
+        }
 
         // have the finger on the finger layer
         // remember we created it invisible
@@ -293,6 +318,13 @@ class Renderer: NSObject, MTKViewDelegate {
         mainMenuScreen.addLayer(effectsLayer)
 //        gameScreen.addLayer(textLayer)
         
+        // add layers to tutorial screen
+        tutorialScreen.addLayer(menuLayer)
+        tutorialScreen.addLayer(tutorialLayer)
+        tutorialScreen.addLayer(tutButtonsLayer)
+        tutorialScreen.addLayer(fingerLayer)
+        tutorialScreen.addLayer(effectsLayer)
+
         // add layers to multiplayer screen
         multiplayerScreen.addLayer(menuLayer)
         multiplayerScreen.addLayer(multiplayerButtonsLayer)
@@ -312,13 +344,6 @@ class Renderer: NSObject, MTKViewDelegate {
             }
         }
         
-        // add buttons to menuLayer
-        buttonLocal = ButtonMesh.createUnlitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
-        buttonLocal!.alpha = 1.0
-        button1v1 = ButtonMesh.createUnlitButton(innerWidth: 10.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
-        button1v1!.alpha = 1.0
-        buttonBuyCoffee = ButtonMesh.createLitButton(innerWidth: 7.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
-        buttonBuyCoffee!.alpha = 1.0
         // also create pause button
         buttonPause = ButtonMesh.createPauseButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
         buttonPause!.position.x = boardW / 2.0 + tileSize * 2.0
@@ -331,13 +356,38 @@ class Renderer: NSObject, MTKViewDelegate {
         buttonBack!.position.y = -boardH / 2.0 + tileSize * 3.0
         // back button goes to a multiplayer screen lauyer
         multiplayerButtonsLayer.meshes.append(buttonBack!)
+        
+        // create tutorial screen buttons
+        buttonPrev = ButtonMesh.createBackButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
+        buttonPrev!.position.x = -boardH / 2.0
+        buttonPrev!.position.y = boardH / 2.0 - tileSize
+        buttonNext = ButtonMesh.createFrontButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
+        buttonNext!.position.x = boardH / 2.0
+        buttonNext!.position.y = boardH / 2.0 - tileSize
+        buttonClose = ButtonMesh.createCancelButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
+        buttonClose!.position.x = boardH / 2.0
+        buttonClose!.position.y = -boardH / 2.0 + tileSize
+        // add them to the tutorial buttons layer
+        tutButtonsLayer.meshes.append(buttonPrev!)
+        tutButtonsLayer.meshes.append(buttonNext!)
+        tutButtonsLayer.meshes.append(buttonClose!)
+
+        // create special abilities buttons
+
+        // add buttons to menuLayer
+        buttonLocal = ButtonMesh.createUnlitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        buttonLocal!.alpha = 1.0
+        button1v1 = ButtonMesh.createUnlitButton(innerWidth: 10.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        button1v1!.alpha = 1.0
+        buttonTutorial = ButtonMesh.createLitButton(innerWidth: 7.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        buttonTutorial!.alpha = 1.0
         // put them in their correct positions
         buttonLocal!.position.y = -1.5 * tileSize
-        buttonBuyCoffee!.position.y = 1.0 * tileSize
+        buttonTutorial!.position.y = 1.0 * tileSize
         button1v1!.position.y = 3.5 * tileSize
         // add them to the layer
         mainButtonsLayer.meshes.append(buttonLocal!)
-        mainButtonsLayer.meshes.append(buttonBuyCoffee!)
+        mainButtonsLayer.meshes.append(buttonTutorial!)
         mainButtonsLayer.meshes.append(button1v1!)
         // make texts for the buttons
         let textSize = CGSize(width: 512, height: 64)
@@ -374,7 +424,6 @@ class Renderer: NSObject, MTKViewDelegate {
             effectsLayer.meshes.removeAll()
             maxArcDisplacement = 0.1
             makeMenuArcs()
-            multiMgr.authenticatePlayer()
         }
         if currentScreen === gameScreen {
             gameMgr.clearElectricArcs()
@@ -383,11 +432,21 @@ class Renderer: NSObject, MTKViewDelegate {
             maxArcDisplacement = 0.2
             gameMgr.gameBoard?.checkConnections()
             gameMgr.addElectricArcs()
+            if let textQuadMesh = menuLayer.meshes.first(where: { $0 is TextQuadMesh }) as? TextQuadMesh {
+                textQuadMesh.alpha = 1.0
+            }
         }
-        if currentScreen === multiplayerScreen {
+        if currentScreen === multiplayerScreen || currentScreen === tutorialScreen {
             gameMgr.clearElectricArcs()
-            // TODO: show the game center stuff
 //            multiMgr.errorMsg = ""
+        }
+        if currentScreen === tutorialScreen {
+            tutIndex = 0
+            tutorialLayer.meshes.removeAll()
+            tutorialLayer.meshes.append(tutMesh[tutIndex]!)
+            if let textQuadMesh = menuLayer.meshes.first(where: { $0 is TextQuadMesh }) as? TextQuadMesh {
+                textQuadMesh.alpha = 0.0
+            }
         }
     }
 
@@ -554,6 +613,7 @@ class Renderer: NSObject, MTKViewDelegate {
             if frameIndex == 65 { // at exactly frame X
                 print ("this is frame 65")
                 initializeGameScreens()
+                multiMgr.authenticatePlayer()
             }
 
             if let logoQuad = logoScreen.layers.first?.meshes.first as? QuadMesh {
@@ -599,24 +659,28 @@ class Renderer: NSObject, MTKViewDelegate {
             gameMgr.lastInput = nil
         }
         
-        // main menu screen updates
-        if currentScreen === mainMenuScreen {
+        // common menu updates
+        if currentScreen === mainMenuScreen || currentScreen === multiplayerScreen || currentScreen === tutorialScreen {
             // make some tile in the background rotate
             startRandomTileRotation()
             // only update the simple rotations in the main menu
             gameMgr.animationManager?.updateSimpleRotateAnimations()
-//            gameMgr.animationManager?.updateAnimations()
+        }
+
+        // main menu screen updates
+        if currentScreen === mainMenuScreen {
             // check user input
             if gameMgr.lastInput != nil {
                 if buttonLocal!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
                     gameMgr.zapGameState = .waitingForInput
-                    // TODO: reset the game - right now it goes to the already existing game
                     setCurrentScreen(gameScreen)
                 }
                 if button1v1!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
                     setCurrentScreen(multiplayerScreen)
-                    // TODO: maybe here show the game center stuff?
                     multiMgr.presentGameCenterMatchmaking()
+                }
+                if buttonTutorial!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    setCurrentScreen(tutorialScreen)
                 }
             }
             gameMgr.lastInput = nil
@@ -624,14 +688,38 @@ class Renderer: NSObject, MTKViewDelegate {
         
         // multiplayer screen updates
         if currentScreen === multiplayerScreen {
-            // same stuff with the tiles in the back
-            startRandomTileRotation()
-            // only update the simple rotations in the main menu
-            gameMgr.animationManager?.updateSimpleRotateAnimations()
-//            gameMgr.animationManager?.updateAnimations()
             // check user input -- back button goes to the main menu
             if gameMgr.lastInput != nil {
                 if buttonBack!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    setCurrentScreen(mainMenuScreen)
+                }
+            }
+            gameMgr.lastInput = nil
+        }
+        
+        // tutorials screen updates
+        if currentScreen === tutorialScreen {
+            // check user input -- back button goes to the main menu
+            if gameMgr.lastInput != nil {
+                if buttonPrev!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    // TODO: go to previous tutorial
+                    if tutIndex > 0 {
+                        tutIndex -= 1
+                    }
+                    tutorialLayer.meshes.removeAll()
+                    tutorialLayer.meshes.append(tutMesh[tutIndex]!)
+//                    setCurrentScreen(mainMenuScreen)
+                }
+                if buttonNext!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    // TODO: go to previous tutorial
+                    if tutIndex < tutorialImages-1 {
+                        tutIndex += 1
+                    }
+                    tutorialLayer.meshes.removeAll()
+                    tutorialLayer.meshes.append(tutMesh[tutIndex]!)
+//                    setCurrentScreen(mainMenuScreen)
+                }
+                if buttonClose!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
                     setCurrentScreen(mainMenuScreen)
                 }
             }
