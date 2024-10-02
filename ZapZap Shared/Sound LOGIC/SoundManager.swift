@@ -13,8 +13,8 @@ class SoundManager: NSObject {
     static let shared = SoundManager()
 
     private var backgroundMusicPlayer: AVAudioPlayer?
-    private var isSoundEffectsEnabled: Bool = true
-    private var isBackgroundMusicEnabled: Bool = true
+    var isSoundEffectsEnabled: Bool = true
+    var isBackgroundMusicEnabled: Bool = true
     private var activeSoundEffectPlayers: [AVAudioPlayer] = []
 
     private override init() {
@@ -76,15 +76,19 @@ class SoundManager: NSObject {
     func toggleBackgroundMusic() {
         if isBackgroundMusicEnabled {
             stopBackgroundMusic()
+            isBackgroundMusicEnabled.toggle()
         } else {
+            isBackgroundMusicEnabled.toggle()
             playBackgroundMusic(filename: "IttyBitty") // Provide your background music file name
         }
-        isBackgroundMusicEnabled.toggle()
     }
 
     // MARK: - Sound Effects
 
     func playSoundEffect(filename: String, fileExtension: String = "wav") {
+        if !isSoundEffectsEnabled {
+            return
+        }
         guard let url = Bundle.main.url(forResource: filename, withExtension: fileExtension) else {
             print("Could not find file: \(filename).\(fileExtension)")
             return
