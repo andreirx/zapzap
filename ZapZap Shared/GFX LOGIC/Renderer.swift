@@ -16,7 +16,7 @@ let alignedUniformsSize = (MemoryLayout<matrix_float4x4>.size + 0xFF) & -0x100
 
 let maxBuffersInFlight = 3
 let MaxOutstandingFrameCount = 3
-let tutorialImages = 6
+let tutorialImages = 5
 
 
 // // // // // // // // // // // // // // // // // // // // //
@@ -107,6 +107,14 @@ class Renderer: NSObject, MTKViewDelegate {
     var buttonRCross: ButtonMesh?
     var buttonRArrow: ButtonMesh?
     
+    var buttonMainMenu: ButtonMesh?
+    var buttonToggleMusic: ButtonMesh?
+    var buttonToggleEffects: ButtonMesh?
+    var checkMusic: ButtonMesh?
+    var checkEffects: ButtonMesh?
+    var uncheckMusic: ButtonMesh?
+    var uncheckEffects: ButtonMesh?
+
     // tutorial image meshes - 6 of them
     var tutMesh: [QuadMesh?] = Array(repeating: nil, count: tutorialImages)
     var tutIndex: Int = 0
@@ -125,6 +133,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var superheroExtraLayer: EffectsLayer!
     var tutorialLayer: GraphicsLayer!
     var tutButtonsLayer: GraphicsLayer!
+    var pauseButtonsLayer: GraphicsLayer!
 
     
     // internal renderer stuff
@@ -273,6 +282,7 @@ class Renderer: NSObject, MTKViewDelegate {
         superheroExtraLayer = EffectsLayer()
         tutorialLayer = GraphicsLayer()
         tutButtonsLayer = GraphicsLayer()
+        pauseButtonsLayer = GraphicsLayer()
 
         gameMgr.createTiles()
         
@@ -287,7 +297,8 @@ class Renderer: NSObject, MTKViewDelegate {
         superheroExtraLayer.texture = Renderer.textures.getTexture(named: "superhero")
         tutorialLayer.texture = Renderer.textures.getTexture(named: "tutorials")
         tutButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
-        
+        pauseButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
+
         for i in 0..<tutorialImages {
             tutMesh[i] = QuadMesh(size: boardH - tileSize,
               topLeftUV: SIMD2(x: Float(i % 3) / 3.0, y: Float(i / 3) / 2.0),
@@ -330,6 +341,12 @@ class Renderer: NSObject, MTKViewDelegate {
         multiplayerScreen.addLayer(multiplayerButtonsLayer)
         multiplayerScreen.addLayer(fingerLayer)
         multiplayerScreen.addLayer(effectsLayer)
+        
+        // add layers to the pause screen
+        pauseScreen.addLayer(menuLayer)
+        pauseScreen.addLayer(pauseButtonsLayer)
+        pauseScreen.addLayer(fingerLayer)
+//        pauseScreen.addLayer(effectsLayer)
 
         // put some random tiles in there on the menu screen
         for i in stride(from: -boardWidth/2 - 2, through: boardWidth*3/2 + 4, by: 2) {
@@ -348,15 +365,65 @@ class Renderer: NSObject, MTKViewDelegate {
         buttonPause = ButtonMesh.createPauseButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
         buttonPause!.position.x = boardW / 2.0 + tileSize * 2.0
         buttonPause!.position.y = -boardH / 2.0 + tileSize
+        buttonPause!.alpha = 1.0
         // pause button goes on a game screen layer
         baseLayer!.meshes.append(buttonPause!)
         // also create back button
         buttonBack = ButtonMesh.createBackButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
         buttonBack!.position.x = -boardW / 2.0 + tileSize * 3.0
         buttonBack!.position.y = -boardH / 2.0 + tileSize * 3.0
+        buttonBack!.alpha = 1.0
         // back button goes to a multiplayer screen lauyer
         multiplayerButtonsLayer.meshes.append(buttonBack!)
+        pauseButtonsLayer.meshes.append(buttonBack!)
         
+        // create pause menu buttons
+        buttonMainMenu = ButtonMesh.createRedButton(innerWidth: 10.0 * tileSize, innerHeight: 1.0 * tileSize, borderWidth: tileSize / 2.0)
+        buttonMainMenu!.alpha = 1.0
+        buttonMainMenu!.position.y = 3.4 * tileSize
+        buttonToggleMusic = ButtonMesh.createThickOutlineButton(innerWidth: 8.0 * tileSize, innerHeight: 0.8 * tileSize, borderWidth: tileSize / 2.0)
+        buttonToggleMusic!.alpha = 1.0
+        buttonToggleMusic!.position.y = -0.4 * tileSize
+        buttonToggleEffects = ButtonMesh.createThickOutlineButton(innerWidth: 8.0 * tileSize, innerHeight: 0.8 * tileSize, borderWidth: tileSize / 2.0)
+        buttonToggleEffects!.alpha = 1.0
+        buttonToggleEffects!.position.y = 1.4 * tileSize
+        checkEffects = ButtonMesh.createCheckButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
+        checkEffects!.position.x = boardW / 4.5
+        checkEffects!.position.y = 1.4 * tileSize
+        checkEffects!.alpha = 1.0
+        checkMusic = ButtonMesh.createCheckButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
+        checkMusic!.position.x = boardW / 4.5
+        checkMusic!.position.y = -0.4 * tileSize
+        checkMusic!.alpha = 1.0
+        uncheckEffects = ButtonMesh.createUncheckButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
+        uncheckEffects!.position.x = boardW / 4.5
+        uncheckEffects!.position.y = 1.4 * tileSize
+        uncheckEffects!.alpha = 1.0
+        uncheckMusic = ButtonMesh.createUncheckButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
+        uncheckMusic!.position.x = boardW / 4.5
+        uncheckMusic!.position.y = -0.4 * tileSize
+        uncheckMusic!.alpha = 1.0
+        // add them to the pause menu layer
+        pauseButtonsLayer.meshes.append(buttonMainMenu!)
+        pauseButtonsLayer.meshes.append(buttonToggleMusic!)
+        pauseButtonsLayer.meshes.append(buttonToggleEffects!)
+        // make texts for the buttons
+        let textSize = CGSize(width: 512, height: 64)
+        var font = Font.systemFont(ofSize: 40)
+        var textMusic = TextQuadMesh(text: "MUSIC", font: font, color: Color.white, size: textSize)
+        var textEffects = TextQuadMesh(text: "EFFECTS", font: font, color: Color.white, size: textSize)
+        var textMenu = TextQuadMesh(text: "Quit Game To Main Menu", font: font, color: Color.white, size: textSize)
+        // put them in their correct positions
+        textMusic.position.y = -0.4 * tileSize + 6
+        textEffects.position.y = 1.4 * tileSize + 6
+        textMenu.position.y = 3.4 * tileSize + 6
+        // add them to the layer
+        pauseButtonsLayer.meshes.append(checkMusic!)
+        pauseButtonsLayer.meshes.append(checkEffects!)
+        pauseButtonsLayer.meshes.append(textMusic)
+        pauseButtonsLayer.meshes.append(textEffects)
+        pauseButtonsLayer.meshes.append(textMenu)
+
         // create tutorial screen buttons
         buttonPrev = ButtonMesh.createBackButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
         buttonPrev!.position.x = -boardH / 2.0
@@ -390,8 +457,8 @@ class Renderer: NSObject, MTKViewDelegate {
         mainButtonsLayer.meshes.append(buttonTutorial!)
         mainButtonsLayer.meshes.append(button1v1!)
         // make texts for the buttons
-        let textSize = CGSize(width: 512, height: 64)
-        var font = Font.systemFont(ofSize: 40)
+//        let textSize = CGSize(width: 512, height: 64)
+//        var font = Font.systemFont(ofSize: 40)
         var textLocal = TextQuadMesh(text: "Solo Zapping", font: font, color: Color.white, size: textSize)
         var text1v1 = TextQuadMesh(text: "1v1 Make Most Points", font: font, color: Color.white, size: textSize)
         var textBuyCoffee = TextQuadMesh(text: "Tutorial", font: font, color: Color.white, size: textSize)
@@ -447,6 +514,9 @@ class Renderer: NSObject, MTKViewDelegate {
             if let textQuadMesh = menuLayer.meshes.first(where: { $0 is TextQuadMesh }) as? TextQuadMesh {
                 textQuadMesh.alpha = 0.0
             }
+        }
+        if currentScreen === pauseScreen {
+            //
         }
     }
 
@@ -637,14 +707,13 @@ class Renderer: NSObject, MTKViewDelegate {
             // verify pause button first
             if gameMgr.lastInput != nil {
                 if buttonPause!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
-                    // temporarily go back to main menu
                     // TODO: go to pause menu screen
                     if gameMgr.leftScore > gameMgr.rightScore {
                         multiMgr.reportScoreToGameCenter(score: gameMgr.leftScore)
                     } else {
                         multiMgr.reportScoreToGameCenter(score: gameMgr.rightScore)
                     }
-                    setCurrentScreen(mainMenuScreen)
+                    setCurrentScreen(pauseScreen)
                 }
             }
             gameMgr.update()
@@ -660,7 +729,7 @@ class Renderer: NSObject, MTKViewDelegate {
         }
         
         // common menu updates
-        if currentScreen === mainMenuScreen || currentScreen === multiplayerScreen || currentScreen === tutorialScreen {
+        if currentScreen === mainMenuScreen || currentScreen === multiplayerScreen || currentScreen === tutorialScreen || currentScreen === pauseScreen {
             // make some tile in the background rotate
             startRandomTileRotation()
             // only update the simple rotations in the main menu
@@ -723,6 +792,50 @@ class Renderer: NSObject, MTKViewDelegate {
                     setCurrentScreen(mainMenuScreen)
                 }
             }
+            gameMgr.lastInput = nil
+        }
+        
+        // pause screen updates
+        if currentScreen === pauseScreen {
+            if gameMgr.lastInput != nil {
+                if buttonBack!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    // get back to the game as it was
+                    currentScreen = gameScreen
+                }
+                if buttonMainMenu!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    // quit the game and go to the main menu
+                    setCurrentScreen(mainMenuScreen)
+                }
+                if buttonToggleMusic!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    // toggle the music
+                    if SoundManager.shared.isBackgroundMusicEnabled {
+                        if let index = pauseButtonsLayer.meshes.firstIndex(where: { $0 === checkMusic }) {
+                            pauseButtonsLayer.meshes[index] = uncheckMusic!
+                        }
+                    } else {
+                        if let index = pauseButtonsLayer.meshes.firstIndex(where: { $0 === uncheckMusic }) {
+                            pauseButtonsLayer.meshes[index] = checkMusic!
+                        }
+                    }
+                    
+                    SoundManager.shared.toggleBackgroundMusic()
+                }
+                if buttonToggleEffects!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    // toggle the music
+                    if SoundManager.shared.isSoundEffectsEnabled {
+                        if let index = pauseButtonsLayer.meshes.firstIndex(where: { $0 === checkEffects }) {
+                            pauseButtonsLayer.meshes[index] = uncheckEffects!
+                        }
+                    } else {
+                        if let index = pauseButtonsLayer.meshes.firstIndex(where: { $0 === uncheckEffects }) {
+                            pauseButtonsLayer.meshes[index] = checkEffects!
+                        }
+                    }
+                    
+                    SoundManager.shared.toggleSoundEffects()
+                }
+            }
+
             gameMgr.lastInput = nil
         }
     }
