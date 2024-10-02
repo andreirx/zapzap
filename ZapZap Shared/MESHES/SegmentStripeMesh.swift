@@ -22,60 +22,60 @@ enum SegmentColor: CaseIterable {
     }
 
     var textureCoordinates: (first: (start: SIMD2<Float>, end: SIMD2<Float>), middle: (start: SIMD2<Float>, end: SIMD2<Float>), last: (start: SIMD2<Float>, end: SIMD2<Float>)) {
-        let tu = Float(1.0 / 8.0)
+        let tu = Float(1.0 / 16.0)
         switch self {
         case .red:
-            return ((SIMD2<Float>(4.0 * tu, 5.0 * tu), SIMD2<Float>(5.0 * tu, 5.0 * tu)),
-                    (SIMD2<Float>(4.0 * tu, 5.5 * tu), SIMD2<Float>(5.0 * tu, 5.5 * tu)),
-                    (SIMD2<Float>(4.0 * tu, 6.0 * tu), SIMD2<Float>(5.0 * tu, 6.0 * tu)))
+            return ((SIMD2<Float>(4.0 * tu - 4.0*tu, 5.0 * tu), SIMD2<Float>(5.0 * tu - 4.0*tu, 5.0 * tu)),
+                    (SIMD2<Float>(4.0 * tu - 4.0*tu, 5.5 * tu), SIMD2<Float>(5.0 * tu - 4.0*tu, 5.5 * tu)),
+                    (SIMD2<Float>(4.0 * tu - 4.0*tu, 6.0 * tu), SIMD2<Float>(5.0 * tu - 4.0*tu, 6.0 * tu)))
         case .orange:
-            return ((SIMD2<Float>(5.0 * tu, 5.0 * tu), SIMD2<Float>(6.0 * tu, 5.0 * tu)),
-                    (SIMD2<Float>(5.0 * tu, 5.5 * tu), SIMD2<Float>(6.0 * tu, 5.5 * tu)),
-                    (SIMD2<Float>(5.0 * tu, 6.0 * tu), SIMD2<Float>(6.0 * tu, 6.0 * tu)))
+            return ((SIMD2<Float>(5.0 * tu - 4.0*tu, 5.0 * tu), SIMD2<Float>(6.0 * tu - 4.0*tu, 5.0 * tu)),
+                    (SIMD2<Float>(5.0 * tu - 4.0*tu, 5.5 * tu), SIMD2<Float>(6.0 * tu - 4.0*tu, 5.5 * tu)),
+                    (SIMD2<Float>(5.0 * tu - 4.0*tu, 6.0 * tu), SIMD2<Float>(6.0 * tu - 4.0*tu, 6.0 * tu)))
         case .yellow:
-            return ((SIMD2<Float>(6.0 * tu, 5.0 * tu), SIMD2<Float>(7.0 * tu, 5.0 * tu)),
-                    (SIMD2<Float>(6.0 * tu, 5.5 * tu), SIMD2<Float>(7.0 * tu, 5.5 * tu)),
-                    (SIMD2<Float>(6.0 * tu, 6.0 * tu), SIMD2<Float>(7.0 * tu, 6.0 * tu)))
+            return ((SIMD2<Float>(6.0 * tu - 4.0*tu, 5.0 * tu), SIMD2<Float>(7.0 * tu - 4.0*tu, 5.0 * tu)),
+                    (SIMD2<Float>(6.0 * tu - 4.0*tu, 5.5 * tu), SIMD2<Float>(7.0 * tu - 4.0*tu, 5.5 * tu)),
+                    (SIMD2<Float>(6.0 * tu - 4.0*tu, 6.0 * tu), SIMD2<Float>(7.0 * tu - 4.0*tu, 6.0 * tu)))
         case .limeGreen:
-            return ((SIMD2<Float>(7.0 * tu, 5.0 * tu), SIMD2<Float>(8.0 * tu, 5.0 * tu)),
-                    (SIMD2<Float>(7.0 * tu, 5.5 * tu), SIMD2<Float>(8.0 * tu, 5.5 * tu)),
-                    (SIMD2<Float>(7.0 * tu, 6.0 * tu), SIMD2<Float>(8.0 * tu, 6.0 * tu)))
+            return ((SIMD2<Float>(7.0 * tu - 4.0*tu, 5.0 * tu), SIMD2<Float>(8.0 * tu - 4.0*tu, 5.0 * tu)),
+                    (SIMD2<Float>(7.0 * tu - 4.0*tu, 5.5 * tu), SIMD2<Float>(8.0 * tu - 4.0*tu, 5.5 * tu)),
+                    (SIMD2<Float>(7.0 * tu - 4.0*tu, 6.0 * tu), SIMD2<Float>(8.0 * tu - 4.0*tu, 6.0 * tu)))
         case .green:
-            return ((SIMD2<Float>(4.0 * tu, 4.0 * tu), SIMD2<Float>(5.0 * tu, 4.0 * tu)),
-                    (SIMD2<Float>(4.0 * tu, 4.5 * tu), SIMD2<Float>(5.0 * tu, 4.5 * tu)),
-                    (SIMD2<Float>(4.0 * tu, 5.0 * tu), SIMD2<Float>(5.0 * tu, 5.0 * tu)))
+            return ((SIMD2<Float>(4.0 * tu - 4.0*tu, 4.0 * tu), SIMD2<Float>(5.0 * tu - 4.0*tu, 4.0 * tu)),
+                    (SIMD2<Float>(4.0 * tu - 4.0*tu, 4.5 * tu), SIMD2<Float>(5.0 * tu - 4.0*tu, 4.5 * tu)),
+                    (SIMD2<Float>(4.0 * tu - 4.0*tu, 5.0 * tu), SIMD2<Float>(5.0 * tu - 4.0*tu, 5.0 * tu)))
         case .greenCyan:
-            return ((SIMD2<Float>(5.0 * tu, 4.0 * tu), SIMD2<Float>(6.0 * tu, 4.0 * tu)),
-                    (SIMD2<Float>(5.0 * tu, 4.5 * tu), SIMD2<Float>(6.0 * tu, 4.5 * tu)),
-                    (SIMD2<Float>(5.0 * tu, 5.0 * tu), SIMD2<Float>(6.0 * tu, 5.0 * tu)))
+            return ((SIMD2<Float>(5.0 * tu - 4.0*tu, 4.0 * tu), SIMD2<Float>(6.0 * tu - 4.0*tu, 4.0 * tu)),
+                    (SIMD2<Float>(5.0 * tu - 4.0*tu, 4.5 * tu), SIMD2<Float>(6.0 * tu - 4.0*tu, 4.5 * tu)),
+                    (SIMD2<Float>(5.0 * tu - 4.0*tu, 5.0 * tu), SIMD2<Float>(6.0 * tu - 4.0*tu, 5.0 * tu)))
         case .cyan:
-            return ((SIMD2<Float>(6.0 * tu, 4.0 * tu), SIMD2<Float>(7.0 * tu, 4.0 * tu)),
-                    (SIMD2<Float>(6.0 * tu, 4.5 * tu), SIMD2<Float>(7.0 * tu, 4.5 * tu)),
-                    (SIMD2<Float>(6.0 * tu, 5.0 * tu), SIMD2<Float>(7.0 * tu, 5.0 * tu)))
+            return ((SIMD2<Float>(6.0 * tu - 4.0*tu, 4.0 * tu), SIMD2<Float>(7.0 * tu - 4.0*tu, 4.0 * tu)),
+                    (SIMD2<Float>(6.0 * tu - 4.0*tu, 4.5 * tu), SIMD2<Float>(7.0 * tu - 4.0*tu, 4.5 * tu)),
+                    (SIMD2<Float>(6.0 * tu - 4.0*tu, 5.0 * tu), SIMD2<Float>(7.0 * tu - 4.0*tu, 5.0 * tu)))
         case .skyBlue:
-            return ((SIMD2<Float>(7.0 * tu, 4.0 * tu), SIMD2<Float>(8.0 * tu, 4.0 * tu)),
-                    (SIMD2<Float>(7.0 * tu, 4.5 * tu), SIMD2<Float>(8.0 * tu, 4.5 * tu)),
-                    (SIMD2<Float>(7.0 * tu, 5.0 * tu), SIMD2<Float>(8.0 * tu, 5.0 * tu)))
+            return ((SIMD2<Float>(7.0 * tu - 4.0*tu, 4.0 * tu), SIMD2<Float>(8.0 * tu - 4.0*tu, 4.0 * tu)),
+                    (SIMD2<Float>(7.0 * tu - 4.0*tu, 4.5 * tu), SIMD2<Float>(8.0 * tu - 4.0*tu, 4.5 * tu)),
+                    (SIMD2<Float>(7.0 * tu - 4.0*tu, 5.0 * tu), SIMD2<Float>(8.0 * tu - 4.0*tu, 5.0 * tu)))
         case .blue:
-            return ((SIMD2<Float>(4.0 * tu, 3.0 * tu), SIMD2<Float>(5.0 * tu, 3.0 * tu)),
-                    (SIMD2<Float>(4.0 * tu, 3.5 * tu), SIMD2<Float>(5.0 * tu, 3.5 * tu)),
-                    (SIMD2<Float>(4.0 * tu, 4.0 * tu), SIMD2<Float>(5.0 * tu, 4.0 * tu)))
+            return ((SIMD2<Float>(4.0 * tu - 4.0*tu, 3.0 * tu), SIMD2<Float>(5.0 * tu - 4.0*tu, 3.0 * tu)),
+                    (SIMD2<Float>(4.0 * tu - 4.0*tu, 3.5 * tu), SIMD2<Float>(5.0 * tu - 4.0*tu, 3.5 * tu)),
+                    (SIMD2<Float>(4.0 * tu - 4.0*tu, 4.0 * tu), SIMD2<Float>(5.0 * tu - 4.0*tu, 4.0 * tu)))
         case .indigo:
-            return ((SIMD2<Float>(5.0 * tu, 3.0 * tu), SIMD2<Float>(6.0 * tu, 3.0 * tu)),
-                    (SIMD2<Float>(5.0 * tu, 3.5 * tu), SIMD2<Float>(6.0 * tu, 3.5 * tu)),
-                    (SIMD2<Float>(5.0 * tu, 4.0 * tu), SIMD2<Float>(6.0 * tu, 4.0 * tu)))
+            return ((SIMD2<Float>(5.0 * tu - 4.0*tu, 3.0 * tu), SIMD2<Float>(6.0 * tu - 4.0*tu, 3.0 * tu)),
+                    (SIMD2<Float>(5.0 * tu - 4.0*tu, 3.5 * tu), SIMD2<Float>(6.0 * tu - 4.0*tu, 3.5 * tu)),
+                    (SIMD2<Float>(5.0 * tu - 4.0*tu, 4.0 * tu), SIMD2<Float>(6.0 * tu - 4.0*tu, 4.0 * tu)))
         case .magenta:
-            return ((SIMD2<Float>(6.0 * tu, 3.0 * tu), SIMD2<Float>(7.0 * tu, 3.0 * tu)),
-                    (SIMD2<Float>(6.0 * tu, 3.5 * tu), SIMD2<Float>(7.0 * tu, 3.5 * tu)),
-                    (SIMD2<Float>(6.0 * tu, 4.0 * tu), SIMD2<Float>(7.0 * tu, 4.0 * tu)))
+            return ((SIMD2<Float>(6.0 * tu - 4.0*tu, 3.0 * tu), SIMD2<Float>(7.0 * tu - 4.0*tu, 3.0 * tu)),
+                    (SIMD2<Float>(6.0 * tu - 4.0*tu, 3.5 * tu), SIMD2<Float>(7.0 * tu - 4.0*tu, 3.5 * tu)),
+                    (SIMD2<Float>(6.0 * tu - 4.0*tu, 4.0 * tu), SIMD2<Float>(7.0 * tu - 4.0*tu, 4.0 * tu)))
         case .pink:
-            return ((SIMD2<Float>(7.0 * tu, 3.0 * tu), SIMD2<Float>(8.0 * tu, 3.0 * tu)),
-                    (SIMD2<Float>(7.0 * tu, 3.5 * tu), SIMD2<Float>(8.0 * tu, 3.5 * tu)),
-                    (SIMD2<Float>(7.0 * tu, 4.0 * tu), SIMD2<Float>(8.0 * tu, 4.0 * tu)))
+            return ((SIMD2<Float>(7.0 * tu - 4.0*tu, 3.0 * tu), SIMD2<Float>(8.0 * tu - 4.0*tu, 3.0 * tu)),
+                    (SIMD2<Float>(7.0 * tu - 4.0*tu, 3.5 * tu), SIMD2<Float>(8.0 * tu - 4.0*tu, 3.5 * tu)),
+                    (SIMD2<Float>(7.0 * tu - 4.0*tu, 4.0 * tu), SIMD2<Float>(8.0 * tu - 4.0*tu, 4.0 * tu)))
         case .white:
-            return ((SIMD2<Float>(7.0 * tu, 2.0 * tu), SIMD2<Float>(8.0 * tu, 2.0 * tu)),
-                    (SIMD2<Float>(7.0 * tu, 2.5 * tu), SIMD2<Float>(8.0 * tu, 2.5 * tu)),
-                    (SIMD2<Float>(7.0 * tu, 3.0 * tu), SIMD2<Float>(8.0 * tu, 3.0 * tu)))
+            return ((SIMD2<Float>(7.0 * tu - 4.0*tu, 2.0 * tu), SIMD2<Float>(8.0 * tu - 4.0*tu, 2.0 * tu)),
+                    (SIMD2<Float>(7.0 * tu - 4.0*tu, 2.5 * tu), SIMD2<Float>(8.0 * tu - 4.0*tu, 2.5 * tu)),
+                    (SIMD2<Float>(7.0 * tu - 4.0*tu, 3.0 * tu), SIMD2<Float>(8.0 * tu - 4.0*tu, 3.0 * tu)))
         }
     }
 }

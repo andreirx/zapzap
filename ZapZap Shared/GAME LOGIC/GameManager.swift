@@ -258,13 +258,13 @@ class GameManager {
             }
         }
         // superheroes
-        superheroLeft = QuadMesh(size: boardW / 2.0, topLeftUV: SIMD2(x: 0.0, y: 0.0), bottomRightUV: SIMD2(x: 1.0, y: 1.0/4.0))
+        superheroLeft = QuadMesh(size: boardW / 2.0, topLeftUV: SIMD2(x: 0.01, y: 0.01), bottomRightUV: SIMD2(x: 0.99, y: 0.99/4.0))
         superheroLeft?.position.x = -boardW / 4.0
         superheroLeft?.alpha = 0.0
         renderer?.superheroLayer.meshes.append(superheroLeft!)
         renderer?.superheroExtraLayer.meshes.append(superheroLeft!)
         //
-        superheroRight = QuadMesh(size: boardW / 2.0, topLeftUV: SIMD2(x: 0.0, y: 1.0/4.0), bottomRightUV: SIMD2(x: 1.0, y: 2.0/4.0))
+        superheroRight = QuadMesh(size: boardW / 2.0, topLeftUV: SIMD2(x: 0.01, y: 1.01/4.0), bottomRightUV: SIMD2(x: 0.99, y: 1.99/4.0))
         superheroRight?.position.x = boardW / 4.0
         superheroRight?.alpha = 0.0
         renderer?.superheroLayer.meshes.append(superheroRight!)
