@@ -24,7 +24,9 @@ class GameObject: QuadMesh {
         ObjectIdentifier(Bonus1.self): { Bonus1() },
         ObjectIdentifier(Bonus2.self): { Bonus2() },
         ObjectIdentifier(Bonus5.self): { Bonus5() },
-        ObjectIdentifier(Bomb.self): { Bomb() }
+        ObjectIdentifier(Bomb.self): { Bomb() },
+        ObjectIdentifier(Cross.self): { Cross() },
+        ObjectIdentifier(Arrow.self): { Arrow() }
     ]
 
     init(size: Float, topLeftUV: SIMD2<Float>, bottomRightUV: SIMD2<Float>,
@@ -92,8 +94,8 @@ class Bomb: GameObject {
         let bottomRightUV = SIMD2<Float>(8.0 / 8.0, 2.0 / 8.0)
         super.init(size: size, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV, rotationSpeed: 0.0, pulseFreq: 0.03)
         self.alpha = 3.0
-        self.bonusPoints = -5
-        self.sound = "bomb"
+        self.bonusPoints = 0
+        self.sound = "powerup"
     }
     
     func explode() {
@@ -104,10 +106,10 @@ class Bomb: GameObject {
 // Cross object
 class Cross: GameObject {
     init() {
-        let size = tileSize * 0.8
+        let size = tileSize * 0.7
         let topLeftUV = SIMD2<Float>(6.0 / 8.0, 0.0 / 8.0)
         let bottomRightUV = SIMD2<Float>(7.0 / 8.0, 1.0 / 8.0)
-        super.init(size: size, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV, rotationSpeed: 0.0, pulseFreq: 0.03)
+        super.init(size: size, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV, rotationSpeed: 1.55, pulseFreq: 0.07)
         self.alpha = 3.0
         self.bonusPoints = 0
         self.sound = "powerup"
@@ -121,10 +123,10 @@ class Cross: GameObject {
 // Arrow object
 class Arrow: GameObject {
     init() {
-        let size = tileSize * 0.8
+        let size = tileSize * 0.7
         let topLeftUV = SIMD2<Float>(7.0 / 8.0, 0.0 / 8.0)
         let bottomRightUV = SIMD2<Float>(8.0 / 8.0, 1.0 / 8.0)
-        super.init(size: size, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV, rotationSpeed: 0.0, pulseFreq: 0.03)
+        super.init(size: size, topLeftUV: topLeftUV, bottomRightUV: bottomRightUV, rotationSpeed: 0.95, pulseFreq: 0.06)
         self.alpha = 3.0
         self.bonusPoints = 0
         self.sound = "powerup"

@@ -63,7 +63,24 @@ class GameManager {
     var scoreLeftMesh: TextQuadMesh? = nil
     var rightScore: Int = 0
     var scoreRightMesh: TextQuadMesh? = nil
+    var multiplayer: Bool = false
     
+    // powers
+    var powerLBomb: Bool = false
+    var powerLCross: Bool = false
+    var powerLArrow: Bool = false
+    var powerRBomb: Bool = false
+    var powerRCross: Bool = false
+    var powerRArrow: Bool = false
+
+    // armed
+    var armLBomb: Bool = false
+    var armLCross: Bool = false
+    var armLArrow: Bool = false
+    var armRBomb: Bool = false
+    var armRCross: Bool = false
+    var armRArrow: Bool = false
+
     public var zapGameState: ZapGameState = .waitingForInput
 
     // these are the correct texture positions (to be divided by 16.0) based on the connection code
@@ -74,6 +91,7 @@ class GameManager {
     init() {
         gameBoard = GameBoard(width: boardWidth, height: boardHeight, missingLinks: defaultMissingLinks)
         self.lastInput = nil
+        self.multiplayer = false
 
         // Initialize tileQuads array with nil values
         self.tileQuads = Array(repeating: Array(repeating: nil, count: boardWidth + 2), count: boardHeight)
@@ -168,28 +186,41 @@ class GameManager {
 
     // function to remake the score meshes
     func updateScoreMeshes() {
-        // create text meshes for keeping score
-        var text = "INDIGO\n\(leftScore)\npoints"
         let font = Font.systemFont(ofSize: 32)
-
+        let textSize = CGSize(width: 256, height: 128)
+        // remove previous meshes
         if (renderer != nil) {
             if renderer!.textLayer != nil {
                 renderer!.textLayer.meshes.removeAll { $0 === scoreLeftMesh }
                 renderer!.textLayer.meshes.removeAll { $0 === scoreRightMesh }
             }
         }
+        if multiplayer {
+            // for MULTIPLAYER, show scores separately
+            // create text meshes for keeping score
+            var text = "INDIGO\n\(leftScore)\npoints"
+            scoreLeftMesh = TextQuadMesh(text: text, font: font, color: Color.magenta, size: textSize)
+            scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 + tileSize * 1.5, -tileSize)
+            text = "ORANGE\n\(rightScore)\npoints"
+            scoreRightMesh = TextQuadMesh(text: text, font: font, color: Color.orange, size: textSize)
+            scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 - tileSize * 1.5, -tileSize)
+            
+            if (renderer != nil) {
+                if renderer!.textLayer != nil {
+                    renderer!.textLayer.meshes.append(scoreLeftMesh!)
+                    renderer!.textLayer.meshes.append(scoreRightMesh!)
+                }
+            }
+        } else {
+            // for SINGLE PLAYER, sum them up and display together
+            var text = "SCORE\n\(leftScore + rightScore)\npoints"
+            scoreLeftMesh = TextQuadMesh(text: text, font: font, color: Color.yellow, size: textSize)
+            scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 + tileSize * 1.5, -tileSize)
 
-        let textSize = CGSize(width: 256, height: 128)
-        scoreLeftMesh = TextQuadMesh(text: text, font: font, color: Color.magenta, size: textSize)
-        scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 + tileSize * 1.5, 0.0)
-        text = "ORANGE\n\(rightScore)\npoints"
-        scoreRightMesh = TextQuadMesh(text: text, font: font, color: Color.orange, size: textSize)
-        scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 - tileSize * 1.5, 0.0)
-        
-        if (renderer != nil) {
-            if renderer!.textLayer != nil {
-                renderer!.textLayer.meshes.append(scoreLeftMesh!)
-                renderer!.textLayer.meshes.append(scoreRightMesh!)
+            if (renderer != nil) {
+                if renderer!.textLayer != nil {
+                    renderer!.textLayer.meshes.append(scoreLeftMesh!)
+                }
             }
         }
     }
@@ -269,12 +300,28 @@ class GameManager {
         superheroRight?.alpha = 0.0
         renderer?.superheroLayer.meshes.append(superheroRight!)
         renderer?.superheroExtraLayer.meshes.append(superheroRight!)
+        //
+        multiplayer = isMultiplayer
+        //
+        // disarm superpowers
+        powerLBomb = false
+        armLBomb = false
+        powerRBomb = false
+        armRBomb = false
+        powerLArrow = false
+        armLArrow = false
+        powerRArrow = false
+        armRArrow = false
+        powerLCross = false
+        armLCross = false
+        powerRCross = false
+        armRCross = false
         // wait for user input
         zapGameState = .waitingForInput
     }
 
     // method to apply the "bombing" on the table
-    func bombTable(ati: Int, atj: Int) {
+    func bombTable(ati: Int, atj: Int, deltaX: Int = 2, deltaY: Int = 2) {
         // make sure we're not bombing outside
         if ati < 0 || ati >= boardWidth || atj < 0 || atj >= boardHeight {
             return
@@ -282,16 +329,16 @@ class GameManager {
         // remove the arcs
         renderer!.effectsLayer.meshes.removeAll { $0 is ElectricArcMesh }
         // also "bomb" the gameTable
-        gameBoard?.bombTable(ati: ati, atj: atj)
+        gameBoard?.bombTable(ati: ati, atj: atj, deltaX: deltaX, deltaY: deltaY)
         // play exploding sound for effect
-//        SoundManager.shared.playSoundEffect(filename: "bomb")
+        SoundManager.shared.playSoundEffect(filename: "bomb")
         // will remove the tiles around ati, atj
         // will "fall down" the ones above
         // will generate new ones from above
-        var starti = ati - 2
-        var endi = ati + 3
-        var startj = atj - 2
-        var endj = atj + 3
+        var starti = ati - deltaX
+        var endi = ati + deltaX + 1
+        var startj = atj - deltaY
+        var endj = atj + deltaY + 1
         // clip
         if starti < 0 {
             starti = 0
@@ -487,10 +534,15 @@ class GameManager {
                 animationManager?.createFallingObject(objectType: Bonus5.self)
             }
         }
-        // randomly add a bomb
-        // DEPENDING ON THE HERO
-        if 0 == Int.random(in: 0..<5) {
+        // randomly add a bomb or other objects
+        if 0 == Int.random(in: 0..<1) {
             animationManager?.createFallingObject(objectType: Bomb.self)
+        }
+        if 0 == Int.random(in: 0..<1) {
+            animationManager?.createFallingObject(objectType: Cross.self)
+        }
+        if 0 == Int.random(in: 0..<1) {
+            animationManager?.createFallingObject(objectType: Arrow.self)
         }
 
         // play that coin sound
@@ -577,9 +629,6 @@ class GameManager {
             // stop everything mid air for the player to see the bolt
             zapGameState = .freezeDuringZap
             animationManager?.addFreezeFrameAnimation(duration: 2.0, drop1s: many1s, drop2s: many2s, drop5s: many5s)
-            // write ZAP ZAP but outside the board
-//            renderer.makeMenuArcs(shiftx1: -boardW / 2.0 + tileSize / 2.0, shifty1: tileSize * 2.0 - 25.0, shiftx2: boardW / 2.0 - tileSize / 2.0, shifty2: tileSize * 2.0 - 50.0)
-            
             // add score animations for each pin on the left
             // and on the right
             for y in 0..<gameBoard.height {
@@ -629,9 +678,6 @@ class GameManager {
                 }
             }
 
-            // increment scores
-//            leftScore += gameBoard.leftPinsConnect
-//            rightScore += gameBoard.rightPinsConnect
             // remake the meshes
             updateScoreMeshes()
 
@@ -667,11 +713,62 @@ class GameManager {
             // and then convert to tile coordinates to check if the user is interacting with the board
             let quadX = Int(round((gameX + boardW / 2.0) / tileSize) - 1)
             let quadY = Int(round((gameY + boardH / 2.0) / tileSize) - 1)
-            if quadX >= 0 && quadX < boardWidth + 2 && quadY >= 0 && quadY < boardWidth {
-//                tileQuads[quadY][quadX]?.position = SIMD2<Float>(gameX, gameY)
+            if quadX >= 0 && quadX < boardWidth + 2 && quadY >= 0 && quadY < boardHeight {
                 if quadX >= 1 && quadX < boardWidth + 1 {
                     print ("hit the board at ", quadX - 1, quadY)
-                    tapTile(i: quadX - 1, j: quadY)
+                    // OK: if no powerups are armed, just tap
+                    if armLBomb || armRBomb {
+                        // bomb the table
+                        bombTable(ati: quadX - 1, atj: quadY)
+                        // remove bonuses because bomb
+                        renderer.objectsLayer.meshes.removeAll()
+                        // lose the power
+                        if armLBomb {
+                            armLBomb = false
+                            powerLBomb = false
+                        }
+                        if armRBomb {
+                            armRBomb = false
+                            powerRBomb = false
+                        }
+                    } else if armLCross || armRCross {
+                        // change the connection to a cross
+                        gameBoard.setTile(at: quadX - 1, y: quadY, connection: 0x0f)
+                        // TODO: recreate the tile
+                        tileQuads[quadY][quadX] = createNewTileQuad(i: quadX, j: quadY)
+                        // remake the arcs
+                        clearElectricArcs()
+                        // check connections and ZAP if needed
+                        checkConnectionsAndStartZap()
+                        addElectricArcs()
+                        // play powerup sound
+                        SoundManager.shared.playSoundEffect(filename: "powerup")
+                        // lose the power
+                        if armLCross {
+                            armLCross = false
+                            powerLCross = false
+                        }
+                        if armRCross {
+                            armRCross = false
+                            powerRCross = false
+                        }
+                    } else if armLArrow || armRArrow {
+                        // TODO: clear the column
+                        bombTable(ati: quadX - 1, atj: quadY, deltaX: 0, deltaY: boardHeight)
+                        // remove bonuses because bomb
+                        renderer.objectsLayer.meshes.removeAll()
+                        // lose the power
+                        if armLArrow {
+                            armLArrow = false
+                            powerLArrow = false
+                        }
+                        if armRArrow {
+                            armRArrow = false
+                            powerRArrow = false
+                        }
+                    } else {
+                        tapTile(i: quadX - 1, j: quadY)
+                    }
                 }
             }
             self.lastInput = nil
@@ -683,7 +780,6 @@ class GameManager {
         // move those animations
         animationManager?.updateAnimations()
         // check connections and ZAP if needed
-        // TODO - this is done in ANY game state - this is not right
         checkConnectionsAndStartZap()
 
     }

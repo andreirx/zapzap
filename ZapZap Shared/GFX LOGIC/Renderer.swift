@@ -16,7 +16,7 @@ let alignedUniformsSize = (MemoryLayout<matrix_float4x4>.size + 0xFF) & -0x100
 
 let maxBuffersInFlight = 3
 let MaxOutstandingFrameCount = 3
-let tutorialImages = 5
+let tutorialImages = 6
 
 
 // // // // // // // // // // // // // // // // // // // // //
@@ -106,7 +106,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var buttonRBomb: ButtonMesh?
     var buttonRCross: ButtonMesh?
     var buttonRArrow: ButtonMesh?
-    
+
     var buttonMainMenu: ButtonMesh?
     var buttonToggleMusic: ButtonMesh?
     var buttonToggleEffects: ButtonMesh?
@@ -114,6 +114,14 @@ class Renderer: NSObject, MTKViewDelegate {
     var checkEffects: ButtonMesh?
     var uncheckMusic: ButtonMesh?
     var uncheckEffects: ButtonMesh?
+    
+    // object button meshes
+    var objLBomb: Bomb?
+    var objLCross: Cross?
+    var objLArrow: Arrow?
+    var objRBomb: Bomb?
+    var objRCross: Cross?
+    var objRArrow: Arrow?
 
     // tutorial image meshes - 6 of them
     var tutMesh: [QuadMesh?] = Array(repeating: nil, count: tutorialImages)
@@ -127,6 +135,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var fingerLayer: GraphicsLayer!
     var baseLayer: GameBoardLayer? // this one won't be ready at creation time, will have to add it later after getting a GameManager
     var objectsLayer: GraphicsLayer!
+    var buttonObjLayer: GraphicsLayer!
     var textLayer: GraphicsLayer!
     var effectsLayer: EffectsLayer!
     var superheroLayer: GraphicsLayer!
@@ -247,20 +256,14 @@ class Renderer: NSObject, MTKViewDelegate {
         gameMgr = fromGameManager
         baseLayer = GameBoardLayer(gameManager: fromGameManager)
         baseLayer?.texture = Renderer.textures.getTexture(named: "base_tiles")
-
-        if textLayer != nil {
-            // Example of adding a text quad
-            textLayer.meshes.append(gameMgr.scoreLeftMesh!)
-            textLayer.meshes.append(gameMgr.scoreRightMesh!)
-        }
-
+/*
         // Call checkConnections and recreate connections
         gameMgr.gameBoard?.checkConnections()
 
         // remake all electric arcs according to their markers
         gameMgr.remakeElectricArcs(forMarker: .left, withColor: .indigo, po2: 4, andWidth: 4.0)
         gameMgr.remakeElectricArcs(forMarker: .right, withColor: .orange, po2: 4, andWidth: 4.0)
-        gameMgr.remakeElectricArcs(forMarker: .ok, withColor: .skyBlue, po2: 3, andWidth: 8.0)
+        */
     }
     
     // function does what it says - sets up game screens, with their layers and contents
@@ -272,6 +275,7 @@ class Renderer: NSObject, MTKViewDelegate {
         // Set up layers and initialize game screen
         backgroundLayer = GraphicsLayer()
         objectsLayer = GraphicsLayer()
+        buttonObjLayer = GraphicsLayer()
         effectsLayer = EffectsLayer()
         textLayer = GraphicsLayer()
         menuLayer = GraphicsLayer()
@@ -288,6 +292,7 @@ class Renderer: NSObject, MTKViewDelegate {
         
         backgroundLayer.texture = Renderer.textures.getTexture(named: "stars")
         objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
+        buttonObjLayer.texture = Renderer.textures.getTexture(named: "arrows")
         effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         menuLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
         mainButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
@@ -319,8 +324,9 @@ class Renderer: NSObject, MTKViewDelegate {
         gameScreen.addLayer(effectsLayer)
         gameScreen.addLayer(textLayer)
         gameScreen.addLayer(objectsLayer)
-        gameScreen.addLayer(superheroLayer)
-        gameScreen.addLayer(superheroExtraLayer)
+        gameScreen.addLayer(buttonObjLayer)
+//        gameScreen.addLayer(superheroLayer)
+//        gameScreen.addLayer(superheroExtraLayer)
 
         // add layers to menu screen
         mainMenuScreen.addLayer(menuLayer)
@@ -333,8 +339,8 @@ class Renderer: NSObject, MTKViewDelegate {
         tutorialScreen.addLayer(menuLayer)
         tutorialScreen.addLayer(tutorialLayer)
         tutorialScreen.addLayer(tutButtonsLayer)
-        tutorialScreen.addLayer(fingerLayer)
-        tutorialScreen.addLayer(effectsLayer)
+//        tutorialScreen.addLayer(fingerLayer)
+//        tutorialScreen.addLayer(effectsLayer)
 
         // add layers to multiplayer screen
         multiplayerScreen.addLayer(menuLayer)
@@ -366,57 +372,123 @@ class Renderer: NSObject, MTKViewDelegate {
         buttonPause!.position.x = boardW / 2.0 + tileSize * 2.0
         buttonPause!.position.y = -boardH / 2.0 + tileSize
         buttonPause!.alpha = 1.0
-        // pause button goes on a game screen layer
+        // and the powers buttons
+        buttonLBomb = ButtonMesh.createThinOutlineButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
+        buttonLBomb!.position.x = -boardW / 2.0 - tileSize * 2.0
+        buttonLBomb!.position.y = tileSize * 1.5
+        buttonLBomb!.alpha = 0.5
+        objLBomb = Bomb()
+        objLBomb!.position.x = -boardW / 2.0 - tileSize * 2.0
+        objLBomb!.position.y = tileSize * 1.5
+        objLBomb!.alpha = 0.15
+        buttonLCross = ButtonMesh.createThinOutlineButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
+        buttonLCross!.position.x = -boardW / 2.0 - tileSize * 1.0
+        buttonLCross!.position.y = tileSize * 2.7
+        buttonLCross!.alpha = 0.5
+        objLCross = Cross()
+        objLCross!.position.x = -boardW / 2.0 - tileSize * 1.0
+        objLCross!.position.y = tileSize * 2.7
+        objLCross!.alpha = 0.15
+        buttonLArrow = ButtonMesh.createThinOutlineButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
+        buttonLArrow!.position.x = -boardW / 2.0 - tileSize * 1.0
+        buttonLArrow!.position.y = tileSize * 4.2
+        buttonLArrow!.alpha = 0.5
+        objLArrow = Arrow()
+        objLArrow!.position.x = -boardW / 2.0 - tileSize * 1.0
+        objLArrow!.position.y = tileSize * 4.2
+        objLArrow!.alpha = 0.15
+        buttonRBomb = ButtonMesh.createThinOutlineButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
+        buttonRBomb!.position.x = boardW / 2.0 + tileSize * 2.0
+        buttonRBomb!.position.y = tileSize * 1.5
+        buttonRBomb!.alpha = 0.5
+        objRBomb = Bomb()
+        objRBomb!.position.x = boardW / 2.0 + tileSize * 2.0
+        objRBomb!.position.y = tileSize * 1.5
+        objRBomb!.alpha = 0.15
+        buttonRCross = ButtonMesh.createThinOutlineButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
+        buttonRCross!.position.x = boardW / 2.0 + tileSize * 1.0
+        buttonRCross!.position.y = tileSize * 2.7
+        buttonRCross!.alpha = 0.5
+        objRCross = Cross()
+        objRCross!.position.x = boardW / 2.0 + tileSize * 1.0
+        objRCross!.position.y = tileSize * 2.7
+        objRCross!.alpha = 0.15
+        buttonRArrow = ButtonMesh.createThinOutlineButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
+        buttonRArrow!.position.x = boardW / 2.0 + tileSize * 1.0
+        buttonRArrow!.position.y = tileSize * 4.2
+        buttonRArrow!.alpha = 0.5
+        objRArrow = Arrow()
+        objRArrow!.position.x = boardW / 2.0 + tileSize * 1.0
+        objRArrow!.position.y = tileSize * 4.2
+        objRArrow!.alpha = 0.15
+        // pause button and superpower buttons go on a game screen layer
         baseLayer!.meshes.append(buttonPause!)
+        baseLayer!.meshes.append(buttonLBomb!)
+        baseLayer!.meshes.append(buttonLCross!)
+        baseLayer!.meshes.append(buttonLArrow!)
+        baseLayer!.meshes.append(buttonRBomb!)
+        baseLayer!.meshes.append(buttonRCross!)
+        baseLayer!.meshes.append(buttonRArrow!)
+        buttonObjLayer!.meshes.append(objLBomb!)
+        buttonObjLayer!.meshes.append(objLCross!)
+        buttonObjLayer!.meshes.append(objLArrow!)
+        buttonObjLayer!.meshes.append(objRBomb!)
+        buttonObjLayer!.meshes.append(objRCross!)
+        buttonObjLayer!.meshes.append(objRArrow!)
+
         // also create back button
         buttonBack = ButtonMesh.createBackButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
-        buttonBack!.position.x = -boardW / 2.0 + tileSize * 3.0
-        buttonBack!.position.y = -boardH / 2.0 + tileSize * 3.0
+        buttonBack!.position.x = -boardW / 2.0 + tileSize * 2.5
+        buttonBack!.position.y = -boardH / 2.0 + tileSize * 2.5
         buttonBack!.alpha = 1.0
         // back button goes to a multiplayer screen lauyer
         multiplayerButtonsLayer.meshes.append(buttonBack!)
         pauseButtonsLayer.meshes.append(buttonBack!)
         
         // create pause menu buttons
-        buttonMainMenu = ButtonMesh.createRedButton(innerWidth: 10.0 * tileSize, innerHeight: 1.0 * tileSize, borderWidth: tileSize / 2.0)
+        buttonMainMenu = ButtonMesh.createRedButton(innerWidth: 7.0 * tileSize, innerHeight: 0.8 * tileSize, borderWidth: tileSize / 3.0)
         buttonMainMenu!.alpha = 1.0
-        buttonMainMenu!.position.y = 3.4 * tileSize
+        buttonMainMenu!.position.y = 3.0 * tileSize
         buttonToggleMusic = ButtonMesh.createThickOutlineButton(innerWidth: 8.0 * tileSize, innerHeight: 0.8 * tileSize, borderWidth: tileSize / 2.0)
         buttonToggleMusic!.alpha = 1.0
-        buttonToggleMusic!.position.y = -0.4 * tileSize
+        buttonToggleMusic!.position.y = -1.0 * tileSize
         buttonToggleEffects = ButtonMesh.createThickOutlineButton(innerWidth: 8.0 * tileSize, innerHeight: 0.8 * tileSize, borderWidth: tileSize / 2.0)
         buttonToggleEffects!.alpha = 1.0
-        buttonToggleEffects!.position.y = 1.4 * tileSize
+        buttonToggleEffects!.position.y = 1.0 * tileSize
         checkEffects = ButtonMesh.createCheckButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
         checkEffects!.position.x = boardW / 4.5
-        checkEffects!.position.y = 1.4 * tileSize
+        checkEffects!.position.y = 1.0 * tileSize
         checkEffects!.alpha = 1.0
         checkMusic = ButtonMesh.createCheckButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
         checkMusic!.position.x = boardW / 4.5
-        checkMusic!.position.y = -0.4 * tileSize
+        checkMusic!.position.y = -1.0 * tileSize
         checkMusic!.alpha = 1.0
         uncheckEffects = ButtonMesh.createUncheckButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
         uncheckEffects!.position.x = boardW / 4.5
-        uncheckEffects!.position.y = 1.4 * tileSize
+        uncheckEffects!.position.y = 1.0 * tileSize
         uncheckEffects!.alpha = 1.0
         uncheckMusic = ButtonMesh.createUncheckButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize * 0.8)
         uncheckMusic!.position.x = boardW / 4.5
-        uncheckMusic!.position.y = -0.4 * tileSize
+        uncheckMusic!.position.y = -1.0 * tileSize
         uncheckMusic!.alpha = 1.0
         // add them to the pause menu layer
         pauseButtonsLayer.meshes.append(buttonMainMenu!)
         pauseButtonsLayer.meshes.append(buttonToggleMusic!)
         pauseButtonsLayer.meshes.append(buttonToggleEffects!)
+
         // make texts for the buttons
         let textSize = CGSize(width: 512, height: 64)
         var font = Font.systemFont(ofSize: 40)
+        let textOffset: Float = 6.0
+
+        //
         var textMusic = TextQuadMesh(text: "MUSIC", font: font, color: Color.white, size: textSize)
         var textEffects = TextQuadMesh(text: "EFFECTS", font: font, color: Color.white, size: textSize)
-        var textMenu = TextQuadMesh(text: "Quit Game To Main Menu", font: font, color: Color.white, size: textSize)
+        var textMenu = TextQuadMesh(text: "Quit Game", font: font, color: Color.white, size: textSize)
         // put them in their correct positions
-        textMusic.position.y = -0.4 * tileSize + 6
-        textEffects.position.y = 1.4 * tileSize + 6
-        textMenu.position.y = 3.4 * tileSize + 6
+        textMusic.position.y = -1.0 * tileSize + textOffset
+        textEffects.position.y = 1.0 * tileSize + textOffset
+        textMenu.position.y = 3.0 * tileSize + textOffset
         // add them to the layer
         pauseButtonsLayer.meshes.append(checkMusic!)
         pauseButtonsLayer.meshes.append(checkEffects!)
@@ -442,16 +514,16 @@ class Renderer: NSObject, MTKViewDelegate {
         // create special abilities buttons
 
         // add buttons to menuLayer
-        buttonLocal = ButtonMesh.createUnlitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        buttonLocal = ButtonMesh.createUnlitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.0 * tileSize, borderWidth: tileSize / 3.0)
         buttonLocal!.alpha = 1.0
-        button1v1 = ButtonMesh.createUnlitButton(innerWidth: 10.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        button1v1 = ButtonMesh.createUnlitButton(innerWidth: 10.0 * tileSize, innerHeight: 1.0 * tileSize, borderWidth: tileSize / 3.0)
         button1v1!.alpha = 1.0
-        buttonTutorial = ButtonMesh.createLitButton(innerWidth: 7.0 * tileSize, innerHeight: 1.2 * tileSize, borderWidth: tileSize / 2.0)
+        buttonTutorial = ButtonMesh.createLitButton(innerWidth: 7.0 * tileSize, innerHeight: 1.0 * tileSize, borderWidth: tileSize / 3.0)
         buttonTutorial!.alpha = 1.0
         // put them in their correct positions
-        buttonLocal!.position.y = -1.5 * tileSize
+        buttonLocal!.position.y = -1.0 * tileSize
         buttonTutorial!.position.y = 1.0 * tileSize
-        button1v1!.position.y = 3.5 * tileSize
+        button1v1!.position.y = 3.0 * tileSize
         // add them to the layer
         mainButtonsLayer.meshes.append(buttonLocal!)
         mainButtonsLayer.meshes.append(buttonTutorial!)
@@ -460,15 +532,15 @@ class Renderer: NSObject, MTKViewDelegate {
 //        let textSize = CGSize(width: 512, height: 64)
 //        var font = Font.systemFont(ofSize: 40)
         var textLocal = TextQuadMesh(text: "Solo Zapping", font: font, color: Color.white, size: textSize)
-        var text1v1 = TextQuadMesh(text: "1v1 Make Most Points", font: font, color: Color.white, size: textSize)
-        var textBuyCoffee = TextQuadMesh(text: "Tutorial", font: font, color: Color.white, size: textSize)
+        var text1v1 = TextQuadMesh(text: "Multiplayer COMING SOON", font: font, color: Color.white, size: textSize)
+        var textTutorial = TextQuadMesh(text: "Tutorial", font: font, color: Color.white, size: textSize)
         // put them in their correct positions
-        textLocal.position.y = -1.5 * tileSize + 6
-        textBuyCoffee.position.y = 1.0 * tileSize + 6
-        text1v1.position.y = 3.5 * tileSize + 6
+        textLocal.position.y = -1.0 * tileSize + textOffset
+        textTutorial.position.y = 1.0 * tileSize + textOffset
+        text1v1.position.y = 3.0 * tileSize + textOffset
         // add them to the layer
         mainButtonsLayer.meshes.append(textLocal)
-        mainButtonsLayer.meshes.append(textBuyCoffee)
+        mainButtonsLayer.meshes.append(textTutorial)
         mainButtonsLayer.meshes.append(text1v1)
         
         // now some license info
@@ -477,9 +549,9 @@ class Renderer: NSObject, MTKViewDelegate {
         Licensed under Creative Commons: By Attribution 4.0 License
         http://creativecommons.org/licenses/by/4.0/
         """
-        font = Font.systemFont(ofSize: 16)
+        font = Font.systemFont(ofSize: 14)
         var textLicense = TextQuadMesh(text: licenseInfo, font: font, color: Color.white, size: textSize)
-        textLicense.position.y = 5.5 * tileSize
+        textLicense.position.y = 4.8 * tileSize
         menuLayer.meshes.append(textLicense)
     }
 
@@ -529,7 +601,7 @@ class Renderer: NSObject, MTKViewDelegate {
     }
 
     // function to write ZAPZAP in the main manu, with electric arcs
-    func makeMenuArcs(shiftx1: Float = 0.0, shifty1: Float = 0.0, shiftx2: Float = 0.0, shifty2: Float = 0.0) {
+    func makeMenuArcs(shiftx1: Float = 0.0, shifty1: Float = 25.0, shiftx2: Float = 0.0, shifty2: Float = 25.0) {
         // Segments for letter Z1
         let zSegments1 = [
             Segment(startPoint: SIMD2<Float>(-300.0-50.0 + shiftx1, -250.0-25.0 + shifty1),
@@ -707,19 +779,183 @@ class Renderer: NSObject, MTKViewDelegate {
             // verify pause button first
             if gameMgr.lastInput != nil {
                 if buttonPause!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
-                    // TODO: go to pause menu screen
-                    if gameMgr.leftScore > gameMgr.rightScore {
-                        multiMgr.reportScoreToGameCenter(score: gameMgr.leftScore)
-                    } else {
-                        multiMgr.reportScoreToGameCenter(score: gameMgr.rightScore)
-                    }
+                    // TODO: move the leaderboard reporting to the end of the game
+                    multiMgr.reportScoreToGameCenter(score: gameMgr.leftScore + gameMgr.rightScore)
                     setCurrentScreen(pauseScreen)
                 }
+                // check for powers deployments
+                // TODO: differentiate local vs multiplayer
+                // also
+                // TODO: just change the acquired and armed status
+                // and update the alphas based on these
+                // because the armed and acquired status can change elsewhere too
+                if gameMgr.powerLBomb {
+                    // if the bomb is "acquired" and you tap on it, it will ARM it
+                    // but DISARM the others if they were armed before
+                    if buttonLBomb!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                        gameMgr.armLBomb = !gameMgr.armLBomb
+                        if gameMgr.armLBomb {
+                            SoundManager.shared.playSoundEffect(filename: "alarm")
+                        }
+                        gameMgr.armLCross = false
+                        gameMgr.armLArrow = false
+                    }
+                }
+                if gameMgr.powerLCross {
+                    // if the cross is "acquired" and you tap on it, it will ARM it
+                    // but DISARM the others if they were armed before
+                    if buttonLCross!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                        gameMgr.armLCross = !gameMgr.armLCross
+                        if gameMgr.armLCross {
+                            SoundManager.shared.playSoundEffect(filename: "alarm")
+                        }
+                        gameMgr.armLBomb = false
+                        gameMgr.armLArrow = false
+                    }
+                }
+                if gameMgr.powerLArrow {
+                    // if the arrow is "acquired" and you tap on it, it will ARM it
+                    // but DISARM the others if they were armed before
+                    if buttonLArrow!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                        gameMgr.armLArrow = !gameMgr.armLArrow
+                        if gameMgr.armLArrow {
+                            SoundManager.shared.playSoundEffect(filename: "alarm")
+                        }
+                        gameMgr.armLCross = false
+                        gameMgr.armLBomb = false
+                    }
+                }
+                if gameMgr.powerRBomb {
+                    // same as above for the right buttons group
+                    if buttonRBomb!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                        gameMgr.armRBomb = !gameMgr.armRBomb
+                        if gameMgr.armRBomb {
+                            SoundManager.shared.playSoundEffect(filename: "alarm")
+                        }
+                        gameMgr.armRCross = false
+                        gameMgr.armRArrow = false
+                    }
+                }
+                if gameMgr.powerRCross {
+                    // same as above for the right buttons group
+                    if buttonRCross!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                        gameMgr.armRCross = !gameMgr.armRCross
+                        if gameMgr.armRCross {
+                            SoundManager.shared.playSoundEffect(filename: "alarm")
+                        }
+                        gameMgr.armRBomb = false
+                        gameMgr.armRArrow = false
+                    }
+                }
+                if gameMgr.powerRArrow {
+                    // same as above for the right buttons group
+                    if buttonRArrow!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                        gameMgr.armRArrow = !gameMgr.armRArrow
+                        if gameMgr.armRArrow {
+                            SoundManager.shared.playSoundEffect(filename: "alarm")
+                        }
+                        gameMgr.armRBomb = false
+                        gameMgr.armRCross = false
+                    }
+                }
             }
+            // update buttons alphas based on acquired and armed status
+            if gameMgr.powerLBomb {
+                if gameMgr.armLBomb {
+                    buttonLBomb!.alpha = 3.0
+                    objLBomb!.alpha = 3.0
+                } else {
+                    buttonLBomb!.alpha = 1.0
+                    objLBomb!.alpha = 1.0
+                }
+            } else {
+                gameMgr.armLBomb = false
+                buttonLBomb!.alpha = 1.0
+                objLBomb!.alpha = 0.15
+            }
+            
+            if gameMgr.powerRBomb {
+                if gameMgr.armRBomb {
+                    buttonRBomb!.alpha = 3.0
+                    objRBomb!.alpha = 3.0
+                } else {
+                    buttonRBomb!.alpha = 1.0
+                    objRBomb!.alpha = 1.0
+                }
+            } else {
+                gameMgr.armRBomb = false
+                buttonRBomb!.alpha = 1.0
+                objRBomb!.alpha = 0.15
+            }
+            
+            if gameMgr.powerLCross {
+                if gameMgr.armLCross {
+                    buttonLCross!.alpha = 3.0
+                    objLCross!.alpha = 3.0
+                } else {
+                    buttonLCross!.alpha = 1.0
+                    objLCross!.alpha = 1.0
+                }
+            } else {
+                gameMgr.armLCross = false
+                buttonLCross!.alpha = 1.0
+                objLCross!.alpha = 0.15
+            }
+            
+            if gameMgr.powerRCross {
+                if gameMgr.armRCross {
+                    buttonRCross!.alpha = 3.0
+                    objRCross!.alpha = 3.0
+                } else {
+                    buttonRCross!.alpha = 1.0
+                    objRCross!.alpha = 1.0
+                }
+            } else {
+                gameMgr.armRCross = false
+                buttonRCross!.alpha = 1.0
+                objRCross!.alpha = 0.15
+            }
+            
+            if gameMgr.powerLArrow {
+                if gameMgr.armLArrow {
+                    buttonLArrow!.alpha = 3.0
+                    objLArrow!.alpha = 3.0
+                } else {
+                    buttonLArrow!.alpha = 1.0
+                    objLArrow!.alpha = 1.0
+                }
+            } else {
+                gameMgr.armLArrow = false
+                buttonLArrow!.alpha = 1.0
+                objLArrow!.alpha = 0.15
+            }
+            
+            if gameMgr.powerRArrow {
+                if gameMgr.armRArrow {
+                    buttonRArrow!.alpha = 3.0
+                    objRArrow!.alpha = 3.0
+                } else {
+                    buttonRArrow!.alpha = 1.0
+                    objRArrow!.alpha = 1.0
+                }
+            } else {
+                gameMgr.armRArrow = false
+                buttonRArrow!.alpha = 1.0
+                objRArrow!.alpha = 0.15
+            }
+            
             gameMgr.update()
             // update the GameObjects in the objectLayer
             if objectsLayer != nil {
                 for mesh in objectsLayer.meshes {
+                    if let gameObject = mesh as? GameObject {
+                        gameObject.update()
+                    }
+                }
+            }
+            // update the GameObjects in the objectLayer
+            if buttonObjLayer != nil {
+                for mesh in buttonObjLayer.meshes {
                     if let gameObject = mesh as? GameObject {
                         gameObject.update()
                     }
@@ -803,6 +1039,8 @@ class Renderer: NSObject, MTKViewDelegate {
                     currentScreen = gameScreen
                 }
                 if buttonMainMenu!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    // show the leaderboard
+                    multiMgr.presentGameCenterLeaderboard()
                     // quit the game and go to the main menu
                     setCurrentScreen(mainMenuScreen)
                 }
