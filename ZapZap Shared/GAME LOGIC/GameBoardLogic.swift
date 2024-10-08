@@ -128,8 +128,8 @@ class GameBoard {
         self.resetTable(percentMissingLinks: missingLinks)
     }
     
-    func setTile(at x: Int, y: Int, tile: Tile) {
-        connections.connections[x][y] = tile
+    func setTile(at x: Int, y: Int, connection: UInt8) {
+        connections.connections[x][y]?.connections = connection
     }
 
     // internal function used in checkConnections
@@ -292,7 +292,7 @@ class GameBoard {
     
     // another method that has to be called IN SYNC and useing the SAME ALGORITHM as
     // what you will be doing to the graphics tiles
-    func bombTable(ati: Int, atj: Int) {
+    func bombTable(ati: Int, atj: Int, deltaX: Int = 2, deltaY: Int = 2) {
         // make sure we're not bombing outside
         if ati < 0 || ati >= width || atj < 0 || atj >= height {
             return
@@ -300,10 +300,10 @@ class GameBoard {
         // will remove the tiles around ati, atj
         // will "fall down" the ones above
         // will generate new ones from above
-        var starti = ati - 2
-        var endi = ati + 3
-        var startj = atj - 2
-        var endj = atj + 3
+        var starti = ati - deltaX
+        var endi = ati + deltaX + 1
+        var startj = atj - deltaY
+        var endj = atj + deltaY + 1
         // clip
         if starti < 0 {
             starti = 0

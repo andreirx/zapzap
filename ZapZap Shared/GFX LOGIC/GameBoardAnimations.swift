@@ -316,8 +316,20 @@ class AnimationManager {
                                         SoundManager.shared.playSoundEffect(filename: bonus.sound)
                                         // was it a bomb?
                                         if let _ = bonus as? Bomb {
-                                            gameManager.bombTable(ati: tileX, atj: tileY)
-                                            didBomb = true
+                                            gameManager.powerLBomb = true
+                                            gameManager.renderer!.objLBomb!.alpha = 1.0
+//                                            gameManager.bombTable(ati: tileX, atj: tileY)
+//                                            didBomb = true
+                                        }
+                                        // was it a cross?
+                                        if let _ = bonus as? Cross {
+                                            gameManager.powerLCross = true
+                                            gameManager.renderer!.objLCross!.alpha = 1.0
+                                        }
+                                        // was it an arrow?
+                                        if let _ = bonus as? Arrow {
+                                            gameManager.powerLArrow = true
+                                            gameManager.renderer!.objLArrow!.alpha = 1.0
                                         }
                                     } else if marking == .right {
                                         if bonus.bonusPoints != 0 {
@@ -328,8 +340,20 @@ class AnimationManager {
                                         SoundManager.shared.playSoundEffect(filename: bonus.sound)
                                         // was it a bomb?
                                         if let _ = bonus as? Bomb {
-                                            gameManager.bombTable(ati: tileX, atj: tileY)
-                                            didBomb = true
+                                            gameManager.powerRBomb = true
+                                            gameManager.renderer!.objRBomb!.alpha = 1.0
+//                                            gameManager.bombTable(ati: tileX, atj: tileY)
+//                                            didBomb = true
+                                        }
+                                        // was it a cross?
+                                        if let _ = bonus as? Cross {
+                                            gameManager.powerRCross = true
+                                            gameManager.renderer!.objRCross!.alpha = 1.0
+                                        }
+                                        // was it an arrow?
+                                        if let _ = bonus as? Arrow {
+                                            gameManager.powerRArrow = true
+                                            gameManager.renderer!.objRArrow!.alpha = 1.0
                                         }
                                     }
                                 }
@@ -339,10 +363,6 @@ class AnimationManager {
                     // Remove the collected bonuses
                     gameManager.renderer!.objectsLayer.meshes.removeAll { mesh in
                         return bonusesToRemove.contains(where: { $0 === mesh })
-                    }
-                    // remove all bonuses if there was a bomb going off
-                    if didBomb {
-                        gameManager.renderer!.objectsLayer.meshes.removeAll()
                     }
                 }
                 animation.cleanup()
@@ -825,8 +845,8 @@ class FreezeFrameAnimation: Animation, Poolable {
 class SuperheroAnimation: Animation {
     private weak var superLeft: QuadMesh?
     private weak var superRight: QuadMesh?
-    private let startAlpha: Float = 1.0
-    private let alphaDecreaseRate: Float = 0.01 // Controls how quickly alpha decreases
+    private let startAlpha: Float = 0.1
+    private let alphaDecreaseRate: Float = 0.015 // Controls how quickly alpha decreases
 
     var isFinished: Bool {
         return superLeft!.alpha <= 0.0
@@ -839,10 +859,10 @@ class SuperheroAnimation: Animation {
         self.superRight = sRight
         self.superLeft?.alpha = startAlpha
         self.superLeft?.position.y = 0.0
-        self.superLeft?.scale = 1.5
+        self.superLeft?.scale = 1.0
         self.superRight?.alpha = startAlpha
         self.superRight?.position.y = 0.0
-        self.superRight?.scale = 1.5
+        self.superRight?.scale = 1.0
     }
 
     func update() {
@@ -903,7 +923,7 @@ class ObjectFallAnimation: Animation {
         speed += ObjectFallAnimation.gravity * ObjectFallAnimation.speedFactor * (1 / 60.0)
         speed *= (1.0 - ObjectFallAnimation.friction)
         object.position.y += speed
-        // scale will be 1 + K * (distance in tiles from target position) where K is 0.2
+        // scale will be 1 + K * (distance in tiles from target position) where K is 0.5
         object.baseScale = 1.0 + 0.5 * (targetY - object.position.y) / tileSize
 
         if object.position.y >= targetY {

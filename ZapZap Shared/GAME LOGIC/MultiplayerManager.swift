@@ -9,7 +9,7 @@ import Foundation
 import GameKit
 import GameplayKit
 
-class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchDelegate, GKLocalPlayerListener {
+class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchDelegate, GKLocalPlayerListener, GKGameCenterControllerDelegate {
 
     // error messages get written into the multiStatusMesh every time they change
     var errorMsg: String = "" {
@@ -35,6 +35,41 @@ class MultiplayerManager: NSObject, GKMatchmakerViewControllerDelegate, GKMatchD
 
     var match: GKMatch?
     var currentMatchmakerViewController: GKMatchmakerViewController? = nil
+    var currentGameCenterViewController: GKGameCenterViewController? = nil
+
+    // MARK: - Present Game Center Leaderboard UI
+    func presentGameCenterLeaderboard() {
+        let leaderboardVC = GKGameCenterViewController(leaderboardID: "MaxPoints", playerScope: .global, timeScope: .allTime)
+        leaderboardVC.gameCenterDelegate = self // Set self as the delegate
+        self.currentGameCenterViewController = leaderboardVC
+
+        // Present the Game Center leaderboard UI
+        if let rootVC = renderer?.viewController {
+            DispatchQueue.main.async {
+                #if os(iOS)
+                // iOS: Present with animation
+                rootVC.present(leaderboardVC, animated: true, completion: nil)
+                #elseif os(macOS)
+                // macOS: Present with a custom animator
+                rootVC.present(leaderboardVC, animator: CustomAnimator())
+                #endif
+            }
+        }
+    }
+
+    // MARK: - Dismiss Game Center Leaderboard
+    func dismissGameCenterVC(viewController: GKGameCenterViewController) {
+        #if os(iOS)
+        viewController.dismiss(animated: true, completion: nil)
+        #elseif os(macOS)
+        viewController.dismiss(nil)
+        #endif
+    }
+
+    // MARK: - GKGameCenterControllerDelegate
+    func gameCenterViewControllerDidFinish(_ gameCenterViewController: GKGameCenterViewController) {
+        dismissGameCenterVC(viewController: gameCenterViewController)
+    }
 
     var gameBoard: GameBoard?
     var renderer: Renderer?
