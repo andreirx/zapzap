@@ -74,6 +74,8 @@
 		18D0AF0D2CAAD1CD00D8B055 /* superhero.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF0B2CAAD1CC00D8B055 /* superhero.wav */; };
 		18D0AF152CB4198F00D8B055 /* alarm.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF142CB4198F00D8B055 /* alarm.wav */; };
 		18D0AF162CB4198F00D8B055 /* alarm.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF142CB4198F00D8B055 /* alarm.wav */; };
+		18D0AF182CB6AFC300D8B055 /* BotPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D0AF172CB6AFC300D8B055 /* BotPlayer.swift */; };
+		18D0AF192CB6AFC300D8B055 /* BotPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D0AF172CB6AFC300D8B055 /* BotPlayer.swift */; };
 		18D313132C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 		18D313142C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 /* End PBXBuildFile section */
@@ -120,6 +122,7 @@
 		18D0AF082CA71FAA00D8B055 /* nope.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = nope.wav; sourceTree = "<group>"; };
 		18D0AF0B2CAAD1CC00D8B055 /* superhero.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = superhero.wav; sourceTree = "<group>"; };
 		18D0AF142CB4198F00D8B055 /* alarm.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm.wav; sourceTree = "<group>"; };
+		18D0AF172CB6AFC300D8B055 /* BotPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BotPlayer.swift; sourceTree = "<group>"; };
 		18D313122C8986B700423697 /* UIMeshes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIMeshes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -218,6 +221,7 @@
 				18BEF38E2C4FE4B100A4D753 /* GameManager.swift */,
 				18BEF3C32C73AE3200A4D753 /* GameObjects.swift */,
 				18D0AF042C9072B800D8B055 /* MultiplayerManager.swift */,
+				18D0AF172CB6AFC300D8B055 /* BotPlayer.swift */,
 			);
 			path = "GAME LOGIC";
 			sourceTree = "<group>";
@@ -400,6 +404,7 @@
 				18BEF3A42C5E56F000A4D753 /* Screen.swift in Sources */,
 				18BEF3982C5A1EC900A4D753 /* ParticleEffects.swift in Sources */,
 				18BEF3752C4A824B00A4D753 /* Shaders.metal in Sources */,
+				18D0AF182CB6AFC300D8B055 /* BotPlayer.swift in Sources */,
 				18BEF3602C4A824B00A4D753 /* GameViewController.swift in Sources */,
 				18BEF35E2C4A824B00A4D753 /* AppDelegate.swift in Sources */,
 				18BEF3C12C64958800A4D753 /* ObjectPool.swift in Sources */,
@@ -426,6 +431,7 @@
 				18BEF3A52C5E56F000A4D753 /* Screen.swift in Sources */,
 				18BEF3992C5A1EC900A4D753 /* ParticleEffects.swift in Sources */,
 				18BEF3762C4A824B00A4D753 /* Shaders.metal in Sources */,
+				18D0AF192CB6AFC300D8B055 /* BotPlayer.swift in Sources */,
 				18BEF3702C4A824B00A4D753 /* GameViewController.swift in Sources */,
 				18BEF36E2C4A824B00A4D753 /* AppDelegate.swift in Sources */,
 				18BEF3C22C64958800A4D753 /* ObjectPool.swift in Sources */,

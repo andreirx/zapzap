@@ -16,12 +16,6 @@ enum Connection: UInt8 {
     case left = 0
 }
 
-enum AnimationMarking: UInt8 {
-    case falling = 2
-    case rotating = 1
-    case none = 0
-}
-
 // // // //
 // just one basic element of our board
 //
@@ -45,6 +39,11 @@ class Tile: Codable {
     func hasConnection(direction: Direction) -> Bool {
         return (connections & direction.rawValue) != 0
     }
+
+    // Copy method
+    func copy() -> Tile {
+        return Tile(connections: self.connections)
+    }
 }
 
 // // // //
@@ -60,6 +59,21 @@ class BoardConnections: Codable {
         self.width = width
         self.height = height
         self.connections = Array(repeating: Array(repeating: nil, count: height), count: width)
+    }
+
+    // Copy method
+    func copy() -> BoardConnections {
+        let copy = BoardConnections(width: self.width, height: self.height)
+        for x in 0..<width {
+            for y in 0..<height {
+                if let tile = self.connections[x][y] {
+                    copy.connections[x][y] = tile.copy()
+                } else {
+                    copy.connections[x][y] = nil
+                }
+            }
+        }
+        return copy
     }
 }
 
@@ -77,7 +91,6 @@ class GameBoard {
     let height: Int
     var connections: BoardConnections
     var connectMarkings: [[Connection]]
-    var animationMarkings: [[AnimationMarking]]
     var multiplierLeft: [Int]
     var multiplierRight: [Int]
     
@@ -92,6 +105,28 @@ class GameBoard {
     private var missingLinks: Int = 0
     private var newElements: Int = 0
     private var missingLinkElements: Int = 0
+    
+    // init from existing board
+    private init(width: Int, height: Int, connections: BoardConnections) {
+        // Initialize the RNG with the seed
+        self.rng = GKMersenneTwisterRandomSource(seed: rngSeed)
+        self.width = width
+        self.height = height
+        self.connections = connections
+        // Initialize other properties if necessary
+        self.missingLinks = defaultMissingLinks
+        self.connectMarkings = Array(repeating: Array(repeating: .none, count: height), count: width)
+        self.multiplierLeft = Array(repeating: 1, count: height)
+        self.multiplierRight = Array(repeating: 1, count: height)
+    }
+
+    // Copy method
+    func copy() -> GameBoard {
+        let connectionsCopy = self.connections.copy()
+        let copy = GameBoard(width: self.width, height: self.height, connections: connectionsCopy)
+        // No need to copy other properties if they are derived or not relevant
+        return copy
+    }
 
     // init with random seed
     init(width: Int, height: Int, missingLinks: Int) {
@@ -103,7 +138,6 @@ class GameBoard {
         self.missingLinks = missingLinks
         self.connections = BoardConnections(width: width, height: height)
         self.connectMarkings = Array(repeating: Array(repeating: .none, count: height), count: width)
-        self.animationMarkings = Array(repeating: Array(repeating: .none, count: height), count: width)
         self.multiplierLeft = Array(repeating: 1, count: height)
         self.multiplierRight = Array(repeating: 1, count: height)
         //
@@ -121,7 +155,6 @@ class GameBoard {
         self.missingLinks = missingLinks
         self.connections = BoardConnections(width: width, height: height)
         self.connectMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
-        self.animationMarkings = Array(repeating: Array(repeating: .none, count: width), count: height)
         self.multiplierLeft = Array(repeating: 1, count: height)
         self.multiplierRight = Array(repeating: 1, count: height)
         //
