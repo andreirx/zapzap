@@ -63,8 +63,14 @@ class GameManager {
     var scoreLeftMesh: TextQuadMesh? = nil
     var rightScore: Int = 0
     var scoreRightMesh: TextQuadMesh? = nil
+
+    // very important things
     var multiplayer: Bool = false
-    
+    var bot: BotPlayer? = nil
+    var isBotThinking: Bool = false
+    var botMoveReady: Bool = false
+    var botMove: ((x: Int, y: Int), rotationCount: Int)? = nil
+
     // powers
     var powerLBomb: Bool = false
     var powerLCross: Bool = false
@@ -103,6 +109,33 @@ class GameManager {
         createTiles()
     }
     
+    // add a bot if you want to plauy with it
+    func addBot() {
+        if self.gameBoard != nil {
+            bot = BotPlayer(gameBoard: self.gameBoard!)
+        }
+    }
+
+    // make the bot move
+    func triggerBotMove() {
+        if bot == nil {
+            // no bot, no move
+            return
+        }
+        isBotThinking = true
+        botMoveReady = false
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            // Call bot's determineNextMove in the background
+            if let move = self?.bot?.determineNextMove() {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    // Save the move and mark it as ready
+                    self?.botMove = move
+                    self?.botMoveReady = true
+                }
+            }
+        }
+    }
+
     // get correct texture position depending on the grid connections
     func getTextureX(gridConnections: Int) -> Float {
         let textureUnitX: Float = 1.0 / 16.0
@@ -263,6 +296,10 @@ class GameManager {
         // reset the score
         leftScore = 0
         rightScore = 0
+        // reset the bot
+        isBotThinking = false
+        botMoveReady = false
+        botMove = nil
         // create new meshes corresponding to the underlying tiles
         createTiles()
         // add the multiplier lights
@@ -776,6 +813,32 @@ class GameManager {
         } else if self.lastInput != nil {
             // if the player tapped but we weren't waiting for input, discard
             self.lastInput = nil
+        }
+        if zapGameState == .waitingForInput {
+            //
+            // Check if it's the bot's turn to move
+            if let bot = bot {
+                if !isBotThinking && !botMoveReady {
+                    // Trigger the bot's move in the background if it's not thinking
+                    triggerBotMove()
+                } else if botMoveReady {
+                    // If the bot move is ready, apply the move to the board
+                    if let move = botMove {
+                        let (x, y) = move.0
+                        let rotationCount = move.1
+                        
+                        // Apply the move to the game board
+                        for _ in 0..<rotationCount {
+                            tapTile(i: x, j: y)
+                        }
+                        
+                        // Reset the flags and prepare for the next move
+                        isBotThinking = false
+                        botMoveReady = false
+                        botMove = nil
+                    }
+                }
+            }
         }
         // move those animations
         animationManager?.updateAnimations()

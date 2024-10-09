@@ -93,6 +93,8 @@ class Renderer: NSObject, MTKViewDelegate {
     var buttonLocal: ButtonMesh?
     var button1v1: ButtonMesh?
     var buttonTutorial: ButtonMesh?
+    var buttonVsBot: ButtonMesh?
+    
     var buttonPause: ButtonMesh?
     var buttonBack: ButtonMesh?
     
@@ -568,6 +570,7 @@ class Renderer: NSObject, MTKViewDelegate {
             gameMgr.clearElectricArcs()
             // MARK: starting new LOCAL game
             gameMgr.startNewGame(isMultiplayer: false)
+            gameMgr.addBot()
             maxArcDisplacement = 0.2
             gameMgr.gameBoard?.checkConnections()
             gameMgr.addElectricArcs()
