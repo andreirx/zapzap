@@ -516,32 +516,43 @@ class Renderer: NSObject, MTKViewDelegate {
         // create special abilities buttons
 
         // add buttons to menuLayer
-        buttonLocal = ButtonMesh.createUnlitButton(innerWidth: 8.0 * tileSize, innerHeight: 1.0 * tileSize, borderWidth: tileSize / 3.0)
+        buttonLocal = ButtonMesh.createUnlitButton(innerWidth: 5.0 * tileSize, innerHeight: 1.0 * tileSize, borderWidth: tileSize / 3.0)
         buttonLocal!.alpha = 1.0
         button1v1 = ButtonMesh.createUnlitButton(innerWidth: 10.0 * tileSize, innerHeight: 1.0 * tileSize, borderWidth: tileSize / 3.0)
         button1v1!.alpha = 1.0
         buttonTutorial = ButtonMesh.createLitButton(innerWidth: 7.0 * tileSize, innerHeight: 1.0 * tileSize, borderWidth: tileSize / 3.0)
         buttonTutorial!.alpha = 1.0
+        buttonVsBot = ButtonMesh.createUnlitButton(innerWidth: 5.0 * tileSize, innerHeight: 1.0 * tileSize, borderWidth: tileSize / 3.0)
+        buttonVsBot!.alpha = 1.0
         // put them in their correct positions
         buttonLocal!.position.y = -1.0 * tileSize
+        buttonLocal!.position.x = -3.0 * tileSize
+        buttonVsBot!.position.y = -1.0 * tileSize
+        buttonVsBot!.position.x = 3.0 * tileSize
         buttonTutorial!.position.y = 1.0 * tileSize
         button1v1!.position.y = 3.0 * tileSize
         // add them to the layer
         mainButtonsLayer.meshes.append(buttonLocal!)
+        mainButtonsLayer.meshes.append(buttonVsBot!)
         mainButtonsLayer.meshes.append(buttonTutorial!)
         mainButtonsLayer.meshes.append(button1v1!)
         // make texts for the buttons
 //        let textSize = CGSize(width: 512, height: 64)
 //        var font = Font.systemFont(ofSize: 40)
-        var textLocal = TextQuadMesh(text: "Solo Zapping", font: font, color: Color.white, size: textSize)
+        var textLocal = TextQuadMesh(text: "Zen Mode", font: font, color: Color.white, size: textSize)
+        var textVsBot = TextQuadMesh(text: "Vs Bot", font: font, color: Color.white, size: textSize)
         var text1v1 = TextQuadMesh(text: "Multiplayer COMING SOON", font: font, color: Color.white, size: textSize)
         var textTutorial = TextQuadMesh(text: "Tutorial", font: font, color: Color.white, size: textSize)
         // put them in their correct positions
         textLocal.position.y = -1.0 * tileSize + textOffset
+        textLocal.position.x = -3.0 * tileSize
+        textVsBot.position.y = -1.0 * tileSize + textOffset
+        textVsBot.position.x = 3.0 * tileSize
         textTutorial.position.y = 1.0 * tileSize + textOffset
         text1v1.position.y = 3.0 * tileSize + textOffset
         // add them to the layer
         mainButtonsLayer.meshes.append(textLocal)
+        mainButtonsLayer.meshes.append(textVsBot)
         mainButtonsLayer.meshes.append(textTutorial)
         mainButtonsLayer.meshes.append(text1v1)
         
@@ -568,9 +579,6 @@ class Renderer: NSObject, MTKViewDelegate {
         }
         if currentScreen === gameScreen {
             gameMgr.clearElectricArcs()
-            // MARK: starting new LOCAL game
-            gameMgr.startNewGame(isMultiplayer: false)
-            gameMgr.addBot()
             maxArcDisplacement = 0.2
             gameMgr.gameBoard?.checkConnections()
             gameMgr.addElectricArcs()
@@ -783,7 +791,6 @@ class Renderer: NSObject, MTKViewDelegate {
             if gameMgr.lastInput != nil {
                 if buttonPause!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
                     // TODO: move the leaderboard reporting to the end of the game
-                    multiMgr.reportScoreToGameCenter(score: gameMgr.leftScore + gameMgr.rightScore)
                     setCurrentScreen(pauseScreen)
                 }
                 // check for powers deployments
@@ -981,6 +988,16 @@ class Renderer: NSObject, MTKViewDelegate {
             if gameMgr.lastInput != nil {
                 if buttonLocal!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
                     gameMgr.zapGameState = .waitingForInput
+                    // MARK: starting new ZEN game
+                    gameMgr.startNewGame(isMultiplayer: false)
+                    gameMgr.bot = nil
+                    setCurrentScreen(gameScreen)
+                }
+                if buttonVsBot!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                    gameMgr.zapGameState = .waitingForInput
+                    // MARK: starting new VS BOT game
+                    gameMgr.startNewGame(isMultiplayer: false)
+                    gameMgr.addBot()
                     setCurrentScreen(gameScreen)
                 }
                 if button1v1!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
@@ -1042,8 +1059,12 @@ class Renderer: NSObject, MTKViewDelegate {
                     currentScreen = gameScreen
                 }
                 if buttonMainMenu!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
-                    // show the leaderboard
-                    multiMgr.presentGameCenterLeaderboard()
+                    if !gameMgr.multiplayer && gameMgr.bot == nil {
+                        // for ZEN mode submit the combined score
+                        multiMgr.reportScoreToGameCenter(score: gameMgr.leftScore + gameMgr.rightScore)
+                        // for ZEN mode show the leaderboard
+                        multiMgr.presentGameCenterLeaderboard()
+                    }
                     // quit the game and go to the main menu
                     setCurrentScreen(mainMenuScreen)
                 }

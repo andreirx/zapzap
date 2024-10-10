@@ -114,6 +114,7 @@ class GameManager {
         if self.gameBoard != nil {
             bot = BotPlayer(gameBoard: self.gameBoard!)
         }
+        updateScoreMeshes()
     }
 
     // make the bot move
@@ -228,13 +229,20 @@ class GameManager {
                 renderer!.textLayer.meshes.removeAll { $0 === scoreRightMesh }
             }
         }
-        if multiplayer {
-            // for MULTIPLAYER, show scores separately
+        if multiplayer || bot != nil {
+            // for MULTIPLAYER or BOT, show scores separately
+            var leftText = "YOU"
+            var rightText = "BOT"
+            // for MULTIPLAYER, show the actual names
+            if multiplayer {
+                leftText = renderer!.multiMgr.match!.players[0].displayName
+                rightText = renderer!.multiMgr.match!.players[1].displayName
+            }
             // create text meshes for keeping score
-            var text = "INDIGO\n\(leftScore)\npoints"
+            var text = "\(leftText)\n\(leftScore)\npoints"
             scoreLeftMesh = TextQuadMesh(text: text, font: font, color: Color.magenta, size: textSize)
             scoreLeftMesh?.position = SIMD2<Float>(-needW / 2.0 + tileSize * 1.5, -tileSize)
-            text = "ORANGE\n\(rightScore)\npoints"
+            text = "\(rightText)\n\(rightScore)\npoints"
             scoreRightMesh = TextQuadMesh(text: text, font: font, color: Color.orange, size: textSize)
             scoreRightMesh?.position = SIMD2<Float>(needW / 2.0 - tileSize * 1.5, -tileSize)
             
@@ -354,6 +362,7 @@ class GameManager {
         powerRCross = false
         armRCross = false
         // wait for user input
+        updateScoreMeshes()
         zapGameState = .waitingForInput
     }
 

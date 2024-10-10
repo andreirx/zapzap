@@ -85,6 +85,12 @@ class BotPlayer {
                 for i in 0..<board.width {
                     if board.connectMarkings[i][j] == .right {
                         score += 1
+                        // pin connecting tiles get bonus points
+                        if i == board.width - 1 {
+                            if board.connections.connections[i][j]!.hasConnection(direction: .right) {
+                                score += 3
+                            }
+                        }
                     }
                 }
             }
