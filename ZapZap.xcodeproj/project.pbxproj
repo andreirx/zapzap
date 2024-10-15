@@ -76,6 +76,8 @@
 		18D0AF162CB4198F00D8B055 /* alarm.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF142CB4198F00D8B055 /* alarm.wav */; };
 		18D0AF182CB6AFC300D8B055 /* BotPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D0AF172CB6AFC300D8B055 /* BotPlayer.swift */; };
 		18D0AF192CB6AFC300D8B055 /* BotPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D0AF172CB6AFC300D8B055 /* BotPlayer.swift */; };
+		18D0AF1B2CBEE12A00D8B055 /* IttyBitty_haloween.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF1A2CBEE12900D8B055 /* IttyBitty_haloween.mp3 */; };
+		18D0AF1C2CBEE12A00D8B055 /* IttyBitty_haloween.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF1A2CBEE12900D8B055 /* IttyBitty_haloween.mp3 */; };
 		18D313132C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 		18D313142C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 /* End PBXBuildFile section */
@@ -123,6 +125,7 @@
 		18D0AF0B2CAAD1CC00D8B055 /* superhero.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = superhero.wav; sourceTree = "<group>"; };
 		18D0AF142CB4198F00D8B055 /* alarm.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm.wav; sourceTree = "<group>"; };
 		18D0AF172CB6AFC300D8B055 /* BotPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BotPlayer.swift; sourceTree = "<group>"; };
+		18D0AF1A2CBEE12900D8B055 /* IttyBitty_haloween.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = IttyBitty_haloween.mp3; sourceTree = "<group>"; };
 		18D313122C8986B700423697 /* UIMeshes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIMeshes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -246,6 +249,7 @@
 				18BEF3A82C611D7500A4D753 /* buzz.wav */,
 				185F389D2C7C582000141850 /* bomb.wav */,
 				18D0AF0B2CAAD1CC00D8B055 /* superhero.wav */,
+				18D0AF1A2CBEE12900D8B055 /* IttyBitty_haloween.mp3 */,
 				18BEF3BA2C63722500A4D753 /* IttyBitty.mp3 */,
 				18BEF3AB2C611D7800A4D753 /* explode.wav */,
 				18D0AF082CA71FAA00D8B055 /* nope.wav */,
@@ -346,6 +350,7 @@
 			files = (
 				18BEF3792C4A824B00A4D753 /* ShaderTypes.h in Resources */,
 				18BEF3BB2C63722500A4D753 /* IttyBitty.mp3 in Resources */,
+				18D0AF1B2CBEE12A00D8B055 /* IttyBitty_haloween.mp3 in Resources */,
 				18D0AF152CB4198F00D8B055 /* alarm.wav in Resources */,
 				185F38982C78C28E00141850 /* coindrop.wav in Resources */,
 				18BEF3BE2C63F1AF00A4D753 /* DungeonLevel.mp3 in Resources */,
@@ -379,6 +384,7 @@
 				18D0AF0D2CAAD1CD00D8B055 /* superhero.wav in Resources */,
 				18BEF3732C4A824B00A4D753 /* Base in Resources */,
 				18BEF3B12C611D7800A4D753 /* rotate.wav in Resources */,
+				18D0AF1C2CBEE12A00D8B055 /* IttyBitty_haloween.mp3 in Resources */,
 				18BEF37C2C4A824B00A4D753 /* Assets.xcassets in Resources */,
 				18BEF3BC2C63722500A4D753 /* IttyBitty.mp3 in Resources */,
 				18BEF37A2C4A824B00A4D753 /* ShaderTypes.h in Resources */,
