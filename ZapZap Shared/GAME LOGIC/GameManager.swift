@@ -56,9 +56,6 @@ class GameManager {
     var tileQuads: [[QuadMesh?]]
     var lastInput: CGPoint?
     
-    var superheroLeft: QuadMesh?
-    var superheroRight: QuadMesh?
-
     var leftScore: Int = 0
     var scoreLeftMesh: TextQuadMesh? = nil
     var rightScore: Int = 0
@@ -128,7 +125,7 @@ class GameManager {
         DispatchQueue.global(qos: .background).async { [weak self] in
             // Call bot's determineNextMove in the background
             if let move = self?.bot?.determineNextMove() {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0 + Double.random(in: 0.0...1.0)) {
                     // Save the move and mark it as ready
                     self?.botMove = move
                     self?.botMoveReady = true
@@ -333,18 +330,6 @@ class GameManager {
                 renderer!.effectsLayer.meshes.append(newLight)
             }
         }
-        // superheroes
-        superheroLeft = QuadMesh(size: boardW / 2.0, topLeftUV: SIMD2(x: 0.01, y: 0.01), bottomRightUV: SIMD2(x: 0.99, y: 0.99/4.0))
-        superheroLeft?.position.x = -boardW / 4.0
-        superheroLeft?.alpha = 0.0
-        renderer?.superheroLayer.meshes.append(superheroLeft!)
-        renderer?.superheroExtraLayer.meshes.append(superheroLeft!)
-        //
-        superheroRight = QuadMesh(size: boardW / 2.0, topLeftUV: SIMD2(x: 0.01, y: 1.01/4.0), bottomRightUV: SIMD2(x: 0.99, y: 1.99/4.0))
-        superheroRight?.position.x = boardW / 4.0
-        superheroRight?.alpha = 0.0
-        renderer?.superheroLayer.meshes.append(superheroRight!)
-        renderer?.superheroExtraLayer.meshes.append(superheroRight!)
         //
         multiplayer = isMultiplayer
         //

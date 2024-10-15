@@ -16,10 +16,15 @@ class SoundManager: NSObject {
     var isSoundEffectsEnabled: Bool = true
     var isBackgroundMusicEnabled: Bool = true
     private var activeSoundEffectPlayers: [AVAudioPlayer] = []
+    private var ambience: String = ""
 
     private override init() {
         super.init()
         setupAudioSession()
+    }
+
+    func setAmbience(named amb: String = "") {
+        self.ambience = amb
     }
 
     private func setupAudioSession() {
@@ -35,18 +40,10 @@ class SoundManager: NSObject {
     }
 
     // MARK: - Background Music
-/*
- "Itty Bitty 8 Bit" Kevin MacLeod (incompetech.com)
- Licensed under Creative Commons: By Attribution 4.0 License
- http://creativecommons.org/licenses/by/4.0/
-*/
-/*
- "8bit Dungeon Level" Kevin MacLeod (incompetech.com)
- Licensed under Creative Commons: By Attribution 4.0 License
- http://creativecommons.org/licenses/by/4.0/
-*/
+
     func playBackgroundMusic(filename: String, fileExtension: String = "mp3") {
         guard isBackgroundMusicEnabled else { return }
+        
         #if os(iOS)
         let audioSession = AVAudioSession.sharedInstance()
         guard !audioSession.isOtherAudioPlaying else {
@@ -54,17 +51,27 @@ class SoundManager: NSObject {
             return
         }
         #endif
-
-        if let url = Bundle.main.url(forResource: filename, withExtension: fileExtension) {
-            do {
-                backgroundMusicPlayer = try AVAudioPlayer(contentsOf: url)
-                backgroundMusicPlayer?.numberOfLoops = -1 // Loop indefinitely
-                backgroundMusicPlayer?.play()
-            } catch {
-                print("Could not create audio player for background music: \(error)")
-            }
+        
+        // Try the ambience-specific file first
+        let ambientFilename = filename + "_\(ambience)"
+        
+        if let url = Bundle.main.url(forResource: ambientFilename, withExtension: fileExtension) {
+            playMusic(from: url)
+        } else if let url = Bundle.main.url(forResource: filename, withExtension: fileExtension) {
+            // Fallback to default version
+            playMusic(from: url)
         } else {
-            print("Could not find file: \(filename).\(fileExtension)")
+            print("Could not find file: \(filename) or \(ambientFilename).\(fileExtension)")
+        }
+    }
+
+    private func playMusic(from url: URL) {
+        do {
+            backgroundMusicPlayer = try AVAudioPlayer(contentsOf: url)
+            backgroundMusicPlayer?.numberOfLoops = -1 // Loop indefinitely
+            backgroundMusicPlayer?.play()
+        } catch {
+            print("Could not create audio player for background music: \(error)")
         }
     }
 
@@ -89,16 +96,27 @@ class SoundManager: NSObject {
         if !isSoundEffectsEnabled {
             return
         }
-        guard let url = Bundle.main.url(forResource: filename, withExtension: fileExtension) else {
-            print("Could not find file: \(filename).\(fileExtension)")
-            return
+        
+        // Try the ambience-specific file first
+        let ambientFilename = filename + "_\(ambience)"
+        
+        if let url = Bundle.main.url(forResource: ambientFilename, withExtension: fileExtension) {
+            playEffect(from: url)
+        } else if let url = Bundle.main.url(forResource: filename, withExtension: fileExtension) {
+            // Fallback to default version
+            playEffect(from: url)
+        } else {
+            print("Could not find file: \(filename) or \(ambientFilename).\(fileExtension)")
         }
-        var player: AVAudioPlayer?
+    }
 
+    private func playEffect(from url: URL) {
+        var player: AVAudioPlayer?
+        
         do {
             player = try AVAudioPlayer(contentsOf: url)
             player?.play()
-            player!.delegate = self
+            player?.delegate = self
             activeSoundEffectPlayers.append(player!)
         } catch {
             print("Could not create audio player: \(error)")
