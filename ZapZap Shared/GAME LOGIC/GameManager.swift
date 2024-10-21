@@ -19,6 +19,10 @@ let boardHeight = 10
 let defaultMissingLinks = 3
 let tileSize: Float = 50.0
 
+let bombFreq: Int = 5
+let crossFreq: Int = 3
+let arrowFreq: Int = 8
+
 let boardW = Float(boardWidth + 3) * tileSize
 let boardH = Float(boardHeight + 1) * tileSize
 
@@ -566,13 +570,13 @@ class GameManager {
             }
         }
         // randomly add a bomb or other objects
-        if 0 == Int.random(in: 0..<1) {
+        if 0 == gameBoard?.rng.nextInt(upperBound: bombFreq) {
             animationManager?.createFallingObject(objectType: Bomb.self)
         }
-        if 0 == Int.random(in: 0..<1) {
+        if 0 == gameBoard?.rng.nextInt(upperBound: crossFreq) {
             animationManager?.createFallingObject(objectType: Cross.self)
         }
-        if 0 == Int.random(in: 0..<1) {
+        if 0 == gameBoard?.rng.nextInt(upperBound: arrowFreq) {
             animationManager?.createFallingObject(objectType: Arrow.self)
         }
 

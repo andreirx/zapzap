@@ -222,6 +222,26 @@ class Renderer: NSObject, MTKViewDelegate {
         setCurrentScreen(logoScreen)
     }
     
+    static var isHalloween: Bool {
+        let calendar = Calendar.current
+        let today = Date()
+
+        let halloweenStartComponents = DateComponents(month: 10, day: 27)
+        let halloweenEndComponents = DateComponents(month: 11, day: 2)
+        
+        // Get today's month and day components
+        let todayComponents = calendar.dateComponents([.month, .day], from: today)
+        
+        // Check if today's date is within the Halloween period
+        if (todayComponents.month == halloweenStartComponents.month && todayComponents.day! >= halloweenStartComponents.day!) ||
+            (todayComponents.month == halloweenEndComponents.month && todayComponents.day! <= halloweenEndComponents.day!) ||
+            (todayComponents.month! > halloweenStartComponents.month! && todayComponents.month! < halloweenEndComponents.month!) {
+            return true
+        } else {
+            return false
+        }
+    }
+    
     // initialize logo screen separately because we need it immediately
     private func setupLogoScreen() {
         let logoTexture = ["companylogo"]
@@ -297,16 +317,18 @@ class Renderer: NSObject, MTKViewDelegate {
         pauseButtonsLayer = GraphicsLayer()
 
         gameMgr.createTiles()
-        Renderer.textures.setAmbience(named: "haloween")
-        SoundManager.shared.setAmbience(named: "haloween")
+        if Renderer.isHalloween {
+            Renderer.textures.setAmbience(named: "haloween")
+            SoundManager.shared.setAmbience(named: "haloween")
+        }
         backgroundLayer.texture = Renderer.textures.getTexture(named: "stars")
         objectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
         buttonObjLayer.texture = Renderer.textures.getTexture(named: "arrows")
         effectsLayer.texture = Renderer.textures.getTexture(named: "arrows")
-        menuLayer.texture = Renderer.textures.getTexture(named: "base_tiles_haloween")
+        menuLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
         mainButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
         purchaseButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
-        fingerLayer.texture = Renderer.textures.getTexture(named: "arrows_haloween")
+        fingerLayer.texture = Renderer.textures.getTexture(named: "arrows")
         tutorialLayer.texture = Renderer.textures.getTexture(named: "tutorials")
         tutButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
         pauseButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
@@ -540,7 +562,7 @@ class Renderer: NSObject, MTKViewDelegate {
         mainButtonsLayer.meshes.append(buttonLocal!)
         mainButtonsLayer.meshes.append(buttonVsBot!)
         mainButtonsLayer.meshes.append(buttonTutorial!)
-        mainButtonsLayer.meshes.append(buttonPurchase!)
+//        mainButtonsLayer.meshes.append(buttonPurchase!)
         // make texts for the buttons
 //        let textSize = CGSize(width: 512, height: 64)
 //        var font = Font.systemFont(ofSize: 40)
@@ -559,14 +581,28 @@ class Renderer: NSObject, MTKViewDelegate {
         mainButtonsLayer.meshes.append(textLocal)
         mainButtonsLayer.meshes.append(textVsBot)
         mainButtonsLayer.meshes.append(textTutorial)
-        mainButtonsLayer.meshes.append(textBuy)
+//        mainButtonsLayer.meshes.append(textBuy)
         
         // now some license info
+        /*
         let licenseInfo = """
         "Itty Bitty 8 Bit" Kevin MacLeod (incompetech.com)
         Licensed under Creative Commons: By Attribution 4.0 License
         http://creativecommons.org/licenses/by/4.0/
         """
+        */
+        var licenseInfo = """
+        "Itty Bitty 8 Bit" Kevin MacLeod (incompetech.com)
+        Licensed under Creative Commons: By Attribution 4.0 License
+        http://creativecommons.org/licenses/by/4.0/
+        """
+        if Renderer.isHalloween {
+            var licenseInfo = """
+            "The Machine Thinks" Kevin MacLeod (incompetech.com)
+            Licensed under Creative Commons: By Attribution 4.0 License
+            http://creativecommons.org/licenses/by/4.0/
+            """
+        }
         font = Font.systemFont(ofSize: 14)
         var textLicense = TextQuadMesh(text: licenseInfo, font: font, color: Color.white, size: textSize)
         textLicense.position.y = 4.8 * tileSize
@@ -1006,7 +1042,8 @@ class Renderer: NSObject, MTKViewDelegate {
                     setCurrentScreen(gameScreen)
                 }
                 if buttonPurchase!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
-                    setCurrentScreen(purchaseScreen)
+                    // TODO: make purchases or play multiplayer
+//                    setCurrentScreen(purchaseScreen)
 //                    multiMgr.presentGameCenterMatchmaking()
                 }
                 if buttonTutorial!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {

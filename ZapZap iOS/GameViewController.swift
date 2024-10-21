@@ -55,7 +55,9 @@ class GameViewController: UIViewController {
         mtkView.delegate = renderer
 
         // start the music
-        SoundManager.shared.setAmbience(named: "haloween")
+        if Renderer.isHalloween {
+            SoundManager.shared.setAmbience(named: "haloween")
+        }
         SoundManager.shared.playBackgroundMusic(filename: "IttyBitty")
     }
 
