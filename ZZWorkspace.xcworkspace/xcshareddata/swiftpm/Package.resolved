@@ -1,0 +1,15 @@
+{
+  "originHash" : "884344e904093199893187b0690c24c60d11247b9c241492a07a639ce6ad9eaf",
+  "pins" : [
+    {
+      "identity" : "swiftystorekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/bizz84/SwiftyStoreKit",
+      "state" : {
+        "revision" : "9ce911639680113dac9b554d6243e406a9758ebe",
+        "version" : "0.16.4"
+      }
+    }
+  ],
+  "version" : 3
+}

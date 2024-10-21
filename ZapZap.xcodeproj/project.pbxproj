@@ -78,6 +78,22 @@
 		18D0AF192CB6AFC300D8B055 /* BotPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D0AF172CB6AFC300D8B055 /* BotPlayer.swift */; };
 		18D0AF1B2CBEE12A00D8B055 /* IttyBitty_haloween.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF1A2CBEE12900D8B055 /* IttyBitty_haloween.mp3 */; };
 		18D0AF1C2CBEE12A00D8B055 /* IttyBitty_haloween.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF1A2CBEE12900D8B055 /* IttyBitty_haloween.mp3 */; };
+		18D0AF232CBFD3F000D8B055 /* superhero_haloween.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF1D2CBFD3EC00D8B055 /* superhero_haloween.wav */; };
+		18D0AF242CBFD3F000D8B055 /* superhero_haloween.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF1D2CBFD3EC00D8B055 /* superhero_haloween.wav */; };
+		18D0AF252CBFD3F000D8B055 /* rotate_haloween.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF1E2CBFD3EE00D8B055 /* rotate_haloween.wav */; };
+		18D0AF262CBFD3F000D8B055 /* rotate_haloween.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF1E2CBFD3EE00D8B055 /* rotate_haloween.wav */; };
+		18D0AF272CBFD3F000D8B055 /* powerup_haloween.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF1F2CBFD3EE00D8B055 /* powerup_haloween.wav */; };
+		18D0AF282CBFD3F000D8B055 /* powerup_haloween.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF1F2CBFD3EE00D8B055 /* powerup_haloween.wav */; };
+		18D0AF2B2CBFD3F000D8B055 /* explode_haloween.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF212CBFD3EF00D8B055 /* explode_haloween.wav */; };
+		18D0AF2C2CBFD3F000D8B055 /* explode_haloween.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF212CBFD3EF00D8B055 /* explode_haloween.wav */; };
+		18D0AF2D2CBFD3F000D8B055 /* coindrop_haloween.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF222CBFD3F000D8B055 /* coindrop_haloween.wav */; };
+		18D0AF2E2CBFD3F000D8B055 /* coindrop_haloween.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF222CBFD3F000D8B055 /* coindrop_haloween.wav */; };
+		18D0AF302CBFD8D100D8B055 /* alarm_haloween.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF2F2CBFD8D100D8B055 /* alarm_haloween.wav */; };
+		18D0AF312CBFD8D100D8B055 /* alarm_haloween.wav in Resources */ = {isa = PBXBuildFile; fileRef = 18D0AF2F2CBFD8D100D8B055 /* alarm_haloween.wav */; };
+		18D0AF342CC22C9D00D8B055 /* SwiftyStoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18D0AF332CC22C9D00D8B055 /* SwiftyStoreKit */; };
+		18D0AF362CC22CBD00D8B055 /* SwiftyStoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18D0AF352CC22CBD00D8B055 /* SwiftyStoreKit */; };
+		18D0AF392CC2839300D8B055 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18D0AF382CC2839300D8B055 /* StoreKit.framework */; };
+		18D0AF3B2CC2839C00D8B055 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18D0AF3A2CC2839C00D8B055 /* StoreKit.framework */; };
 		18D313132C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 		18D313142C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 /* End PBXBuildFile section */
@@ -126,6 +142,14 @@
 		18D0AF142CB4198F00D8B055 /* alarm.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm.wav; sourceTree = "<group>"; };
 		18D0AF172CB6AFC300D8B055 /* BotPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BotPlayer.swift; sourceTree = "<group>"; };
 		18D0AF1A2CBEE12900D8B055 /* IttyBitty_haloween.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = IttyBitty_haloween.mp3; sourceTree = "<group>"; };
+		18D0AF1D2CBFD3EC00D8B055 /* superhero_haloween.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = superhero_haloween.wav; sourceTree = "<group>"; };
+		18D0AF1E2CBFD3EE00D8B055 /* rotate_haloween.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = rotate_haloween.wav; sourceTree = "<group>"; };
+		18D0AF1F2CBFD3EE00D8B055 /* powerup_haloween.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = powerup_haloween.wav; sourceTree = "<group>"; };
+		18D0AF212CBFD3EF00D8B055 /* explode_haloween.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = explode_haloween.wav; sourceTree = "<group>"; };
+		18D0AF222CBFD3F000D8B055 /* coindrop_haloween.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = coindrop_haloween.wav; sourceTree = "<group>"; };
+		18D0AF2F2CBFD8D100D8B055 /* alarm_haloween.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm_haloween.wav; sourceTree = "<group>"; };
+		18D0AF382CC2839300D8B055 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS17.5.sdk/System/Library/Frameworks/StoreKit.framework; sourceTree = DEVELOPER_DIR; };
+		18D0AF3A2CC2839C00D8B055 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		18D313122C8986B700423697 /* UIMeshes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIMeshes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -134,6 +158,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18D0AF342CC22C9D00D8B055 /* SwiftyStoreKit in Frameworks */,
+				18D0AF392CC2839300D8B055 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -141,6 +167,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18D0AF362CC22CBD00D8B055 /* SwiftyStoreKit in Frameworks */,
+				18D0AF3B2CC2839C00D8B055 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -154,6 +182,7 @@
 				18BEF35C2C4A824B00A4D753 /* ZapZap iOS */,
 				18BEF36C2C4A824B00A4D753 /* ZapZap macOS */,
 				18BEF35B2C4A824B00A4D753 /* Products */,
+				18D0AF372CC2839300D8B055 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -251,6 +280,12 @@
 				18D0AF0B2CAAD1CC00D8B055 /* superhero.wav */,
 				18D0AF1A2CBEE12900D8B055 /* IttyBitty_haloween.mp3 */,
 				18BEF3BA2C63722500A4D753 /* IttyBitty.mp3 */,
+				18D0AF222CBFD3F000D8B055 /* coindrop_haloween.wav */,
+				18D0AF2F2CBFD8D100D8B055 /* alarm_haloween.wav */,
+				18D0AF212CBFD3EF00D8B055 /* explode_haloween.wav */,
+				18D0AF1F2CBFD3EE00D8B055 /* powerup_haloween.wav */,
+				18D0AF1E2CBFD3EE00D8B055 /* rotate_haloween.wav */,
+				18D0AF1D2CBFD3EC00D8B055 /* superhero_haloween.wav */,
 				18BEF3AB2C611D7800A4D753 /* explode.wav */,
 				18D0AF082CA71FAA00D8B055 /* nope.wav */,
 				18D0AF142CB4198F00D8B055 /* alarm.wav */,
@@ -269,6 +304,15 @@
 			path = "Sound LOGIC";
 			sourceTree = "<group>";
 		};
+		18D0AF372CC2839300D8B055 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				18D0AF3A2CC2839C00D8B055 /* StoreKit.framework */,
+				18D0AF382CC2839300D8B055 /* StoreKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -285,6 +329,9 @@
 			dependencies = (
 			);
 			name = "ZapZap iOS";
+			packageProductDependencies = (
+				18D0AF332CC22C9D00D8B055 /* SwiftyStoreKit */,
+			);
 			productName = "ZapZap iOS";
 			productReference = 18BEF35A2C4A824B00A4D753 /* ZapZap.app */;
 			productType = "com.apple.product-type.application";
@@ -302,6 +349,9 @@
 			dependencies = (
 			);
 			name = "ZapZap macOS";
+			packageProductDependencies = (
+				18D0AF352CC22CBD00D8B055 /* SwiftyStoreKit */,
+			);
 			productName = "ZapZap macOS";
 			productReference = 18BEF36B2C4A824B00A4D753 /* ZapZap.app */;
 			productType = "com.apple.product-type.application";
@@ -333,6 +383,9 @@
 				Base,
 			);
 			mainGroup = 18BEF34C2C4A824A00A4D753;
+			packageReferences = (
+				18D0AF322CC22C9D00D8B055 /* XCRemoteSwiftPackageReference "SwiftyStoreKit" */,
+			);
 			productRefGroup = 18BEF35B2C4A824B00A4D753 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -351,16 +404,22 @@
 				18BEF3792C4A824B00A4D753 /* ShaderTypes.h in Resources */,
 				18BEF3BB2C63722500A4D753 /* IttyBitty.mp3 in Resources */,
 				18D0AF1B2CBEE12A00D8B055 /* IttyBitty_haloween.mp3 in Resources */,
+				18D0AF232CBFD3F000D8B055 /* superhero_haloween.wav in Resources */,
+				18D0AF272CBFD3F000D8B055 /* powerup_haloween.wav in Resources */,
 				18D0AF152CB4198F00D8B055 /* alarm.wav in Resources */,
 				185F38982C78C28E00141850 /* coindrop.wav in Resources */,
+				18D0AF2B2CBFD3F000D8B055 /* explode_haloween.wav in Resources */,
 				18BEF3BE2C63F1AF00A4D753 /* DungeonLevel.mp3 in Resources */,
 				18BEF3B22C611D7800A4D753 /* powerup.wav in Resources */,
 				18BEF3632C4A824B00A4D753 /* Base in Resources */,
 				18BEF37B2C4A824B00A4D753 /* Assets.xcassets in Resources */,
+				18D0AF302CBFD8D100D8B055 /* alarm_haloween.wav in Resources */,
 				18D0AF0C2CAAD1CD00D8B055 /* superhero.wav in Resources */,
 				18BEF3AE2C611D7800A4D753 /* buzz.wav in Resources */,
 				18BEF3B02C611D7800A4D753 /* rotate.wav in Resources */,
+				18D0AF252CBFD3F000D8B055 /* rotate_haloween.wav in Resources */,
 				18BEF3AC2C611D7800A4D753 /* bop.wav in Resources */,
+				18D0AF2D2CBFD3F000D8B055 /* coindrop_haloween.wav in Resources */,
 				18BEF3662C4A824B00A4D753 /* Base in Resources */,
 				18BEF3B42C611D7800A4D753 /* explode.wav in Resources */,
 				18D0AF092CA71FAB00D8B055 /* nope.wav in Resources */,
@@ -375,10 +434,15 @@
 				18D0AF0A2CA71FAB00D8B055 /* nope.wav in Resources */,
 				185F389F2C7C582100141850 /* bomb.wav in Resources */,
 				18BEF3B52C611D7800A4D753 /* explode.wav in Resources */,
+				18D0AF282CBFD3F000D8B055 /* powerup_haloween.wav in Resources */,
 				18BEF3B32C611D7800A4D753 /* powerup.wav in Resources */,
+				18D0AF262CBFD3F000D8B055 /* rotate_haloween.wav in Resources */,
 				185F38992C78C28E00141850 /* coindrop.wav in Resources */,
+				18D0AF2E2CBFD3F000D8B055 /* coindrop_haloween.wav in Resources */,
 				18D0AF162CB4198F00D8B055 /* alarm.wav in Resources */,
+				18D0AF312CBFD8D100D8B055 /* alarm_haloween.wav in Resources */,
 				18BEF3BF2C63F1AF00A4D753 /* DungeonLevel.mp3 in Resources */,
+				18D0AF242CBFD3F000D8B055 /* superhero_haloween.wav in Resources */,
 				18BEF3AF2C611D7800A4D753 /* buzz.wav in Resources */,
 				18BEF3AD2C611D7800A4D753 /* bop.wav in Resources */,
 				18D0AF0D2CAAD1CD00D8B055 /* superhero.wav in Resources */,
@@ -386,6 +450,7 @@
 				18BEF3B12C611D7800A4D753 /* rotate.wav in Resources */,
 				18D0AF1C2CBEE12A00D8B055 /* IttyBitty_haloween.mp3 in Resources */,
 				18BEF37C2C4A824B00A4D753 /* Assets.xcassets in Resources */,
+				18D0AF2C2CBFD3F000D8B055 /* explode_haloween.wav in Resources */,
 				18BEF3BC2C63722500A4D753 /* IttyBitty.mp3 in Resources */,
 				18BEF37A2C4A824B00A4D753 /* ShaderTypes.h in Resources */,
 			);
@@ -599,7 +664,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "ZapZap iOS/ZapZap iOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7S282Q4JN2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -613,7 +678,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bijuterie.ZapZap;
 				PRODUCT_NAME = ZapZap;
 				SDKROOT = iphoneos;
@@ -631,7 +696,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "ZapZap iOS/ZapZap iOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7S282Q4JN2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -645,7 +710,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bijuterie.ZapZap;
 				PRODUCT_NAME = ZapZap;
 				SDKROOT = iphoneos;
@@ -665,7 +730,7 @@
 				CODE_SIGN_ENTITLEMENTS = "ZapZap macOS/ZapZap_macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7S282Q4JN2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -678,7 +743,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bijuterie.ZapZap;
 				PRODUCT_NAME = ZapZap;
 				SDKROOT = macosx;
@@ -696,7 +761,7 @@
 				CODE_SIGN_ENTITLEMENTS = "ZapZap macOS/ZapZap_macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7S282Q4JN2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -709,7 +774,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bijuterie.ZapZap;
 				PRODUCT_NAME = ZapZap;
 				SDKROOT = macosx;
@@ -751,6 +816,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		18D0AF322CC22C9D00D8B055 /* XCRemoteSwiftPackageReference "SwiftyStoreKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/bizz84/SwiftyStoreKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.16.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		18D0AF332CC22C9D00D8B055 /* SwiftyStoreKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18D0AF322CC22C9D00D8B055 /* XCRemoteSwiftPackageReference "SwiftyStoreKit" */;
+			productName = SwiftyStoreKit;
+		};
+		18D0AF352CC22CBD00D8B055 /* SwiftyStoreKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18D0AF322CC22C9D00D8B055 /* XCRemoteSwiftPackageReference "SwiftyStoreKit" */;
+			productName = SwiftyStoreKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 18BEF34D2C4A824A00A4D753 /* Project object */;
 }
