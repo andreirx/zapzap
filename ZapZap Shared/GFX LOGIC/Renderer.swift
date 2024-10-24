@@ -126,6 +126,8 @@ class Renderer: NSObject, MTKViewDelegate {
     var checkEffects: ButtonMesh?
     var uncheckMusic: ButtonMesh?
     var uncheckEffects: ButtonMesh?
+    var buttonGameOver: ButtonMesh?
+    var textGameOver: TextQuadMesh?
     
     // object button meshes
     var objLBomb: Bomb?
@@ -153,6 +155,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var tutorialLayer: GraphicsLayer!
     var tutButtonsLayer: GraphicsLayer!
     var pauseButtonsLayer: GraphicsLayer!
+    var gameOverLayer: GraphicsLayer!
 
     
     // internal renderer stuff
@@ -226,7 +229,7 @@ class Renderer: NSObject, MTKViewDelegate {
         let calendar = Calendar.current
         let today = Date()
 
-        let halloweenStartComponents = DateComponents(month: 10, day: 27)
+        let halloweenStartComponents = DateComponents(month: 10, day: 28)
         let halloweenEndComponents = DateComponents(month: 11, day: 2)
         
         // Get today's month and day components
@@ -315,6 +318,7 @@ class Renderer: NSObject, MTKViewDelegate {
         tutorialLayer = GraphicsLayer()
         tutButtonsLayer = GraphicsLayer()
         pauseButtonsLayer = GraphicsLayer()
+        gameOverLayer = GraphicsLayer()
 
         gameMgr.createTiles()
         if Renderer.isHalloween {
@@ -332,6 +336,7 @@ class Renderer: NSObject, MTKViewDelegate {
         tutorialLayer.texture = Renderer.textures.getTexture(named: "tutorials")
         tutButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
         pauseButtonsLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
+        gameOverLayer.texture = Renderer.textures.getTexture(named: "base_tiles")
 
         for i in 0..<tutorialImages {
             tutMesh[i] = QuadMesh(size: boardH - tileSize,
@@ -356,6 +361,7 @@ class Renderer: NSObject, MTKViewDelegate {
         gameScreen.addLayer(buttonObjLayer)
 //        gameScreen.addLayer(superheroLayer)
 //        gameScreen.addLayer(superheroExtraLayer)
+        gameScreen.addLayer(gameOverLayer)
 
         // add layers to menu screen
         mainMenuScreen.addLayer(menuLayer)
@@ -464,6 +470,12 @@ class Renderer: NSObject, MTKViewDelegate {
         buttonObjLayer!.meshes.append(objRBomb!)
         buttonObjLayer!.meshes.append(objRCross!)
         buttonObjLayer!.meshes.append(objRArrow!)
+        
+        // something to show for game over
+        buttonGameOver = ButtonMesh.createUnlitButton(innerWidth: 10.0 * tileSize, innerHeight: 5.0 * tileSize, borderWidth: tileSize)
+        buttonGameOver!.position.y = -1.0 * tileSize
+        buttonGameOver!.alpha = 0.0
+        gameOverLayer.meshes.append(buttonGameOver!)
 
         // also create back button
         buttonBack = ButtonMesh.createBackButton(innerWidth: 0.0, innerHeight: 0.0, borderWidth: tileSize)
@@ -568,7 +580,7 @@ class Renderer: NSObject, MTKViewDelegate {
 //        var font = Font.systemFont(ofSize: 40)
         var textLocal = TextQuadMesh(text: "Zen Mode", font: font, color: Color.white, size: textSize)
         var textVsBot = TextQuadMesh(text: "Vs Bot", font: font, color: Color.white, size: textSize)
-        var textBuy = TextQuadMesh(text: "Purchase Ambiances", font: font, color: Color.white, size: textSize)
+        var textBuy = TextQuadMesh(text: "Multiplayer COMING SOON", font: font, color: Color.white, size: textSize)
         var textTutorial = TextQuadMesh(text: "Tutorial", font: font, color: Color.white, size: textSize)
         // put them in their correct positions
         textLocal.position.y = -1.0 * tileSize + textOffset
@@ -581,7 +593,7 @@ class Renderer: NSObject, MTKViewDelegate {
         mainButtonsLayer.meshes.append(textLocal)
         mainButtonsLayer.meshes.append(textVsBot)
         mainButtonsLayer.meshes.append(textTutorial)
-//        mainButtonsLayer.meshes.append(textBuy)
+        mainButtonsLayer.meshes.append(textBuy)
         
         // now some license info
         /*
@@ -828,85 +840,96 @@ class Renderer: NSObject, MTKViewDelegate {
 
         // game screen updates
         if currentScreen === gameScreen {
-            // verify pause button first
+            // verify game over first
             if gameMgr.lastInput != nil {
-                if buttonPause!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
-                    // TODO: move the leaderboard reporting to the end of the game
-                    setCurrentScreen(pauseScreen)
-                }
-                // check for powers deployments
-                // TODO: differentiate local vs multiplayer
-                // also
-                // TODO: just change the acquired and armed status
-                // and update the alphas based on these
-                // because the armed and acquired status can change elsewhere too
-                if gameMgr.powerLBomb {
-                    // if the bomb is "acquired" and you tap on it, it will ARM it
-                    // but DISARM the others if they were armed before
-                    if buttonLBomb!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
-                        gameMgr.armLBomb = !gameMgr.armLBomb
-                        if gameMgr.armLBomb {
-                            SoundManager.shared.playSoundEffect(filename: "alarm")
-                        }
-                        gameMgr.armLCross = false
-                        gameMgr.armLArrow = false
+                if gameMgr.zapGameState == .gameOver {
+                    // because game over is different
+                    if buttonMainMenu!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                        setCurrentScreen(mainMenuScreen)
+                        buttonGameOver!.alpha = 0.0
+                        gameOverLayer.meshes.removeAll()
+                        gameOverLayer.meshes.append(buttonGameOver!)
                     }
-                }
-                if gameMgr.powerLCross {
-                    // if the cross is "acquired" and you tap on it, it will ARM it
-                    // but DISARM the others if they were armed before
-                    if buttonLCross!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
-                        gameMgr.armLCross = !gameMgr.armLCross
-                        if gameMgr.armLCross {
-                            SoundManager.shared.playSoundEffect(filename: "alarm")
-                        }
-                        gameMgr.armLBomb = false
-                        gameMgr.armLArrow = false
+                } else {
+                    // now check other buttons
+                    if buttonPause!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                        // TODO: move the leaderboard reporting to the end of the game
+                        setCurrentScreen(pauseScreen)
                     }
-                }
-                if gameMgr.powerLArrow {
-                    // if the arrow is "acquired" and you tap on it, it will ARM it
-                    // but DISARM the others if they were armed before
-                    if buttonLArrow!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
-                        gameMgr.armLArrow = !gameMgr.armLArrow
-                        if gameMgr.armLArrow {
-                            SoundManager.shared.playSoundEffect(filename: "alarm")
+                    // check for powers deployments
+                    // TODO: differentiate local vs multiplayer
+                    // also
+                    // TODO: just change the acquired and armed status
+                    // and update the alphas based on these
+                    // because the armed and acquired status can change elsewhere too
+                    if gameMgr.powerLBomb {
+                        // if the bomb is "acquired" and you tap on it, it will ARM it
+                        // but DISARM the others if they were armed before
+                        if buttonLBomb!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                            gameMgr.armLBomb = !gameMgr.armLBomb
+                            if gameMgr.armLBomb {
+                                SoundManager.shared.playSoundEffect(filename: "alarm")
+                            }
+                            gameMgr.armLCross = false
+                            gameMgr.armLArrow = false
                         }
-                        gameMgr.armLCross = false
-                        gameMgr.armLBomb = false
                     }
-                }
-                if gameMgr.powerRBomb {
-                    // same as above for the right buttons group
-                    if buttonRBomb!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
-                        gameMgr.armRBomb = !gameMgr.armRBomb
-                        if gameMgr.armRBomb {
-                            SoundManager.shared.playSoundEffect(filename: "alarm")
+                    if gameMgr.powerLCross {
+                        // if the cross is "acquired" and you tap on it, it will ARM it
+                        // but DISARM the others if they were armed before
+                        if buttonLCross!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                            gameMgr.armLCross = !gameMgr.armLCross
+                            if gameMgr.armLCross {
+                                SoundManager.shared.playSoundEffect(filename: "alarm")
+                            }
+                            gameMgr.armLBomb = false
+                            gameMgr.armLArrow = false
                         }
-                        gameMgr.armRCross = false
-                        gameMgr.armRArrow = false
                     }
-                }
-                if gameMgr.powerRCross {
-                    // same as above for the right buttons group
-                    if buttonRCross!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
-                        gameMgr.armRCross = !gameMgr.armRCross
-                        if gameMgr.armRCross {
-                            SoundManager.shared.playSoundEffect(filename: "alarm")
+                    if gameMgr.powerLArrow {
+                        // if the arrow is "acquired" and you tap on it, it will ARM it
+                        // but DISARM the others if they were armed before
+                        if buttonLArrow!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                            gameMgr.armLArrow = !gameMgr.armLArrow
+                            if gameMgr.armLArrow {
+                                SoundManager.shared.playSoundEffect(filename: "alarm")
+                            }
+                            gameMgr.armLCross = false
+                            gameMgr.armLBomb = false
                         }
-                        gameMgr.armRBomb = false
-                        gameMgr.armRArrow = false
                     }
-                }
-                if gameMgr.powerRArrow {
-                    // same as above for the right buttons group
-                    if buttonRArrow!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
-                        gameMgr.armRArrow = !gameMgr.armRArrow
-                        if gameMgr.armRArrow {
-                            SoundManager.shared.playSoundEffect(filename: "alarm")
+                    if gameMgr.powerRBomb {
+                        // same as above for the right buttons group
+                        if buttonRBomb!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                            gameMgr.armRBomb = !gameMgr.armRBomb
+                            if gameMgr.armRBomb {
+                                SoundManager.shared.playSoundEffect(filename: "alarm")
+                            }
+                            gameMgr.armRCross = false
+                            gameMgr.armRArrow = false
                         }
-                        gameMgr.armRBomb = false
-                        gameMgr.armRCross = false
+                    }
+                    if gameMgr.powerRCross {
+                        // same as above for the right buttons group
+                        if buttonRCross!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                            gameMgr.armRCross = !gameMgr.armRCross
+                            if gameMgr.armRCross {
+                                SoundManager.shared.playSoundEffect(filename: "alarm")
+                            }
+                            gameMgr.armRBomb = false
+                            gameMgr.armRArrow = false
+                        }
+                    }
+                    if gameMgr.powerRArrow {
+                        // same as above for the right buttons group
+                        if buttonRArrow!.tappedInside(point: getGameXY(fromPoint: gameMgr.lastInput!)) {
+                            gameMgr.armRArrow = !gameMgr.armRArrow
+                            if gameMgr.armRArrow {
+                                SoundManager.shared.playSoundEffect(filename: "alarm")
+                            }
+                            gameMgr.armRBomb = false
+                            gameMgr.armRCross = false
+                        }
                     }
                 }
             }

@@ -8,6 +8,10 @@
 import Foundation
 import simd
 
+let multiArrowsUV: Float = 0.0
+let indigoArrowsUV: Float = 0.25
+let orangeArrowsUV: Float = 0.5
+
 // // // // // // // // // // // // // // // // // // // // //
 //
 // AnimationManager - class to manage animations around
@@ -38,9 +42,9 @@ class AnimationManager {
     }
     
     // this will also link a rotation indicator quad to the base tile quad
-    func addRotateAnimation(quad: QuadMesh, duration: TimeInterval, tilePosition: (x: Int, y: Int), objectsLayer: GraphicsLayer, effectsLayer: EffectsLayer) {
+    func addRotateAnimation(quad: QuadMesh, duration: TimeInterval, tilePosition: (x: Int, y: Int), objectsLayer: GraphicsLayer, effectsLayer: EffectsLayer, arrowsTextureOffset: Float = 0.0) {
         let animation = AnimationPools.rotateAnimationPool.getObject()
-        animation.configure(quad: quad, duration: duration, tilePosition: tilePosition, objectsLayer: objectsLayer, effectsLayer: effectsLayer)
+        animation.configure(quad: quad, duration: duration, tilePosition: tilePosition, objectsLayer: objectsLayer, effectsLayer: effectsLayer, arrowsTextureOffset: arrowsTextureOffset)
         rotateAnimations.append(animation)
     }
     
@@ -229,6 +233,20 @@ class AnimationManager {
         updateTextAnimations()
         updateSimpleRotateAnimations()
         
+        if gameManager!.zapGameState == .gameOver {
+            if gameManager!.renderer!.buttonGameOver!.alpha < 1.0 {
+                gameManager!.renderer!.buttonGameOver!.alpha += 0.01
+                if gameManager!.renderer!.textGameOver != nil {
+                    gameManager!.renderer!.textGameOver!.alpha += 0.01
+                }
+            } else {
+                gameManager!.renderer!.buttonGameOver!.alpha = 1.0
+                if gameManager!.renderer!.textGameOver != nil {
+                    gameManager!.renderer!.textGameOver!.alpha = 1.0
+                }
+            }
+        }
+        
         // finger update
 //        fingerQuad.alpha = 0.5 + 0.5 * sin(Float(gameManager!.renderer!.frameIndex) / 60.0)
 
@@ -236,7 +254,8 @@ class AnimationManager {
         // do the freeze frame animations first
         if let freezeFrame = freezeFrameAnimations.first {
             freezeFrame.update()
-            if freezeFrame.isFinished {
+            // because game over is something else
+            if freezeFrame.isFinished && gameManager!.zapGameState != .gameOver {
                 gameManager?.dropCoins(many1: freezeFrame.drop1, many2: freezeFrame.drop2, many5: freezeFrame.drop5)
                 freezeFrame.cleanup()
                 freezeFrameAnimations.removeFirst()
@@ -365,6 +384,8 @@ class AnimationManager {
     // this handles updates to falling tiles and their completion
     private func updateFallAnimations() {
         guard let gameManager = gameManager else { return }
+        // because game over is something else
+        if gameManager.zapGameState == .gameOver { return }
 
         for animation in fallAnimations {
             animation.update()
@@ -411,6 +432,9 @@ class AnimationManager {
 
     // this will update object falling animation - until their completion
     private func updateObjectFallAnimations() {
+        // because game over is something else
+        if gameManager!.zapGameState == .gameOver { return }
+
         for animation in objectFallAnimations {
             animation.update()
         }
@@ -494,7 +518,7 @@ class RotateAnimation: Animation, Poolable {
         effectsLayer = nil
     }
 
-    func configure(quad: QuadMesh, duration: TimeInterval, tilePosition: (x: Int, y: Int), objectsLayer: GraphicsLayer, effectsLayer: EffectsLayer) {
+    func configure(quad: QuadMesh, duration: TimeInterval, tilePosition: (x: Int, y: Int), objectsLayer: GraphicsLayer, effectsLayer: EffectsLayer, arrowsTextureOffset: Float) {
         self.quad = quad
         self.duration = duration
         self.tilePosition = tilePosition
@@ -503,7 +527,7 @@ class RotateAnimation: Animation, Poolable {
         self.objectsLayer = objectsLayer
         self.effectsLayer = effectsLayer
 
-        let tempQuad = QuadMesh(size: tileSize * 2.5, topLeftUV: SIMD2<Float>(0, 0), bottomRightUV: SIMD2<Float>(0.25, 0.25))
+        let tempQuad = QuadMesh(size: tileSize * 2.5, topLeftUV: SIMD2<Float>(0.0 + arrowsTextureOffset, 0), bottomRightUV: SIMD2<Float>(0.25 + arrowsTextureOffset, 0.25))
         tempQuad.position = quad.position
         tempQuad.rotation = quad.rotation
         effectsLayer.meshes.append(tempQuad)
