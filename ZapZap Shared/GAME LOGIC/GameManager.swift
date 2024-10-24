@@ -23,6 +23,8 @@ let bombFreq: Int = 5
 let crossFreq: Int = 3
 let arrowFreq: Int = 8
 
+let maxVsScore: Int = 100
+
 let boardW = Float(boardWidth + 3) * tileSize
 let boardH = Float(boardHeight + 1) * tileSize
 
@@ -49,6 +51,7 @@ enum ZapGameState: Int {
     case waitingForIndigo
     case superheroBeforeDrop
     case superheroAfterDrop
+    case gameOver
 }
 
 
@@ -252,6 +255,27 @@ class GameManager {
                     renderer!.textLayer.meshes.append(scoreLeftMesh!)
                     renderer!.textLayer.meshes.append(scoreRightMesh!)
                 }
+            }
+            
+            // because game over is something else
+            if leftScore >= maxVsScore || rightScore >= maxVsScore {
+                // also add the quit to main menu button
+                renderer?.gameOverLayer.meshes.append(renderer!.buttonMainMenu!)
+                var textMenu = TextQuadMesh(text: "Main Menu", font: font, color: Color.white, size: textSize)
+                textMenu.position.y = 4.0 * tileSize - 6.0
+                renderer?.gameOverLayer.meshes.append(textMenu)
+                let fontGO = Font.systemFont(ofSize: 64)
+                let textSizeGO = CGSize(width: 512, height: 256)
+                var textGO = "GAME OVER\nEqual Scores"
+                if leftScore > rightScore {
+                    textGO = "GAME OVER\n\(leftText) Won"
+                } else if leftScore < rightScore{
+                    textGO = "GAME OVER\n\(rightText) Won"
+                }
+                renderer?.textGameOver = TextQuadMesh(text: textGO, font: fontGO, color: Color.white, size: textSizeGO)
+                renderer?.gameOverLayer.meshes.append(renderer!.textGameOver!)
+                zapGameState = .gameOver
+                SoundManager.shared.playSoundEffect(filename: "powerup")
             }
         } else {
             // for SINGLE PLAYER, sum them up and display together
@@ -506,14 +530,14 @@ class GameManager {
     }
 
     // function that does what it has to do when a tile is tapped
-    func tapTile(i: Int, j: Int) {
+    func tapTile(i: Int, j: Int, arrowTextureOffset: Float = 0.0) {
         // play that sound
         SoundManager.shared.playSoundEffect(filename: "rotate")
         
         gameBoard?.connections.connections[i][j]?.rotate()
         let newQuad = createNewTileQuad(i: i + 1, j: j)
         tileQuads[j][i + 1] = newQuad
-        animationManager?.addRotateAnimation(quad: newQuad!, duration: 0.2, tilePosition: (x: i, y: j), objectsLayer: renderer!.objectsLayer, effectsLayer: renderer!.effectsLayer)
+        animationManager?.addRotateAnimation(quad: newQuad!, duration: 0.2, tilePosition: (x: i, y: j), objectsLayer: renderer!.objectsLayer, effectsLayer: renderer!.effectsLayer, arrowsTextureOffset: arrowTextureOffset)
     }
     
     // function to create score animation and update the LEFT score
@@ -802,7 +826,11 @@ class GameManager {
                             powerRArrow = false
                         }
                     } else {
-                        tapTile(i: quadX - 1, j: quadY)
+                        if multiplayer || bot != nil {
+                            tapTile(i: quadX - 1, j: quadY, arrowTextureOffset: indigoArrowsUV)
+                        } else {
+                            tapTile(i: quadX - 1, j: quadY)
+                        }
                     }
                 }
             }
@@ -827,7 +855,7 @@ class GameManager {
                         
                         // Apply the move to the game board
                         for _ in 0..<rotationCount {
-                            tapTile(i: x, j: y)
+                            tapTile(i: x, j: y, arrowTextureOffset: orangeArrowsUV)
                         }
                         
                         // Reset the flags and prepare for the next move
