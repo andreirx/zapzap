@@ -1,0 +1,220 @@
+.game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+.game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* HUD overlay */
+.hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 24px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.score {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-left {
+  color: #4af;
+}
+
+.score-right {
+  color: #f84;
+}
+
+.phase-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.9rem;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Menu overlay */
+.menu-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 20, 0.85);
+  z-index: 20;
+  gap: 24px;
+}
+
+.menu-overlay h1 {
+  font-size: 3rem;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, #4af, #f84);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.menu-overlay button {
+  padding: 12px 40px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border: 2px solid #4af;
+  border-radius: 8px;
+  background: transparent;
+  color: #4af;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-overlay button:hover {
+  background: #4af;
+  color: #0a0a14;
+}
+
+/* Game Over overlay */
+.game-over-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 20, 0.9);
+  z-index: 20;
+  gap: 16px;
+}
+
+.game-over-overlay h2 {
+  font-size: 2.5rem;
+  color: #f84;
+}
+
+.game-over-overlay .final-score {
+  font-size: 1.2rem;
+  opacity: 0.8;
+}
+
+.game-over-overlay button,
+.pause-overlay button {
+  padding: 12px 40px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border: 2px solid #4af;
+  border-radius: 8px;
+  background: transparent;
+  color: #4af;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.game-over-overlay button:hover,
+.pause-overlay button:hover {
+  background: #4af;
+  color: #0a0a14;
+}
+
+/* Pause overlay */
+.pause-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 20, 0.85);
+  z-index: 20;
+  gap: 16px;
+}
+
+.pause-overlay h2 {
+  font-size: 2rem;
+  color: #4af;
+}
+
+/* Pause button in HUD */
+.pause-btn {
+  pointer-events: auto;
+  padding: 4px 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pause-btn:hover {
+  border-color: #4af;
+  color: #4af;
+}
+
+/* Zen mode score */
+.score-zen {
+  color: #ff4;
+}
+
+/* Power-up buttons */
+.power-buttons {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
+}
+
+.power-left {
+  left: 8px;
+}
+
+.power-right {
+  right: 8px;
+}
+
+.power-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.power-btn:hover {
+  border-color: #4af;
+  color: #4af;
+}
+
+.power-btn.armed {
+  border-color: #f44;
+  color: #f44;
+  background: rgba(255, 68, 68, 0.2);
+  box-shadow: 0 0 12px rgba(255, 68, 68, 0.4);
+}
