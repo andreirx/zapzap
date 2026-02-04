@@ -150,9 +150,6 @@ pub struct GameState {
     // Pending bonus drop counts (stored during freeze, spawned after freeze ends)
     pending_bonus: (usize, usize, usize),
 
-    // Saved markings snapshot for bonus collection after tiles have been removed
-    saved_markings: Vec<Marking>,
-
     // Per-column new tile counts from bomb/arrow (for fall animations after freeze)
     pending_bomb_columns: Vec<(usize, usize)>,
 
@@ -192,7 +189,6 @@ impl GameState {
             power_left: PowerUpInventory::default(),
             power_right: PowerUpInventory::default(),
             pending_bonus: (0, 0, 0),
-            saved_markings: Vec::new(),
             pending_bomb_columns: Vec::new(),
             render_buffer: Vec::with_capacity(capacity),
             sound_events: Vec::with_capacity(8),
@@ -270,8 +266,12 @@ impl GameState {
 
     fn process_input(&mut self) {
         if let Some((tx, ty)) = self.pending_tap.take() {
-            // Check if a power-up is armed (left side only for player taps)
+            // Check if any power-up is armed (either side)
             if let Some(ptype) = self.power_left.consume_armed() {
+                self.apply_power_up(ptype, tx, ty);
+                return;
+            }
+            if let Some(ptype) = self.power_right.consume_armed() {
                 self.apply_power_up(ptype, tx, ty);
                 return;
             }
@@ -394,6 +394,9 @@ impl GameState {
         // Always rebuild arcs from current board markings (legacy: arcs visible at all times)
         self.effects.build_arcs_from_board(&self.board, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
 
+        // Collect any landed bonuses on tiles touched by arcs (Left, Right, or Ok)
+        self.collect_landed_bonuses();
+
         if zap != 0 {
             // Add multiplier-based score for each connected pin
             self.apply_multiplier_scores();
@@ -486,6 +489,91 @@ impl GameState {
         }
     }
 
+    /// Collect any landed bonuses sitting on tiles with active markings (Left, Right, Ok).
+    /// Called from check_and_transition() so bonuses are picked up whenever arcs touch them,
+    /// not just after a full zap cycle.
+    fn collect_landed_bonuses(&mut self) {
+        if self.bonuses.landed.is_empty() {
+            return;
+        }
+
+        let landed = core::mem::take(&mut self.bonuses.landed);
+        let mut uncollected = Vec::new();
+        let mut left_pts = 0i32;
+        let mut right_pts = 0i32;
+        let mut left_powers: Vec<PowerUpType> = Vec::new();
+        let mut right_powers: Vec<PowerUpType> = Vec::new();
+
+        for bonus in landed {
+            let marking = self.board.get_marking(bonus.tile_x, bonus.tile_y);
+            let pts = bonus.points();
+            match marking {
+                Marking::Left | Marking::Ok => {
+                    left_pts += pts;
+                    if let FallingBonusKind::PowerUp(ptype) = bonus.kind {
+                        left_powers.push(ptype);
+                    }
+                    if pts > 0 {
+                        let bx = GRID_OFFSET_X + bonus.tile_x as f32 * TILE_SIZE + TILE_SIZE * 0.5;
+                        let by = GRID_OFFSET_Y + bonus.tile_y as f32 * TILE_SIZE + TILE_SIZE * 0.5;
+                        self.score_popups.push(ScorePopup {
+                            x: bx, y: by, value: pts as f32, side: 0.0,
+                        });
+                    }
+                }
+                Marking::Right => {
+                    right_pts += pts;
+                    if let FallingBonusKind::PowerUp(ptype) = bonus.kind {
+                        right_powers.push(ptype);
+                    }
+                    if pts > 0 {
+                        let bx = GRID_OFFSET_X + bonus.tile_x as f32 * TILE_SIZE + TILE_SIZE * 0.5;
+                        let by = GRID_OFFSET_Y + bonus.tile_y as f32 * TILE_SIZE + TILE_SIZE * 0.5;
+                        self.score_popups.push(ScorePopup {
+                            x: bx, y: by, value: pts as f32, side: 1.0,
+                        });
+                    }
+                }
+                _ => {
+                    uncollected.push(bonus);
+                }
+            }
+        }
+        self.bonuses.landed = uncollected;
+
+        if left_pts > 0 || right_pts > 0 {
+            match self.mode {
+                GameMode::Zen => {
+                    let total = left_pts + right_pts;
+                    self.left_score += total;
+                    self.right_score += total;
+                }
+                GameMode::VsBot => {
+                    self.left_score += left_pts;
+                    self.right_score += right_pts;
+                }
+            }
+            self.sound_events.push(SoundEvent::CoinDrop);
+        }
+
+        for ptype in left_powers {
+            match ptype {
+                PowerUpType::Bomb => self.power_left.has_bomb = true,
+                PowerUpType::Cross => self.power_left.has_cross = true,
+                PowerUpType::Arrow => self.power_left.has_arrow = true,
+            }
+            self.sound_events.push(SoundEvent::PowerUp);
+        }
+        for ptype in right_powers {
+            match ptype {
+                PowerUpType::Bomb => self.power_right.has_bomb = true,
+                PowerUpType::Cross => self.power_right.has_cross = true,
+                PowerUpType::Arrow => self.power_right.has_arrow = true,
+            }
+            self.sound_events.push(SoundEvent::PowerUp);
+        }
+    }
+
     fn do_zap(&mut self) {
         // Clear arcs (keep particles alive, they'll fade naturally)
         self.effects.arcs.clear();
@@ -495,9 +583,6 @@ impl GameState {
 
         // Re-check connections so markings are fresh
         let _ = self.board.check_connections();
-
-        // Save markings snapshot for bonus collection after falls complete
-        self.saved_markings = self.board.markings.clone();
 
         // Record original y-positions of surviving (non-Ok) tiles per column
         // before removal. Collected bottom-up to match remove_and_shift order.
@@ -569,97 +654,9 @@ impl GameState {
     }
 
     /// Called when both tile falls and bonus falls are complete.
+    /// Bonus collection is handled by collect_landed_bonuses() inside check_and_transition(),
+    /// which uses the live board markings (not stale snapshots).
     fn finish_falling(&mut self) {
-        // Score bonuses using saved markings from before tile removal.
-        // Collected bonuses are removed; uncollected ones remain for rendering.
-        if !self.saved_markings.is_empty() {
-            let height = self.board.height;
-            let saved = core::mem::take(&mut self.saved_markings);
-
-            let mut left_pts = 0i32;
-            let mut right_pts = 0i32;
-            let mut left_powers: Vec<PowerUpType> = Vec::new();
-            let mut right_powers: Vec<PowerUpType> = Vec::new();
-            let mut uncollected = Vec::new();
-
-            let landed = core::mem::take(&mut self.bonuses.landed);
-            for bonus in landed {
-                let idx = bonus.tile_x * height + bonus.tile_y;
-                let marking = if idx < saved.len() { saved[idx] } else { Marking::None };
-                let pts = bonus.points();
-                match marking {
-                    Marking::Left | Marking::Ok => {
-                        left_pts += pts;
-                        if let FallingBonusKind::PowerUp(ptype) = bonus.kind {
-                            left_powers.push(ptype);
-                        }
-                        if pts > 0 {
-                            let bx = GRID_OFFSET_X + bonus.tile_x as f32 * TILE_SIZE + TILE_SIZE * 0.5;
-                            let by = GRID_OFFSET_Y + bonus.tile_y as f32 * TILE_SIZE + TILE_SIZE * 0.5;
-                            self.score_popups.push(ScorePopup {
-                                x: bx, y: by, value: pts as f32, side: 0.0,
-                            });
-                        }
-                        // Collected — don't keep
-                    }
-                    Marking::Right => {
-                        right_pts += pts;
-                        if let FallingBonusKind::PowerUp(ptype) = bonus.kind {
-                            right_powers.push(ptype);
-                        }
-                        if pts > 0 {
-                            let bx = GRID_OFFSET_X + bonus.tile_x as f32 * TILE_SIZE + TILE_SIZE * 0.5;
-                            let by = GRID_OFFSET_Y + bonus.tile_y as f32 * TILE_SIZE + TILE_SIZE * 0.5;
-                            self.score_popups.push(ScorePopup {
-                                x: bx, y: by, value: pts as f32, side: 1.0,
-                            });
-                        }
-                        // Collected — don't keep
-                    }
-                    _ => {
-                        // Not on a connected tile — keep for continued rendering
-                        uncollected.push(bonus);
-                    }
-                }
-            }
-            self.bonuses.landed = uncollected;
-
-            // In Zen mode, all bonus points accrue globally to both scores
-            match self.mode {
-                GameMode::Zen => {
-                    let total = left_pts + right_pts;
-                    self.left_score += total;
-                    self.right_score += total;
-                }
-                GameMode::VsBot => {
-                    self.left_score += left_pts;
-                    self.right_score += right_pts;
-                }
-            }
-
-            for ptype in left_powers {
-                match ptype {
-                    PowerUpType::Bomb => self.power_left.has_bomb = true,
-                    PowerUpType::Cross => self.power_left.has_cross = true,
-                    PowerUpType::Arrow => self.power_left.has_arrow = true,
-                }
-                self.sound_events.push(SoundEvent::PowerUp);
-            }
-            for ptype in right_powers {
-                // In Zen mode, all power-ups go to player (left) inventory
-                let target = match self.mode {
-                    GameMode::Zen => &mut self.power_left,
-                    GameMode::VsBot => &mut self.power_right,
-                };
-                match ptype {
-                    PowerUpType::Bomb => target.has_bomb = true,
-                    PowerUpType::Cross => target.has_cross = true,
-                    PowerUpType::Arrow => target.has_arrow = true,
-                }
-                self.sound_events.push(SoundEvent::PowerUp);
-            }
-        }
-
         self.check_and_transition();
     }
 
