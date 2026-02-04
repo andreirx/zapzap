@@ -2,6 +2,11 @@ use std::f32::consts::FRAC_PI_2;
 
 /// Rotation animation for a tile being tapped.
 /// Linear interpolation over 0.2s from start_rotation to end_rotation.
+/// In Y-DOWN coordinates: positive angle = clockwise visual.
+/// Game logic rotates connections instantly (CCW via bit-shift left).
+/// Visual starts at -count*PI/2 and animates to 0 (sweeps CW back to rest).
+/// Wait — user confirmed: start at +count*PI/2, animate to 0.
+/// Positive start = CW offset, animating to 0 = visual CCW sweep.
 #[derive(Debug, Clone)]
 pub struct RotateAnim {
     pub x: usize,
@@ -13,12 +18,13 @@ pub struct RotateAnim {
 }
 
 impl RotateAnim {
-    pub fn new(x: usize, y: usize) -> Self {
+    pub fn new(x: usize, y: usize, rotation_count: usize) -> Self {
+        let count = rotation_count.max(1) as f32;
         RotateAnim {
             x,
             y,
-            start_rotation: FRAC_PI_2, // start at +90deg (just rotated)
-            end_rotation: 0.0,          // end at 0 (aligned)
+            start_rotation: count * FRAC_PI_2, // positive = CW offset; animates CCW back to 0
+            end_rotation: 0.0,
             progress: 0.0,
             duration: 0.2,
         }
@@ -161,7 +167,7 @@ mod tests {
 
     #[test]
     fn rotate_anim_completes() {
-        let mut anim = RotateAnim::new(5, 5);
+        let mut anim = RotateAnim::new(5, 5, 1);
         // Should be active initially
         assert!(anim.tick(0.1).is_some());
         // Should complete after 0.2s total
@@ -170,9 +176,9 @@ mod tests {
 
     #[test]
     fn rotate_anim_interpolates() {
-        let mut anim = RotateAnim::new(0, 0);
+        let mut anim = RotateAnim::new(0, 0, 1);
         let rot = anim.tick(0.1).unwrap(); // 50% progress
-        // Should be halfway between PI/2 and 0
+        // Should be halfway between +PI/2 and 0
         let expected = FRAC_PI_2 * 0.5;
         assert!((rot - expected).abs() < 0.01, "got {}, expected {}", rot, expected);
     }
@@ -196,8 +202,8 @@ mod tests {
     #[test]
     fn animation_state_tick_rotations() {
         let mut state = AnimationState::new();
-        state.rotate_anims.push(RotateAnim::new(1, 2));
-        state.rotate_anims.push(RotateAnim::new(3, 4));
+        state.rotate_anims.push(RotateAnim::new(1, 2, 1));
+        state.rotate_anims.push(RotateAnim::new(3, 4, 1));
         assert!(state.has_rotate_anims());
 
         // Tick past completion

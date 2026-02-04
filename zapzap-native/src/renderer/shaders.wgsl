@@ -45,7 +45,7 @@ struct VertexOutput {
 
 // Unit quad vertices (2 triangles)
 // Positions: (-0.5,-0.5), (0.5,-0.5), (-0.5,0.5), (0.5,0.5)
-// UVs:       (0, 1),      (1, 1),     (0, 0),     (1, 0)
+// UVs:       (0, 0),      (1, 0),     (0, 1),     (1, 1)
 const QUAD_POS = array<vec2<f32>, 4>(
     vec2(-0.5, -0.5),
     vec2( 0.5, -0.5),
@@ -53,10 +53,10 @@ const QUAD_POS = array<vec2<f32>, 4>(
     vec2( 0.5,  0.5),
 );
 const QUAD_UV = array<vec2<f32>, 4>(
-    vec2(0.0, 1.0),
-    vec2(1.0, 1.0),
     vec2(0.0, 0.0),
     vec2(1.0, 0.0),
+    vec2(0.0, 1.0),
+    vec2(1.0, 1.0),
 );
 const QUAD_IDX = array<u32, 6>(0u, 1u, 2u, 2u, 1u, 3u);
 

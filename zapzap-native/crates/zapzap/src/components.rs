@@ -44,7 +44,7 @@ pub enum GameMode {
 /// Default grid dimensions matching the legacy game.
 pub const DEFAULT_WIDTH: usize = 12;
 pub const DEFAULT_HEIGHT: usize = 10;
-pub const DEFAULT_MISSING_LINKS: usize = 30;
+pub const DEFAULT_MISSING_LINKS: usize = 3;
 
 /// Sound events that the simulation emits for the host to play.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
