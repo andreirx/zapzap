@@ -174,7 +174,6 @@ pub fn build_strip_vertices(
         return Vec::new();
     }
 
-    let uvs = color.uvs();
     let n = points.len();
     // Total vertices: 2*(n+2) = start cap + n points + end cap, each with 2 verts
     let mut verts = Vec::with_capacity((n + 2) * 2 * 5);
@@ -192,35 +191,37 @@ pub fn build_strip_vertices(
     // Encode color index in z-component for procedural coloring in shader
     let color_z = color as u8 as f32;
 
-    // Push a vertex pair
-    let push_pair = |verts: &mut Vec<f32>, center: [f32; 2], perp: [f32; 2], w: f32, u: (f32, f32), v: f32| {
-        // Left vertex
+    // Push a vertex pair with cross-strip UV encoding for glow profile.
+    // u: 0.0 at left edge, 1.0 at right edge (interpolates to 0.5 at center)
+    // v: 0.0 at cap tips, 1.0 at body (for tip falloff)
+    let push_pair = |verts: &mut Vec<f32>, center: [f32; 2], perp: [f32; 2], w: f32, v: f32| {
+        // Left vertex (edge: u=0)
         verts.extend_from_slice(&[
             center[0] + perp[0] * w,
             center[1] + perp[1] * w,
             color_z,
-            u.0,
+            0.0,
             v,
         ]);
-        // Right vertex
+        // Right vertex (edge: u=1)
         verts.extend_from_slice(&[
             center[0] - perp[0] * w,
             center[1] - perp[1] * w,
             color_z,
-            u.1,
+            1.0,
             v,
         ]);
     };
 
-    // Start cap: extend backwards from first point
+    // Start cap: extend backwards from first point (tip: v=0)
     let (d0, p0) = dir(points[0], points[1]);
     let start_cap = [points[0][0] - d0[0] * width, points[0][1] - d0[1] * width];
-    push_pair(&mut verts, start_cap, p0, width, uvs.first_u, uvs.first_v);
+    push_pair(&mut verts, start_cap, p0, width, 0.0);
 
-    // First point
-    push_pair(&mut verts, points[0], p0, width, uvs.mid_u, uvs.mid_v);
+    // First point (body: v=1)
+    push_pair(&mut verts, points[0], p0, width, 1.0);
 
-    // Middle points: average perpendiculars from neighboring segments
+    // Middle points: average perpendiculars from neighboring segments (body: v=1)
     for i in 1..n - 1 {
         let (_, p_prev) = dir(points[i - 1], points[i]);
         let (_, p_next) = dir(points[i], points[i + 1]);
@@ -228,16 +229,16 @@ pub fn build_strip_vertices(
         let avg = [p_prev[0] + p_next[0], p_prev[1] + p_next[1]];
         let avg_len = (avg[0] * avg[0] + avg[1] * avg[1]).sqrt().max(0.001);
         let perp = [avg[0] / avg_len, avg[1] / avg_len];
-        push_pair(&mut verts, points[i], perp, width, uvs.mid_u, uvs.mid_v);
+        push_pair(&mut verts, points[i], perp, width, 1.0);
     }
 
-    // Last point
+    // Last point (body: v=1)
     let (d_last, p_last) = dir(points[n - 2], points[n - 1]);
-    push_pair(&mut verts, points[n - 1], p_last, width, uvs.mid_u, uvs.mid_v);
+    push_pair(&mut verts, points[n - 1], p_last, width, 1.0);
 
-    // End cap: extend forwards from last point
+    // End cap: extend forwards from last point (tip: v=0)
     let end_cap = [points[n - 1][0] + d_last[0] * width, points[n - 1][1] + d_last[1] * width];
-    push_pair(&mut verts, end_cap, p_last, width, uvs.last_u, uvs.last_v);
+    push_pair(&mut verts, end_cap, p_last, width, 0.0);
 
     verts
 }

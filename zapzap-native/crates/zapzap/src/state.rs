@@ -175,6 +175,7 @@ impl GameState {
             GamePhase::FallingTiles => {
                 self.anims.tick_falls();
                 if !self.anims.has_fall_anims() {
+                    self.bonuses.clear();
                     self.check_and_transition();
                 }
             }
@@ -411,7 +412,14 @@ impl GameState {
         }
 
         self.board.remove_and_shift_connecting_tiles();
-        self.bonuses.clear();
+
+        // Reset all markings to None so falling tiles render with normal alpha.
+        // Markings will be recalculated by check_connections() after falls complete.
+        for x in 0..self.board.width {
+            for y in 0..self.board.height {
+                self.board.set_marking(x, y, Marking::None);
+            }
+        }
 
         let half_tile = TILE_SIZE * 0.5;
 
@@ -483,12 +491,17 @@ impl GameState {
                     // Use GRID_CODEP lookup for correct atlas column
                     let sprite_id = sprites::tile_atlas_col(tile.connections);
 
-                    let alpha = match marking {
-                        Marking::Ok => 1.5,
-                        Marking::Right => 1.0,
-                        Marking::Left => 1.0,
-                        Marking::Animating => 0.3,
-                        Marking::None => 1.0,
+                    // During FreezeDuringZap, hide connected tiles (arcs replace them visually)
+                    let alpha = if marking == Marking::Ok && self.phase == GamePhase::FreezeDuringZap {
+                        0.0
+                    } else {
+                        match marking {
+                            Marking::Ok => 1.5,
+                            Marking::Right => 1.0,
+                            Marking::Left => 1.0,
+                            Marking::Animating => 0.3,
+                            Marking::None => 1.0,
+                        }
                     };
 
                     let flags = if marking == Marking::Animating { 2.0 } else { 1.0 };

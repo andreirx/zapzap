@@ -18,7 +18,7 @@ export interface Renderer {
   device: GPUDevice;
   context: GPUCanvasContext;
   textures: GameTextures;
-  draw: (instanceData: Float32Array, instanceCount: number, effectsData?: Float32Array, effectsVertexCount?: number) => void;
+  draw: (instanceData: Float32Array, instanceCount: number, tileInstanceCount: number, effectsData?: Float32Array, effectsVertexCount?: number) => void;
   resize: (width: number, height: number) => void;
 }
 
@@ -160,33 +160,55 @@ export async function initRenderer(canvas: HTMLCanvasElement): Promise<Renderer>
     ],
   });
 
-  // ---- Alpha Blend Pipeline (tiles) ----
+  // Alpha blend state shared by tile and bonus pipelines
+  const alphaBlendTargets: GPUColorTargetState[] = [
+    {
+      format,
+      blend: {
+        color: {
+          srcFactor: 'src-alpha',
+          dstFactor: 'one-minus-src-alpha',
+          operation: 'add',
+        },
+        alpha: {
+          srcFactor: 'one',
+          dstFactor: 'one-minus-src-alpha',
+          operation: 'add',
+        },
+      },
+    },
+  ];
+
+  // ---- Alpha Blend Pipeline (tiles — 16×8 base_tiles atlas) ----
   const alphaPipeline = device.createRenderPipeline({
     layout: tilePipelineLayout,
     vertex: {
       module: shaderModule,
       entryPoint: 'vs_main',
+      constants: { ATLAS_COLS: 16, ATLAS_ROWS: 8 },
     },
     fragment: {
       module: shaderModule,
       entryPoint: 'fs_main',
-      targets: [
-        {
-          format,
-          blend: {
-            color: {
-              srcFactor: 'src-alpha',
-              dstFactor: 'one-minus-src-alpha',
-              operation: 'add',
-            },
-            alpha: {
-              srcFactor: 'one',
-              dstFactor: 'one-minus-src-alpha',
-              operation: 'add',
-            },
-          },
-        },
-      ],
+      targets: alphaBlendTargets,
+    },
+    primitive: {
+      topology: 'triangle-list',
+    },
+  });
+
+  // ---- Alpha Blend Pipeline (bonuses — 8×8 arrows atlas) ----
+  const arrowsAlphaPipeline = device.createRenderPipeline({
+    layout: tilePipelineLayout,
+    vertex: {
+      module: shaderModule,
+      entryPoint: 'vs_main',
+      constants: { ATLAS_COLS: 8, ATLAS_ROWS: 8 },
+    },
+    fragment: {
+      module: shaderModule,
+      entryPoint: 'fs_main',
+      targets: alphaBlendTargets,
     },
     primitive: {
       topology: 'triangle-list',
@@ -267,7 +289,7 @@ export async function initRenderer(canvas: HTMLCanvasElement): Promise<Renderer>
   updateCamera(canvas.width, canvas.height);
 
   // ---- Draw Function ----
-  function draw(instanceData: Float32Array, instanceCount: number, effectsData?: Float32Array, effectsVertexCount?: number) {
+  function draw(instanceData: Float32Array, instanceCount: number, tileInstanceCount: number, effectsData?: Float32Array, effectsVertexCount?: number) {
     // Upload instance data
     const byteLen = instanceCount * INSTANCE_STRIDE;
     device.queue.writeBuffer(instanceBuffer, 0, instanceData.buffer, instanceData.byteOffset, byteLen);
@@ -293,12 +315,24 @@ export async function initRenderer(canvas: HTMLCanvasElement): Promise<Renderer>
       ],
     });
 
-    // Pass 1: Tiles (alpha blend)
-    pass.setPipeline(alphaPipeline);
-    pass.setBindGroup(0, cameraBindGroup);
-    pass.setBindGroup(1, textureBindGroup);
-    pass.setBindGroup(2, instanceBindGroup);
-    pass.draw(6, instanceCount);
+    // Pass 1a: Tiles + pins (alpha blend, base_tiles.png, 16×8 atlas)
+    if (tileInstanceCount > 0) {
+      pass.setPipeline(alphaPipeline);
+      pass.setBindGroup(0, cameraBindGroup);
+      pass.setBindGroup(1, textureBindGroup);
+      pass.setBindGroup(2, instanceBindGroup);
+      pass.draw(6, tileInstanceCount);
+    }
+
+    // Pass 1b: Bonus objects (alpha blend, arrows.png, 8×8 atlas)
+    const bonusCount = instanceCount - tileInstanceCount;
+    if (bonusCount > 0) {
+      pass.setPipeline(arrowsAlphaPipeline);
+      pass.setBindGroup(0, cameraBindGroup);
+      pass.setBindGroup(1, arrowsBindGroup);
+      pass.setBindGroup(2, instanceBindGroup);
+      pass.draw(6, bonusCount, 0, tileInstanceCount);
+    }
 
     // Pass 2: Effects (additive blend) — arcs + particles
     if (hasEffects) {

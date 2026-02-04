@@ -77,6 +77,13 @@ function App() {
         instanceCount * INSTANCE_FLOATS,
       );
 
+      // Tile + pin instances come first; bonuses are appended after.
+      // tileCount = left_pins + game_tiles + right_pins = bw*bh + 2*bh
+      const tileInstanceCount = Math.min(
+        Math.floor(bw) * Math.floor(bh) + 2 * Math.floor(bh),
+        instanceCount,
+      );
+
       let effectsData: Float32Array | undefined;
       let effectsVertexCount: number | undefined;
       if (effectsVertCount > 0) {
@@ -89,7 +96,7 @@ function App() {
         effectsVertexCount = effectsVertCount;
       }
 
-      renderer.draw(instanceData, instanceCount, effectsData, effectsVertexCount);
+      renderer.draw(instanceData, instanceCount, tileInstanceCount, effectsData, effectsVertexCount);
     }
 
     rafRef.current = requestAnimationFrame(renderLoop);
