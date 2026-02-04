@@ -41,6 +41,7 @@ struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
     @location(0) tex_coord: vec2<f32>,
     @location(1) alpha: f32,
+    @location(2) color_idx: f32,
 };
 
 // Unit quad vertices (2 triangles)
@@ -99,6 +100,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     out.tex_coord = uv_origin + uv * uv_size;
 
     out.alpha = inst.alpha;
+    out.color_idx = 0.0;
 
     return out;
 }
@@ -124,13 +126,37 @@ fn vs_effects(input: EffectsVertexInput) -> VertexOutput {
     out.clip_position = camera.projection * vec4<f32>(input.position.xy, 0.0, 1.0);
     out.tex_coord = input.tex_coord;
     out.alpha = 1.0;
+    out.color_idx = input.position.z;
     return out;
 }
 
+// Procedural color lookup for SegmentColor enum (13 values).
+// Designed for 6.4x HDR multiplier — base colors are pre-HDR linear values.
+fn segment_color(idx: f32) -> vec3<f32> {
+    let i = u32(idx + 0.5);
+    switch i {
+        case 0u  { return vec3(1.0, 0.1, 0.05); }   // Red
+        case 1u  { return vec3(1.0, 0.45, 0.0); }    // Orange
+        case 2u  { return vec3(1.0, 0.9, 0.0); }     // Yellow
+        case 3u  { return vec3(0.5, 1.0, 0.0); }     // LimeGreen
+        case 4u  { return vec3(0.0, 1.0, 0.2); }     // Green
+        case 5u  { return vec3(0.0, 1.0, 0.6); }     // GreenCyan
+        case 6u  { return vec3(0.0, 0.9, 1.0); }     // Cyan
+        case 7u  { return vec3(0.0, 0.5, 1.0); }     // SkyBlue
+        case 8u  { return vec3(0.1, 0.1, 1.0); }     // Blue
+        case 9u  { return vec3(0.4, 0.0, 1.0); }     // Indigo
+        case 10u { return vec3(0.8, 0.0, 1.0); }     // Magenta
+        case 11u { return vec3(1.0, 0.0, 0.5); }     // Pink
+        case 12u { return vec3(1.0, 1.0, 1.0); }     // White
+        default  { return vec3(1.0, 1.0, 1.0); }
+    }
+}
+
 // Additive fragment shader for HDR glow effects (electric arcs).
+// Uses procedural vertex colors instead of texture sampling.
 // Multiplies by 6.4 to push into EDR range on supported displays.
 @fragment
 fn fs_additive(in: VertexOutput) -> @location(0) vec4<f32> {
-    let color = textureSample(t_atlas, s_atlas, in.tex_coord);
-    return color * 6.4 * in.alpha;
+    let rgb = segment_color(in.color_idx) * 6.4 * in.alpha;
+    return vec4<f32>(rgb, in.alpha);
 }
