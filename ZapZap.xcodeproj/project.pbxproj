@@ -93,7 +93,6 @@
 		18D0AF342CC22C9D00D8B055 /* SwiftyStoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18D0AF332CC22C9D00D8B055 /* SwiftyStoreKit */; };
 		18D0AF362CC22CBD00D8B055 /* SwiftyStoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18D0AF352CC22CBD00D8B055 /* SwiftyStoreKit */; };
 		18D0AF392CC2839300D8B055 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18D0AF382CC2839300D8B055 /* StoreKit.framework */; };
-		18D0AF3B2CC2839C00D8B055 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18D0AF3A2CC2839C00D8B055 /* StoreKit.framework */; };
 		18D313132C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 		18D313142C8986B700423697 /* UIMeshes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18D313122C8986B700423697 /* UIMeshes.swift */; };
 /* End PBXBuildFile section */
@@ -149,7 +148,6 @@
 		18D0AF222CBFD3F000D8B055 /* coindrop_haloween.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = coindrop_haloween.wav; sourceTree = "<group>"; };
 		18D0AF2F2CBFD8D100D8B055 /* alarm_haloween.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm_haloween.wav; sourceTree = "<group>"; };
 		18D0AF382CC2839300D8B055 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS17.5.sdk/System/Library/Frameworks/StoreKit.framework; sourceTree = DEVELOPER_DIR; };
-		18D0AF3A2CC2839C00D8B055 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		18D313122C8986B700423697 /* UIMeshes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIMeshes.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -168,7 +166,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				18D0AF362CC22CBD00D8B055 /* SwiftyStoreKit in Frameworks */,
-				18D0AF3B2CC2839C00D8B055 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -307,7 +304,6 @@
 		18D0AF372CC2839300D8B055 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				18D0AF3A2CC2839C00D8B055 /* StoreKit.framework */,
 				18D0AF382CC2839300D8B055 /* StoreKit.framework */,
 			);
 			name = Frameworks;
@@ -731,7 +727,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 5;
-				DEVELOPMENT_TEAM = 7S282Q4JN2;
+				DEVELOPMENT_TEAM = PTN74UT4G3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
@@ -744,7 +740,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.bijuterie.ZapZap;
+				PRODUCT_BUNDLE_IDENTIFIER = com.andreirx.ZapZap;
 				PRODUCT_NAME = ZapZap;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -762,7 +758,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 5;
-				DEVELOPMENT_TEAM = 7S282Q4JN2;
+				DEVELOPMENT_TEAM = PTN74UT4G3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
@@ -775,7 +771,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.bijuterie.ZapZap;
+				PRODUCT_BUNDLE_IDENTIFIER = com.andreirx.ZapZap;
 				PRODUCT_NAME = ZapZap;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;

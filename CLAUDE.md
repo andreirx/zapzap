@@ -35,6 +35,11 @@ We are currently in the **Audit & Architecture Phase**.
 - **Glue (TypeScript):**
     - Strict Mode.
     - No logic in the UI thread; UI only sends `Commands` to the Worker.
+- **GENERAL GOOD PRACTICES**
+    - Clean code
+    - Clean architecture (hexagonal)
+    - LESS spaghetti not MORE spaghetti
+    - NO HARDCODINGS - whatever formula you use to compute a value, USE THE FORMULA - do not hardcode values unless appropriate and matching reader understanding - like pi or 90 degrees.
 
 ## Documentation Rules
 - **MAP.md:** Every directory must contain a `MAP.md` explaining *what* the module does and *how* it connects to the architecture.

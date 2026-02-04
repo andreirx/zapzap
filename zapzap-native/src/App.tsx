@@ -5,7 +5,7 @@ import { SoundManager } from './audio/sound-manager';
 
 // Game constants matching Rust state.rs
 const TILE_SIZE = 50;
-const GRID_OFFSET_X = 150;
+const GRID_OFFSET_X = 225;
 const GRID_OFFSET_Y = 25;
 const INSTANCE_FLOATS = 8;
 const EFFECTS_VERTEX_FLOATS = 5;

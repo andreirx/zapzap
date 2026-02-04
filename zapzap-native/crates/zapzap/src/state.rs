@@ -51,7 +51,7 @@ pub mod sprites {
 
 /// Game constants matching legacy.
 pub const TILE_SIZE: f32 = 50.0;
-pub const GRID_OFFSET_X: f32 = 150.0; // left margin for pins
+pub const GRID_OFFSET_X: f32 = 225.0; // left margin for pins (centers 14-col board in 1050-wide canvas)
 pub const GRID_OFFSET_Y: f32 = 25.0;
 pub const MAX_VS_SCORE: i32 = 100;
 
@@ -105,7 +105,7 @@ impl GameState {
         let board = GameBoard::new(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_MISSING_LINKS, seed);
         let capacity = DEFAULT_WIDTH * DEFAULT_HEIGHT + 2 * DEFAULT_HEIGHT + 64; // tiles + pins + UI + bonuses
         let bot_enabled = mode == GameMode::VsBot;
-        GameState {
+        let mut state = GameState {
             board,
             phase: GamePhase::WaitingForInput,
             mode,
@@ -122,7 +122,13 @@ impl GameState {
             render_buffer: Vec::with_capacity(capacity),
             sound_events: Vec::with_capacity(8),
             pending_tap: None,
-        }
+        };
+
+        // Build initial arcs from board state (legacy: arcs always visible)
+        state.board.check_connections();
+        state.effects.build_arcs_from_board(&state.board, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
+
+        state
     }
 
     /// Queue a tap from JS. Coordinates are in tile space (0..width, 0..height).
@@ -148,22 +154,19 @@ impl GameState {
                 }
             }
             GamePhase::FreezeDuringZap => {
-                self.effects.tick(dt);
-                self.effects.rebuild_effects_buffer();
                 if self.anims.tick_freeze(dt) {
                     self.do_zap();
                 }
             }
             GamePhase::FreezeDuringBomb => {
                 if self.anims.tick_freeze(dt) {
+                    // Rebuild arcs after bomb changed the board
+                    self.board.check_connections();
+                    self.effects.build_arcs_from_board(&self.board, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
                     self.phase = GamePhase::WaitingForInput;
                 }
             }
             GamePhase::FallingBonuses => {
-                // Update particles (they may still be alive from zap)
-                self.effects.tick(dt);
-                self.effects.rebuild_effects_buffer();
-
                 if !self.bonuses.tick_falling() {
                     // All bonuses have landed — collect and transition
                     self.collect_bonuses();
@@ -171,8 +174,6 @@ impl GameState {
             }
             GamePhase::FallingTiles => {
                 self.anims.tick_falls();
-                self.effects.tick(dt);
-                self.effects.rebuild_effects_buffer();
                 if !self.anims.has_fall_anims() {
                     self.check_and_transition();
                 }
@@ -181,6 +182,10 @@ impl GameState {
                 // Nothing to update.
             }
         }
+
+        // Always tick effects (particles need to update in every phase)
+        self.effects.tick(dt);
+        self.effects.rebuild_effects_buffer();
 
         self.rebuild_render_buffer();
     }
@@ -198,7 +203,7 @@ impl GameState {
                 tile.rotate();
             }
             // Visual animation: smooth rotation from +90deg to 0
-            self.anims.rotate_anims.push(RotateAnim::new(tx, ty));
+            self.anims.rotate_anims.push(RotateAnim::new(tx, ty, 1));
             self.sound_events.push(SoundEvent::Rotate);
             self.phase = GamePhase::RotatingTile;
         }
@@ -247,7 +252,7 @@ impl GameState {
                     tile.rotate();
                 }
             }
-            self.anims.rotate_anims.push(RotateAnim::new(mv.x, mv.y));
+            self.anims.rotate_anims.push(RotateAnim::new(mv.x, mv.y, mv.rotation_count));
             self.phase = GamePhase::RotatingTile;
 
             // Reset delay for next move
@@ -259,6 +264,10 @@ impl GameState {
 
     fn check_and_transition(&mut self) {
         let zap = self.board.check_connections();
+
+        // Always rebuild arcs from current board markings (legacy: arcs visible at all times)
+        self.effects.build_arcs_from_board(&self.board, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
+
         if zap != 0 {
             // Add multiplier-based score for each connected pin
             self.apply_multiplier_scores();
@@ -269,10 +278,8 @@ impl GameState {
                 self.board.right_pins_connect,
             );
 
-            // Build electric arcs and spawn particles for the connected tiles
-            self.effects.build_arcs_from_board(&self.board, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
+            // Spawn particles for the connected tiles
             self.effects.spawn_zap_particles(&self.board, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
-            self.effects.rebuild_effects_buffer();
 
             self.sound_events.push(SoundEvent::Buzz);
             self.anims.freeze_timer = FREEZE_ZAP_DURATION;
@@ -285,7 +292,7 @@ impl GameState {
                 self.phase = GamePhase::GameOver;
             }
         } else {
-            self.effects.clear();
+            // No zap — arcs already rebuilt above, keep particles alive (they fade naturally)
             self.phase = GamePhase::WaitingForInput;
         }
     }
@@ -459,8 +466,8 @@ impl GameState {
 
                     let alpha = match marking {
                         Marking::Ok => 1.5,
-                        Marking::Right => 0.8,
-                        Marking::Left => 0.8,
+                        Marking::Right => 1.0,
+                        Marking::Left => 1.0,
                         Marking::Animating => 0.3,
                         Marking::None => 1.0,
                     };

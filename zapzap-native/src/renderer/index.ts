@@ -12,7 +12,7 @@ const MAX_INSTANCES = 256;
 // Effects vertex: 5 floats = 20 bytes (x, y, z, u, v)
 const EFFECTS_VERTEX_FLOATS = 5;
 const EFFECTS_VERTEX_BYTES = EFFECTS_VERTEX_FLOATS * 4;
-const MAX_EFFECTS_VERTICES = 8192;
+const MAX_EFFECTS_VERTICES = 16384;
 
 export interface Renderer {
   device: GPUDevice;
