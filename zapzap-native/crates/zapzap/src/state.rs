@@ -396,30 +396,49 @@ impl GameState {
         // Now remove connected tiles and transition to FallingTiles
         self.sound_events.push(SoundEvent::Explode);
 
-        let mut removed_per_col = vec![0usize; self.board.width];
+        // Record original y-positions of surviving (non-Ok) tiles per column
+        // before removal. Collected bottom-up to match remove_and_shift order.
+        let height = self.board.height;
+        let mut survivors_per_col: Vec<Vec<usize>> = Vec::with_capacity(self.board.width);
         for x in 0..self.board.width {
-            for y in 0..self.board.height {
-                if self.board.get_marking(x, y) == Marking::Ok {
-                    removed_per_col[x] += 1;
+            let mut col_survivors = Vec::new();
+            for y in (0..height).rev() {
+                if self.board.get_marking(x, y) != Marking::Ok {
+                    col_survivors.push(y);
                 }
             }
+            survivors_per_col.push(col_survivors);
         }
 
         self.board.remove_and_shift_connecting_tiles();
         self.bonuses.clear();
 
-        // Create fall animations for tiles that shifted down
+        let half_tile = TILE_SIZE * 0.5;
+
+        // Create per-tile fall animations
         for x in 0..self.board.width {
-            let num_new = removed_per_col[x];
+            let survivors = &survivors_per_col[x];
+            let num_new = height - survivors.len();
             if num_new == 0 {
                 continue;
             }
-            for y in 0..self.board.height {
-                let target_y = GRID_OFFSET_Y + (y as f32) * TILE_SIZE + TILE_SIZE * 0.5;
-                let start_y = target_y - (num_new as f32) * TILE_SIZE;
-                if start_y < target_y {
-                    self.anims.fall_anims.push(FallAnim::new(x, y, start_y, target_y));
+
+            // Surviving tiles: placed at y = height-1-i (bottom-up)
+            // Only animate if they actually moved
+            for (i, &old_y) in survivors.iter().enumerate() {
+                let new_y = height - 1 - i;
+                if new_y != old_y {
+                    let old_world_y = GRID_OFFSET_Y + old_y as f32 * TILE_SIZE + half_tile;
+                    let new_world_y = GRID_OFFSET_Y + new_y as f32 * TILE_SIZE + half_tile;
+                    self.anims.fall_anims.push(FallAnim::new(x, new_y, old_world_y, new_world_y));
                 }
+            }
+
+            // New tiles: start above the grid and fall into top slots
+            for i in 0..num_new {
+                let start_y = GRID_OFFSET_Y - (num_new - i) as f32 * TILE_SIZE + half_tile;
+                let target_y = GRID_OFFSET_Y + i as f32 * TILE_SIZE + half_tile;
+                self.anims.fall_anims.push(FallAnim::new(x, i, start_y, target_y));
             }
         }
 

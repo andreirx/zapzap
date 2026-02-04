@@ -189,13 +189,16 @@ pub fn build_strip_vertices(
         (d, p)
     };
 
+    // Encode color index in z-component for procedural coloring in shader
+    let color_z = color as u8 as f32;
+
     // Push a vertex pair
     let push_pair = |verts: &mut Vec<f32>, center: [f32; 2], perp: [f32; 2], w: f32, u: (f32, f32), v: f32| {
         // Left vertex
         verts.extend_from_slice(&[
             center[0] + perp[0] * w,
             center[1] + perp[1] * w,
-            0.0,
+            color_z,
             u.0,
             v,
         ]);
@@ -203,7 +206,7 @@ pub fn build_strip_vertices(
         verts.extend_from_slice(&[
             center[0] - perp[0] * w,
             center[1] - perp[1] * w,
-            0.0,
+            color_z,
             u.1,
             v,
         ]);
