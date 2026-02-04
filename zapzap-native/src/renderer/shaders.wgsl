@@ -61,9 +61,10 @@ const QUAD_UV = array<vec2<f32>, 4>(
 );
 const QUAD_IDX = array<u32, 6>(0u, 1u, 2u, 2u, 1u, 3u);
 
-// Texture atlas layout: 16 columns × 8 rows (base_tiles.png)
-const ATLAS_COLS: f32 = 16.0;
-const ATLAS_ROWS: f32 = 8.0;
+// Texture atlas layout — overridable per pipeline.
+// base_tiles.png: 16 columns × 8 rows; arrows.png: 8 columns × 8 rows.
+override ATLAS_COLS: f32 = 16.0;
+override ATLAS_ROWS: f32 = 8.0;
 
 @vertex
 fn vs_main(input: VertexInput) -> VertexOutput {
@@ -153,10 +154,25 @@ fn segment_color(idx: f32) -> vec3<f32> {
 }
 
 // Additive fragment shader for HDR glow effects (electric arcs).
-// Uses procedural vertex colors instead of texture sampling.
+// Procedural lightsaber profile: white-hot core with colored glow halo.
+// tex_coord.x = cross-strip position (0=edge, 0.5=center, 1=edge)
+// tex_coord.y = along-strip position (0=cap tip, 1=body)
 // Multiplies by 6.4 to push into EDR range on supported displays.
 @fragment
 fn fs_additive(in: VertexOutput) -> @location(0) vec4<f32> {
-    let rgb = segment_color(in.color_idx) * 6.4 * in.alpha;
-    return vec4<f32>(rgb, in.alpha);
+    // Distance from strip center: 0 at center, 1 at edges
+    let d = abs(in.tex_coord.x * 2.0 - 1.0);
+
+    // Tight Gaussian core (white-hot center of the lightsaber)
+    let core = exp(-d * d * 16.0);
+    // Wider Gaussian halo (colored glow around the core)
+    let halo = exp(-d * d * 3.0);
+
+    // Cap tip falloff (tapers the ends to points)
+    let tip = in.tex_coord.y;
+
+    let base = segment_color(in.color_idx);
+    let rgb = (vec3<f32>(1.0, 1.0, 1.0) * core * 0.6 + base * halo) * 6.4 * tip;
+    let a = halo * tip;
+    return vec4<f32>(rgb, a);
 }

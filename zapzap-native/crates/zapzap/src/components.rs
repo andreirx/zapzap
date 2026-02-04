@@ -97,14 +97,13 @@ impl BonusType {
         }
     }
 
-    /// Atlas UV as (col_start, row_start) in an 8-column subdivision.
-    /// Legacy: all coins are in column 3, rows 2-4 of an 8x8 grid.
-    /// In the 16x8 atlas, this maps to col 6, rows 2-4.
+    /// Atlas UV as (col, row) in the 8×8 arrows.png atlas.
+    /// Legacy: all coins are in column 3, rows 2-4.
     pub fn atlas_uv(self) -> (f32, f32) {
         match self {
-            BonusType::Coin1 => (6.0, 2.0), // col 6, row 2 in 16x8 atlas
-            BonusType::Coin2 => (6.0, 3.0), // col 6, row 3
-            BonusType::Coin5 => (6.0, 4.0), // col 6, row 4
+            BonusType::Coin1 => (3.0, 2.0),
+            BonusType::Coin2 => (3.0, 3.0),
+            BonusType::Coin5 => (3.0, 4.0),
         }
     }
 }
@@ -119,13 +118,12 @@ pub enum PowerUpType {
 }
 
 impl PowerUpType {
-    /// Atlas UV for the power-up sprite (in 16x8 atlas).
-    /// Legacy: Bomb at col 14 row 1, Cross at col 12 row 0, Arrow at col 14 row 0.
+    /// Atlas UV for the power-up sprite in the 8×8 arrows.png atlas.
     pub fn atlas_uv(self) -> (f32, f32) {
         match self {
-            PowerUpType::Bomb => (14.0, 1.0),
-            PowerUpType::Cross => (12.0, 0.0),
-            PowerUpType::Arrow => (14.0, 0.0),
+            PowerUpType::Bomb => (7.0, 1.0),
+            PowerUpType::Cross => (6.0, 0.0),
+            PowerUpType::Arrow => (7.0, 0.0),
         }
     }
 
