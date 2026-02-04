@@ -40,6 +40,7 @@ function App() {
   const [powerState, setPowerState] = useState(0);
   const [popups, setPopups] = useState<Array<{ id: number; x: number; y: number; value: number; side: number }>>([]);
   const popupIdRef = useRef(0);
+  const [rendererBackend, setRendererBackend] = useState<'webgpu' | 'canvas2d' | null>(null);
 
   // Render loop: read SharedArrayBuffer and draw
   const renderLoop = useCallback(() => {
@@ -120,6 +121,7 @@ function App() {
       const renderer = await initRenderer(canvas!);
       if (cleanup) return;
       rendererRef.current = renderer;
+      setRendererBackend(renderer.backend);
 
       // Start render loop
       rafRef.current = requestAnimationFrame(renderLoop);
@@ -321,6 +323,13 @@ function App() {
         onPointerDown={handlePointerDown}
       />
 
+      {/* Fallback renderer warning */}
+      {rendererBackend === 'canvas2d' && (
+        <div className="fallback-banner">
+          Running in compatibility mode (no HDR). For the best experience, use Chrome or Safari with WebGPU enabled.
+        </div>
+      )}
+
       {/* HUD */}
       {(screen === 'playing' || screen === 'paused') && (
         <div className="hud">
@@ -365,8 +374,8 @@ function App() {
         </div>
       )}
 
-      {/* Power-up buttons (right side, VsBot) */}
-      {(screen === 'playing') && gameMode === MODE_VS_BOT && (hasRightBomb || hasRightCross || hasRightArrow) && (
+      {/* Power-up buttons (right side) */}
+      {(screen === 'playing') && (hasRightBomb || hasRightCross || hasRightArrow) && (
         <div className="power-buttons power-right">
           {hasRightBomb && (
             <button
