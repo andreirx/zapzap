@@ -14,7 +14,6 @@ const MAX_INSTANCES = 256;
 const INSTANCE_DATA_FLOATS = MAX_INSTANCES * INSTANCE_FLOATS;
 
 // Game phases matching Rust GamePhase enum
-const PHASE_WAITING = 0;
 const PHASE_GAME_OVER = 5;
 
 // Game modes matching Rust GameMode enum
@@ -407,6 +406,13 @@ function App() {
           <h1>ZapZap</h1>
           <button onClick={() => startGame(MODE_ZEN)}>Zen Mode</button>
           <button onClick={() => startGame(MODE_VS_BOT)}>Vs Bot</button>
+          <p className="music-credit">
+            "Itty Bitty 8 Bit" Kevin MacLeod (incompetech.com)<br />
+            Licensed under Creative Commons: By Attribution 4.0 License<br />
+            <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">
+              http://creativecommons.org/licenses/by/4.0/
+            </a>
+          </p>
         </div>
       )}
 

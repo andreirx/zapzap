@@ -7,7 +7,6 @@
 //   Effects stride: 5 floats (20 bytes) per vertex (x, y, z, u, v).
 
 import init, {
-  init_game,
   init_game_with_mode,
   tick_game,
   tap_tile,
@@ -21,7 +20,6 @@ import init, {
   get_score_popups_ptr,
   get_score_popups_len,
   get_game_phase,
-  get_game_mode,
   get_left_score,
   get_right_score,
   get_board_width,
@@ -54,7 +52,6 @@ let sharedI32: Int32Array | null = null;
 let running = false;
 let wasmMemory: WebAssembly.Memory | null = null;
 
-let gameMode = 0; // 0=Zen, 1=VsBot
 let lastPhase = -1; // Track phase transitions for debug logging
 let lastEffectsCount = 0; // Track effects to log changes
 const PHASE_NAMES = ['WaitingForInput', 'RotatingTile', 'FallingTiles', 'FreezeDuringZap', 'FreezeDuringBomb', 'GameOver', 'FallingBonuses'];
@@ -63,7 +60,6 @@ async function initialize(mode: number = 0) {
   // Initialize WASM module
   const wasm = await init();
   wasmMemory = wasm.memory;
-  gameMode = mode;
   lastPhase = -1;
 
   // Initialize game with a random seed and mode
@@ -220,7 +216,6 @@ self.onmessage = (e: MessageEvent) => {
           const iy = buf[i * 8 + 1];
           if (Math.abs(ix - expectedX) < 1 && Math.abs(iy - expectedY) < 1) {
             const rot = buf[i * 8 + 2].toFixed(3);
-            const scale = buf[i * 8 + 3].toFixed(1);
             const spriteId = buf[i * 8 + 4];
             const alpha = buf[i * 8 + 5].toFixed(2);
             const flags = buf[i * 8 + 6];

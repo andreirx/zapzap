@@ -30,7 +30,7 @@ export function computeProjection(canvasW: number, canvasH: number): Projection 
 }
 
 /** Build column-major orthographic projection matrix for WebGPU. */
-export function buildProjectionMatrix(canvasW: number, canvasH: number): Float32Array {
+export function buildProjectionMatrix(canvasW: number, canvasH: number): Float32Array<ArrayBuffer> {
   const { projWidth, projHeight } = computeProjection(canvasW, canvasH);
   const l = 0, r = projWidth, b = projHeight, t = 0;
   return new Float32Array([
