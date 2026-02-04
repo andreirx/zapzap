@@ -2,52 +2,26 @@
 // Lower visual quality (no HDR/EDR, simplified effects) but fully functional.
 // Same Renderer interface as WebGPU backend; driven by SharedArrayBuffer data.
 
+import { createCanvasImages, type AssetBlobs } from './asset-loader';
+import { computeProjection } from './camera';
+import { SEGMENT_COLORS_RGB8 } from './constants';
 import type { Renderer } from './types';
 
 const TILE_SIZE = 50;
 const INSTANCE_FLOATS = 8;
 const EFFECTS_VERTEX_FLOATS = 5;
 
-// Segment colors matching WGSL segment_color() lookup — clamped to SDR [0,255].
-const SEGMENT_COLORS: [number, number, number][] = [
-  [255, 25, 13],    // 0  Red
-  [255, 115, 0],    // 1  Orange
-  [255, 230, 0],    // 2  Yellow
-  [128, 255, 0],    // 3  LimeGreen
-  [0, 255, 51],     // 4  Green
-  [0, 255, 153],    // 5  GreenCyan
-  [0, 230, 255],    // 6  Cyan
-  [0, 128, 255],    // 7  SkyBlue
-  [25, 25, 255],    // 8  Blue
-  [102, 0, 255],    // 9  Indigo
-  [204, 0, 255],    // 10 Magenta
-  [255, 0, 128],    // 11 Pink
-  [255, 255, 255],  // 12 White
-];
-
-const GAME_WIDTH = 1050;
-const GAME_HEIGHT = 550;
-
-function loadImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = url;
-  });
-}
-
-export async function initCanvas2DRenderer(canvas: HTMLCanvasElement): Promise<Renderer> {
+export async function initCanvas2DRenderer(
+  canvas: HTMLCanvasElement,
+  blobs: AssetBlobs,
+): Promise<Renderer> {
   const ctx = canvas.getContext('2d');
   if (!ctx) {
     throw new Error('Failed to get Canvas 2D context');
   }
 
-  // Load atlas images (same PNGs as WebGPU, loaded as HTMLImageElement)
-  const [baseTilesImg, arrowsImg] = await Promise.all([
-    loadImage('/assets/base_tiles.png'),
-    loadImage('/assets/arrows.png'),
-  ]);
+  // Create HTMLImageElements from pre-fetched blobs
+  const images = await createCanvasImages(blobs);
 
   // Atlas dimensions
   const BASE_COLS = 16;
@@ -55,23 +29,12 @@ export async function initCanvas2DRenderer(canvas: HTMLCanvasElement): Promise<R
   const ARROWS_COLS = 8;
   const ARROWS_ROWS = 8;
 
-  const baseCellW = baseTilesImg.width / BASE_COLS;
-  const baseCellH = baseTilesImg.height / BASE_ROWS;
-  const arrowsCellW = arrowsImg.width / ARROWS_COLS;
-  const arrowsCellH = arrowsImg.height / ARROWS_ROWS;
+  const baseCellW = images.baseTiles.width / BASE_COLS;
+  const baseCellH = images.baseTiles.height / BASE_ROWS;
+  const arrowsCellW = images.arrows.width / ARROWS_COLS;
+  const arrowsCellH = images.arrows.height / ARROWS_ROWS;
 
-  function computeProjection(canvasW: number, canvasH: number) {
-    const aspect = canvasW / canvasH;
-    const gameAspect = GAME_WIDTH / GAME_HEIGHT;
-    let projWidth = GAME_WIDTH;
-    let projHeight = GAME_HEIGHT;
-    if (aspect > gameAspect) {
-      projWidth = GAME_HEIGHT * aspect;
-    } else {
-      projHeight = GAME_WIDTH / aspect;
-    }
-    return { projWidth, projHeight, scaleX: canvasW / projWidth, scaleY: canvasH / projHeight };
-  }
+  // ---- Instance drawing (tiles + bonuses) ----
 
   function drawInstance(
     c: CanvasRenderingContext2D,
@@ -95,27 +58,34 @@ export async function initCanvas2DRenderer(canvas: HTMLCanvasElement): Promise<R
 
     const cellCount = Math.max(flags, 1);
     const col = spriteId % cols;
-    const row = atlasRow;
 
     // Source rectangle in atlas
     const srcX = col * cellW;
-    const srcY = row * cellH;
+    const srcY = atlasRow * cellH;
     const srcW = cellCount * cellW;
     const srcH = cellCount * cellH;
 
-    // Destination size in game units (shader uses tile_size = 50 * scale for all quads)
+    // Destination size in game units
     const size = TILE_SIZE * scale;
     const half = size * 0.5;
 
-    c.save();
     c.globalAlpha = alpha;
-    c.translate(x, y);
-    if (rotation !== 0) {
+
+    if (rotation === 0) {
+      // Fast path: skip save/translate/rotate/restore for non-rotated tiles.
+      // Most tiles (~119/120) are static; this avoids expensive state stack ops.
+      c.drawImage(atlas, srcX, srcY, srcW, srcH, x - half, y - half, size, size);
+    } else {
+      // Slow path: rotated tile (player interaction, animations)
+      c.save();
+      c.translate(x, y);
       c.rotate(rotation);
+      c.drawImage(atlas, srcX, srcY, srcW, srcH, -half, -half, size, size);
+      c.restore();
     }
-    c.drawImage(atlas, srcX, srcY, srcW, srcH, -half, -half, size, size);
-    c.restore();
   }
+
+  // ---- Effects drawing (arcs + particles) ----
 
   function drawEffectsTriangle(
     c: CanvasRenderingContext2D,
@@ -130,9 +100,9 @@ export async function initCanvas2DRenderer(canvas: HTMLCanvasElement): Promise<R
     const x1 = data[off1], y1 = data[off1 + 1];
     const x2 = data[off2], y2 = data[off2 + 1];
 
-    // Color from z-channel of first vertex
+    // Color from z-channel of first vertex (SegmentColor enum index)
     const colorIdx = Math.round(data[off0 + 2]);
-    const [r, g, b] = SEGMENT_COLORS[Math.min(Math.max(colorIdx, 0), SEGMENT_COLORS.length - 1)];
+    const [r, g, b] = SEGMENT_COLORS_RGB8[Math.min(Math.max(colorIdx, 0), SEGMENT_COLORS_RGB8.length - 1)];
 
     // Approximate lightsaber brightness from UV:
     // u = cross-strip (0=edge, 0.5=center, 1=edge), v = along-strip (0=tip, 1=body)
@@ -155,6 +125,8 @@ export async function initCanvas2DRenderer(canvas: HTMLCanvasElement): Promise<R
     c.fillStyle = `rgba(${r}, ${g}, ${b}, ${Math.min(a, 1).toFixed(3)})`;
     c.fill();
   }
+
+  // ---- Main draw function ----
 
   function draw(
     instanceData: Float32Array,
@@ -179,12 +151,12 @@ export async function initCanvas2DRenderer(canvas: HTMLCanvasElement): Promise<R
 
     // Pass 1a: Tile + pin instances (base_tiles atlas, 16x8)
     for (let i = 0; i < tileInstanceCount; i++) {
-      drawInstance(ctx!, instanceData, i * INSTANCE_FLOATS, baseTilesImg, BASE_COLS, baseCellW, baseCellH);
+      drawInstance(ctx!, instanceData, i * INSTANCE_FLOATS, images.baseTiles, BASE_COLS, baseCellW, baseCellH);
     }
 
     // Pass 1b: Bonus instances (arrows atlas, 8x8)
     for (let i = tileInstanceCount; i < instanceCount; i++) {
-      drawInstance(ctx!, instanceData, i * INSTANCE_FLOATS, arrowsImg, ARROWS_COLS, arrowsCellW, arrowsCellH);
+      drawInstance(ctx!, instanceData, i * INSTANCE_FLOATS, images.arrows, ARROWS_COLS, arrowsCellW, arrowsCellH);
     }
 
     // Pass 2: Effects (additive blend — arcs + particles)

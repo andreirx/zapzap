@@ -30,6 +30,20 @@ struct Instance {
 
 @group(2) @binding(0) var<storage, read> instances: array<Instance>;
 
+// ---- Segment colors UBO (effects pipeline only, group 3) ----
+// 13 vec4<f32> values — source of truth is constants.ts, uploaded once as a UBO.
+// Uses group 3 because group 2 is occupied by instance storage in the tile pipeline.
+
+struct SegmentColors {
+    values: array<vec4<f32>, 13>,
+};
+@group(3) @binding(0) var<uniform> segment_colors: SegmentColors;
+
+fn segment_color(idx: f32) -> vec3<f32> {
+    let i = min(u32(idx + 0.5), 12u);
+    return segment_colors.values[i].xyz;
+}
+
 // ---- Vertex I/O ----
 
 struct VertexInput {
@@ -131,28 +145,6 @@ fn vs_effects(input: EffectsVertexInput) -> VertexOutput {
     out.alpha = 1.0;
     out.color_idx = input.position.z;
     return out;
-}
-
-// Procedural color lookup for SegmentColor enum (13 values).
-// Designed for 6.4x HDR multiplier — base colors are pre-HDR linear values.
-fn segment_color(idx: f32) -> vec3<f32> {
-    let i = u32(idx + 0.5);
-    switch i {
-        case 0u  { return vec3(1.0, 0.1, 0.05); }   // Red
-        case 1u  { return vec3(1.0, 0.45, 0.0); }    // Orange
-        case 2u  { return vec3(1.0, 0.9, 0.0); }     // Yellow
-        case 3u  { return vec3(0.5, 1.0, 0.0); }     // LimeGreen
-        case 4u  { return vec3(0.0, 1.0, 0.2); }     // Green
-        case 5u  { return vec3(0.0, 1.0, 0.6); }     // GreenCyan
-        case 6u  { return vec3(0.0, 0.9, 1.0); }     // Cyan
-        case 7u  { return vec3(0.0, 0.5, 1.0); }     // SkyBlue
-        case 8u  { return vec3(0.1, 0.1, 1.0); }     // Blue
-        case 9u  { return vec3(0.4, 0.0, 1.0); }     // Indigo
-        case 10u { return vec3(0.8, 0.0, 1.0); }     // Magenta
-        case 11u { return vec3(1.0, 0.0, 0.5); }     // Pink
-        case 12u { return vec3(1.0, 1.0, 1.0); }     // White
-        default  { return vec3(1.0, 1.0, 1.0); }
-    }
 }
 
 // Additive fragment shader for HDR glow effects (electric arcs).
