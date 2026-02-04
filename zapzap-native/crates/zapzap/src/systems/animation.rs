@@ -15,18 +15,24 @@ pub struct RotateAnim {
     pub end_rotation: f32,
     pub progress: f32,    // 0.0 -> 1.0
     pub duration: f32,    // seconds (0.2)
+    pub is_bot: bool,     // true = bot move (orange arrows), false = player (indigo arrows)
 }
 
 impl RotateAnim {
     pub fn new(x: usize, y: usize, rotation_count: usize) -> Self {
+        Self::new_with_source(x, y, rotation_count, false)
+    }
+
+    pub fn new_with_source(x: usize, y: usize, rotation_count: usize, is_bot: bool) -> Self {
         let count = rotation_count.max(1) as f32;
         RotateAnim {
             x,
             y,
-            start_rotation: count * FRAC_PI_2, // positive = CW offset; animates CCW back to 0
+            start_rotation: count * FRAC_PI_2,
             end_rotation: 0.0,
             progress: 0.0,
             duration: 0.2,
+            is_bot,
         }
     }
 

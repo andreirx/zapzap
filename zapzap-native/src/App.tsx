@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import './App.css';
 import { initRenderer, type Renderer } from './renderer';
 import { SoundManager } from './audio/sound-manager';
@@ -38,6 +38,8 @@ function App() {
   const [boardHeight, setBoardHeight] = useState(10);
   const [gameMode, setGameMode] = useState(MODE_ZEN);
   const [powerState, setPowerState] = useState(0);
+  const [popups, setPopups] = useState<Array<{ id: number; x: number; y: number; value: number; side: number }>>([]);
+  const popupIdRef = useRef(0);
 
   // Render loop: read SharedArrayBuffer and draw
   const renderLoop = useCallback(() => {
@@ -171,6 +173,33 @@ function App() {
         for (const eventId of e.data.events) {
           soundRef.current.play(eventId);
         }
+      } else if (e.data.type === 'popup') {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const gameWidth = 1050;
+        const gameHeight = 550;
+        const canvasAspect = (rect.width * dpr) / (rect.height * dpr);
+        const gameAspect = gameWidth / gameHeight;
+        let projWidth = gameWidth;
+        let projHeight = gameHeight;
+        if (canvasAspect > gameAspect) {
+          projWidth = gameHeight * canvasAspect;
+        } else {
+          projHeight = gameWidth / canvasAspect;
+        }
+
+        const newPopups = e.data.popups.map((p: { x: number; y: number; value: number; side: number }) => {
+          const cssX = (p.x / projWidth) * rect.width;
+          const cssY = (p.y / projHeight) * rect.height;
+          const id = ++popupIdRef.current;
+          setTimeout(() => {
+            setPopups(prev => prev.filter(pp => pp.id !== id));
+          }, 2500);
+          return { id, x: cssX, y: cssY, value: p.value, side: p.side };
+        });
+        setPopups(prev => [...prev, ...newPopups]);
       }
     };
 
@@ -394,6 +423,17 @@ function App() {
           <button onClick={quitToMenu}>Menu</button>
         </div>
       )}
+
+      {/* Score popups */}
+      {popups.map(p => (
+        <span
+          key={p.id}
+          className={`score-popup ${p.side === 0 ? 'left' : 'right'}`}
+          style={{ left: p.x, top: p.y } as CSSProperties}
+        >
+          +{p.value}
+        </span>
+      ))}
     </div>
   );
 }

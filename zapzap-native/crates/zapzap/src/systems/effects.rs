@@ -477,6 +477,43 @@ impl EffectsState {
         }
     }
 
+    /// Spawn explosion particles for a list of tile positions (used by bomb/arrow power-ups).
+    pub fn spawn_explosion_particles(
+        &mut self,
+        positions: &[(usize, usize)],
+        tile_size: f32,
+        offset_x: f32,
+        offset_y: f32,
+    ) {
+        let speed_limit = 10.0f32;
+        let count_per_tile = 10;
+        let particle_width = 4.0;
+        let lifetime = 2.0;
+
+        self.attractor = [
+            offset_x + 6.0 * tile_size,
+            offset_y + 2.0 * tile_size * 10.0,
+        ];
+
+        for &(x, y) in positions {
+            let cx = offset_x + x as f32 * tile_size + tile_size * 0.5;
+            let cy = offset_y + y as f32 * tile_size + tile_size * 0.5;
+
+            for _ in 0..count_per_tile {
+                let sx = (self.rng.next_int(20000) as f32 / 1000.0) - 10.0;
+                let sy = (self.rng.next_int(20000) as f32 / 1000.0) - 10.0;
+                let color = SegmentColor::random(&mut self.rng);
+                self.particles.push(Particle::new(
+                    [cx, cy],
+                    [sx * speed_limit / 10.0, sy * speed_limit / 10.0],
+                    particle_width,
+                    color,
+                    lifetime,
+                ));
+            }
+        }
+    }
+
     /// Advance effects: twitch arcs, update particles.
     pub fn tick(&mut self, dt: f32) {
         // Twitch all arcs

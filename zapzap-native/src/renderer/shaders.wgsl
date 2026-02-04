@@ -96,8 +96,10 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     let col = inst.sprite_id % ATLAS_COLS;
     let row = inst.atlas_row;
 
+    // flags encodes UV cell count: 1.0 = single cell, 2.0 = 2×2 block (rotation arrows)
+    let cell_size = max(inst.flags, 1.0);
     let uv_origin = vec2<f32>(col / ATLAS_COLS, row / ATLAS_ROWS);
-    let uv_size = vec2<f32>(1.0 / ATLAS_COLS, 1.0 / ATLAS_ROWS);
+    let uv_size = vec2<f32>(cell_size / ATLAS_COLS, cell_size / ATLAS_ROWS);
     out.tex_coord = uv_origin + uv * uv_size;
 
     out.alpha = inst.alpha;

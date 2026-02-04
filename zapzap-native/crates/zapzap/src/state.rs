@@ -5,9 +5,11 @@ use crate::components::{
 };
 use crate::systems::animation::{AnimationState, FallAnim, RotateAnim};
 use crate::systems::board::GameBoard;
-use crate::systems::bonus::{calculate_bonus_drops, BonusState};
+use crate::systems::bonus::{calculate_bonus_drops, BonusState, FallingBonusKind};
 use crate::systems::bot::BotPlayer;
-use crate::systems::effects::EffectsState;
+use crate::systems::effects::{
+    build_strip_vertices, strip_to_triangles, EffectsState, SegmentColor,
+};
 
 /// Matches Swift's ZapGameState enum.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -55,6 +57,17 @@ pub const GRID_OFFSET_X: f32 = 225.0; // left margin for pins (centers 14-col bo
 pub const GRID_OFFSET_Y: f32 = 25.0;
 pub const MAX_VS_SCORE: i32 = 100;
 
+/// A score popup event emitted when points are scored.
+/// Read by JS via SharedArrayBuffer to display floating "+N" text.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct ScorePopup {
+    pub x: f32,     // world-space X
+    pub y: f32,     // world-space Y
+    pub value: f32, // score points (as f32)
+    pub side: f32,  // 0.0 = left (magenta), 1.0 = right (orange)
+}
+
 /// Freeze durations matching legacy (seconds).
 const FREEZE_ZAP_DURATION: f32 = 2.0;
 const FREEZE_BOMB_DURATION: f32 = 1.0;
@@ -62,6 +75,57 @@ const FREEZE_BOMB_DURATION: f32 = 1.0;
 /// Bot delay timer range (seconds).
 const BOT_DELAY_MIN: f32 = 1.0;
 const BOT_DELAY_MAX: f32 = 2.0;
+
+/// Render multiplier light indicators as small glowing dots next to each pin.
+/// Uses the effects pipeline (additive blend) for neon glow aesthetic.
+/// Layout matches legacy: 4 dots per column, arranged in a grid pattern.
+fn build_multiplier_lights(
+    board: &GameBoard,
+    effects_buffer: &mut Vec<f32>,
+) {
+    let left_pin_x = GRID_OFFSET_X - TILE_SIZE + TILE_SIZE * 0.5;
+    let right_pin_x = GRID_OFFSET_X + (board.width as f32) * TILE_SIZE + TILE_SIZE * 0.5;
+    let light_len = 2.0;
+    let light_width = 3.0;
+    // Base offset pushes first dot column well outside the pin sprite
+    let base_offset = TILE_SIZE * 0.45;
+
+    for y in 0..board.height {
+        let pin_y = GRID_OFFSET_Y + y as f32 * TILE_SIZE + TILE_SIZE * 0.5;
+
+        // Left multiplier lights (magenta)
+        let mult_left = board.multiplier_left[y].max(0) as usize;
+        for i in 0..mult_left {
+            let dx = base_offset + (i / 4) as f32 * TILE_SIZE / 5.0;
+            let dy = 2.0 * TILE_SIZE / 10.0 + (i % 4) as f32 * TILE_SIZE / 5.0;
+            let lx = left_pin_x - dx;
+            let ly = pin_y - TILE_SIZE * 0.5 + dy;
+            let strip = build_strip_vertices(
+                &[[lx, ly], [lx + light_len, ly]],
+                light_width,
+                SegmentColor::Magenta,
+            );
+            let tris = strip_to_triangles(&strip, 5);
+            effects_buffer.extend_from_slice(&tris);
+        }
+
+        // Right multiplier lights (orange)
+        let mult_right = board.multiplier_right[y].max(0) as usize;
+        for i in 0..mult_right {
+            let dx = base_offset + (i / 4) as f32 * TILE_SIZE / 5.0;
+            let dy = 2.0 * TILE_SIZE / 10.0 + (i % 4) as f32 * TILE_SIZE / 5.0;
+            let rx = right_pin_x + dx;
+            let ry = pin_y - TILE_SIZE * 0.5 + dy;
+            let strip = build_strip_vertices(
+                &[[rx, ry], [rx + light_len, ry]],
+                light_width,
+                SegmentColor::Orange,
+            );
+            let tris = strip_to_triangles(&strip, 5);
+            effects_buffer.extend_from_slice(&tris);
+        }
+    }
+}
 
 /// The top-level game state, holding everything the simulation needs.
 pub struct GameState {
@@ -86,11 +150,20 @@ pub struct GameState {
     // Pending bonus drop counts (stored during freeze, spawned after freeze ends)
     pending_bonus: (usize, usize, usize),
 
+    // Saved markings snapshot for bonus collection after tiles have been removed
+    saved_markings: Vec<Marking>,
+
+    // Per-column new tile counts from bomb/arrow (for fall animations after freeze)
+    pending_bomb_columns: Vec<(usize, usize)>,
+
     // The render buffer — written each tick, read by the host renderer.
     pub render_buffer: Vec<RenderInstance>,
 
     // Sound events emitted this tick
     pub sound_events: Vec<SoundEvent>,
+
+    // Score popups emitted this tick (read by JS for floating text)
+    pub score_popups: Vec<ScorePopup>,
 
     // Input queue (tile coordinates from JS)
     pub pending_tap: Option<(usize, usize)>,
@@ -119,14 +192,16 @@ impl GameState {
             power_left: PowerUpInventory::default(),
             power_right: PowerUpInventory::default(),
             pending_bonus: (0, 0, 0),
+            saved_markings: Vec::new(),
+            pending_bomb_columns: Vec::new(),
             render_buffer: Vec::with_capacity(capacity),
             sound_events: Vec::with_capacity(8),
+            score_popups: Vec::with_capacity(16),
             pending_tap: None,
         };
 
-        // Build initial arcs from board state (legacy: arcs always visible)
-        state.board.check_connections();
-        state.effects.build_arcs_from_board(&state.board, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
+        // Check initial board — auto-zap if already connected, otherwise build arcs
+        state.check_and_transition();
 
         state
     }
@@ -141,6 +216,7 @@ impl GameState {
     /// Main simulation tick. Called each frame from the host.
     pub fn tick(&mut self, dt: f32) {
         self.sound_events.clear();
+        self.score_popups.clear();
 
         match self.phase {
             GamePhase::WaitingForInput => {
@@ -160,23 +236,20 @@ impl GameState {
             }
             GamePhase::FreezeDuringBomb => {
                 if self.anims.tick_freeze(dt) {
-                    // Rebuild arcs after bomb changed the board
-                    self.board.check_connections();
-                    self.effects.build_arcs_from_board(&self.board, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
-                    self.phase = GamePhase::WaitingForInput;
+                    self.finish_bomb();
                 }
             }
             GamePhase::FallingBonuses => {
-                if !self.bonuses.tick_falling() {
-                    // All bonuses have landed — collect and transition
-                    self.collect_bonuses();
-                }
+                // Legacy: no longer used — bonuses now fall in sync with tiles
+                // in FallingTiles phase. Keep variant to avoid breaking repr(u8).
             }
             GamePhase::FallingTiles => {
                 self.anims.tick_falls();
-                if !self.anims.has_fall_anims() {
-                    self.bonuses.clear();
-                    self.check_and_transition();
+                self.bonuses.tick_falling();
+                let falls_done = !self.anims.has_fall_anims();
+                let bonuses_done = self.bonuses.falling.is_empty();
+                if falls_done && bonuses_done {
+                    self.finish_falling();
                 }
             }
             GamePhase::GameOver => {
@@ -187,6 +260,10 @@ impl GameState {
         // Always tick effects (particles need to update in every phase)
         self.effects.tick(dt);
         self.effects.rebuild_effects_buffer();
+        build_multiplier_lights(&self.board, &mut self.effects.effects_buffer);
+
+        // Tick idle animations for landed bonuses (rotation + pulse)
+        self.bonuses.tick_idle(dt);
 
         self.rebuild_render_buffer();
     }
@@ -213,6 +290,9 @@ impl GameState {
     fn apply_power_up(&mut self, ptype: PowerUpType, tx: usize, ty: usize) {
         match ptype {
             PowerUpType::Bomb => {
+                let positions = self.bomb_affected_positions(tx, ty, 2, 2);
+                self.effects.spawn_explosion_particles(&positions, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
+                self.pending_bomb_columns = Self::column_counts(&positions);
                 self.board.bomb_table(tx, ty, 2, 2);
                 self.bonuses.clear();
                 self.sound_events.push(SoundEvent::Bomb);
@@ -222,17 +302,62 @@ impl GameState {
             PowerUpType::Cross => {
                 self.board.set_tile(tx, ty, 0x0F);
                 self.sound_events.push(SoundEvent::PowerUp);
-                // Immediately check connections after setting full connections
                 self.check_and_transition();
             }
             PowerUpType::Arrow => {
-                self.board.bomb_table(tx, ty, 0, self.board.height);
+                let height = self.board.height;
+                let positions = self.bomb_affected_positions(tx, ty, 0, height);
+                self.effects.spawn_explosion_particles(&positions, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
+                self.pending_bomb_columns = Self::column_counts(&positions);
+                self.board.bomb_table(tx, ty, 0, height);
                 self.bonuses.clear();
                 self.sound_events.push(SoundEvent::Bomb);
                 self.anims.freeze_timer = FREEZE_BOMB_DURATION;
                 self.phase = GamePhase::FreezeDuringBomb;
             }
         }
+    }
+
+    /// Compute tile positions affected by a bomb_table call (for particle effects).
+    fn bomb_affected_positions(&self, ati: usize, atj: usize, dx: usize, dy: usize) -> Vec<(usize, usize)> {
+        let mut positions = Vec::new();
+        let start_i = ati.saturating_sub(dx);
+        let end_i = (ati + dx + 1).min(self.board.width);
+        let start_j = atj.saturating_sub(dy);
+        let end_j = (atj + dy + 1).min(self.board.height);
+        for x in start_i..end_i {
+            for y in start_j..end_j {
+                if self.board.grid.get(x, y).is_some() {
+                    positions.push((x, y));
+                }
+            }
+        }
+        positions
+    }
+
+    /// Check if a tile is a new (not-yet-fallen) tile from a bomb/arrow.
+    /// During FreezeDuringBomb, these tiles should be hidden since bomb_table
+    /// already placed them but they haven't animated in yet.
+    fn is_pending_bomb_tile(&self, x: usize, y: usize) -> bool {
+        for &(col, num_new) in &self.pending_bomb_columns {
+            if col == x && y < num_new {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Count how many tiles were affected per column.
+    fn column_counts(positions: &[(usize, usize)]) -> Vec<(usize, usize)> {
+        let mut counts: Vec<(usize, usize)> = Vec::new();
+        for &(x, _) in positions {
+            if let Some(entry) = counts.iter_mut().find(|(cx, _)| *cx == x) {
+                entry.1 += 1;
+            } else {
+                counts.push((x, 1));
+            }
+        }
+        counts
     }
 
     fn try_bot_move(&mut self, dt: f32) {
@@ -253,7 +378,7 @@ impl GameState {
                     tile.rotate();
                 }
             }
-            self.anims.rotate_anims.push(RotateAnim::new(mv.x, mv.y, mv.rotation_count));
+            self.anims.rotate_anims.push(RotateAnim::new_with_source(mv.x, mv.y, mv.rotation_count, true));
             self.phase = GamePhase::RotatingTile;
 
             // Reset delay for next move
@@ -303,7 +428,12 @@ impl GameState {
     fn apply_multiplier_scores(&mut self) {
         use crate::components::Direction;
 
+        let left_pin_x = GRID_OFFSET_X - TILE_SIZE + TILE_SIZE * 0.5;
+        let right_pin_x = GRID_OFFSET_X + (self.board.width as f32) * TILE_SIZE + TILE_SIZE * 0.5;
+
         for y in 0..self.board.height {
+            let pin_y = GRID_OFFSET_Y + y as f32 * TILE_SIZE + TILE_SIZE * 0.5;
+
             // Left pins
             if self.board.get_marking(0, y) == Marking::Ok {
                 if let Some(tile) = self.board.grid.get(0, y) {
@@ -318,6 +448,12 @@ impl GameState {
                                 self.left_score += mult;
                             }
                         }
+                        self.score_popups.push(ScorePopup {
+                            x: left_pin_x,
+                            y: pin_y,
+                            value: mult as f32,
+                            side: 0.0,
+                        });
                         self.board.multiplier_left[y] += 1;
                     }
                 }
@@ -337,6 +473,12 @@ impl GameState {
                                 self.right_score += mult;
                             }
                         }
+                        self.score_popups.push(ScorePopup {
+                            x: right_pin_x,
+                            y: pin_y,
+                            value: mult as f32,
+                            side: 1.0,
+                        });
                         self.board.multiplier_right[y] += 1;
                     }
                 }
@@ -349,53 +491,13 @@ impl GameState {
         self.effects.arcs.clear();
 
         self.sound_events.push(SoundEvent::CoinDrop);
+        self.sound_events.push(SoundEvent::Explode);
 
-        // Re-check connections so markings are fresh for bonus collection
+        // Re-check connections so markings are fresh
         let _ = self.board.check_connections();
 
-        // Spawn bonus objects
-        let (m1, m2, m5) = self.pending_bonus;
-        self.pending_bonus = (0, 0, 0);
-
-        let mut bonus_rng = self.effects.rng.clone();
-        self.bonuses.spawn_bonuses(
-            m1, m2, m5,
-            &self.board,
-            &mut bonus_rng,
-            TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y,
-        );
-        self.effects.rng = bonus_rng;
-
-        self.phase = GamePhase::FallingBonuses;
-    }
-
-    fn collect_bonuses(&mut self) {
-        // Collect landed bonuses
-        let (left_pts, right_pts, left_powers, right_powers) =
-            self.bonuses.collect_landed(&self.board);
-
-        self.left_score += left_pts;
-        self.right_score += right_pts;
-
-        // Award collected power-ups
-        for ptype in left_powers {
-            match ptype {
-                PowerUpType::Bomb => self.power_left.has_bomb = true,
-                PowerUpType::Cross => self.power_left.has_cross = true,
-                PowerUpType::Arrow => self.power_left.has_arrow = true,
-            }
-            self.sound_events.push(SoundEvent::PowerUp);
-        }
-        for ptype in right_powers {
-            match ptype {
-                PowerUpType::Bomb => self.power_right.has_bomb = true,
-                PowerUpType::Cross => self.power_right.has_cross = true,
-                PowerUpType::Arrow => self.power_right.has_arrow = true,
-            }
-        }
-
-        // Now remove connected tiles and transition to FallingTiles
-        self.sound_events.push(SoundEvent::Explode);
+        // Save markings snapshot for bonus collection after falls complete
+        self.saved_markings = self.board.markings.clone();
 
         // Record original y-positions of surviving (non-Ok) tiles per column
         // before removal. Collected bottom-up to match remove_and_shift order.
@@ -411,10 +513,10 @@ impl GameState {
             survivors_per_col.push(col_survivors);
         }
 
+        // Remove connected tiles and fill with new ones
         self.board.remove_and_shift_connecting_tiles();
 
-        // Reset all markings to None so falling tiles render with normal alpha.
-        // Markings will be recalculated by check_connections() after falls complete.
+        // Reset all markings to None so falling tiles render with normal alpha
         for x in 0..self.board.width {
             for y in 0..self.board.height {
                 self.board.set_marking(x, y, Marking::None);
@@ -432,7 +534,6 @@ impl GameState {
             }
 
             // Surviving tiles: placed at y = height-1-i (bottom-up)
-            // Only animate if they actually moved
             for (i, &old_y) in survivors.iter().enumerate() {
                 let new_y = height - 1 - i;
                 if new_y != old_y {
@@ -450,7 +551,140 @@ impl GameState {
             }
         }
 
+        // Spawn bonus objects (they'll fall in sync with tiles)
+        let (m1, m2, m5) = self.pending_bonus;
+        self.pending_bonus = (0, 0, 0);
+
+        let mut bonus_rng = self.effects.rng.clone();
+        self.bonuses.spawn_bonuses(
+            m1, m2, m5,
+            &self.board,
+            &mut bonus_rng,
+            TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y,
+        );
+        self.effects.rng = bonus_rng;
+
+        // Go directly to FallingTiles — bonuses and tiles fall simultaneously
         self.phase = GamePhase::FallingTiles;
+    }
+
+    /// Called when both tile falls and bonus falls are complete.
+    fn finish_falling(&mut self) {
+        // Score bonuses using saved markings from before tile removal.
+        // Collected bonuses are removed; uncollected ones remain for rendering.
+        if !self.saved_markings.is_empty() {
+            let height = self.board.height;
+            let saved = core::mem::take(&mut self.saved_markings);
+
+            let mut left_pts = 0i32;
+            let mut right_pts = 0i32;
+            let mut left_powers: Vec<PowerUpType> = Vec::new();
+            let mut right_powers: Vec<PowerUpType> = Vec::new();
+            let mut uncollected = Vec::new();
+
+            let landed = core::mem::take(&mut self.bonuses.landed);
+            for bonus in landed {
+                let idx = bonus.tile_x * height + bonus.tile_y;
+                let marking = if idx < saved.len() { saved[idx] } else { Marking::None };
+                let pts = bonus.points();
+                match marking {
+                    Marking::Left | Marking::Ok => {
+                        left_pts += pts;
+                        if let FallingBonusKind::PowerUp(ptype) = bonus.kind {
+                            left_powers.push(ptype);
+                        }
+                        if pts > 0 {
+                            let bx = GRID_OFFSET_X + bonus.tile_x as f32 * TILE_SIZE + TILE_SIZE * 0.5;
+                            let by = GRID_OFFSET_Y + bonus.tile_y as f32 * TILE_SIZE + TILE_SIZE * 0.5;
+                            self.score_popups.push(ScorePopup {
+                                x: bx, y: by, value: pts as f32, side: 0.0,
+                            });
+                        }
+                        // Collected — don't keep
+                    }
+                    Marking::Right => {
+                        right_pts += pts;
+                        if let FallingBonusKind::PowerUp(ptype) = bonus.kind {
+                            right_powers.push(ptype);
+                        }
+                        if pts > 0 {
+                            let bx = GRID_OFFSET_X + bonus.tile_x as f32 * TILE_SIZE + TILE_SIZE * 0.5;
+                            let by = GRID_OFFSET_Y + bonus.tile_y as f32 * TILE_SIZE + TILE_SIZE * 0.5;
+                            self.score_popups.push(ScorePopup {
+                                x: bx, y: by, value: pts as f32, side: 1.0,
+                            });
+                        }
+                        // Collected — don't keep
+                    }
+                    _ => {
+                        // Not on a connected tile — keep for continued rendering
+                        uncollected.push(bonus);
+                    }
+                }
+            }
+            self.bonuses.landed = uncollected;
+
+            // In Zen mode, all bonus points accrue globally to both scores
+            match self.mode {
+                GameMode::Zen => {
+                    let total = left_pts + right_pts;
+                    self.left_score += total;
+                    self.right_score += total;
+                }
+                GameMode::VsBot => {
+                    self.left_score += left_pts;
+                    self.right_score += right_pts;
+                }
+            }
+
+            for ptype in left_powers {
+                match ptype {
+                    PowerUpType::Bomb => self.power_left.has_bomb = true,
+                    PowerUpType::Cross => self.power_left.has_cross = true,
+                    PowerUpType::Arrow => self.power_left.has_arrow = true,
+                }
+                self.sound_events.push(SoundEvent::PowerUp);
+            }
+            for ptype in right_powers {
+                // In Zen mode, all power-ups go to player (left) inventory
+                let target = match self.mode {
+                    GameMode::Zen => &mut self.power_left,
+                    GameMode::VsBot => &mut self.power_right,
+                };
+                match ptype {
+                    PowerUpType::Bomb => target.has_bomb = true,
+                    PowerUpType::Cross => target.has_cross = true,
+                    PowerUpType::Arrow => target.has_arrow = true,
+                }
+                self.sound_events.push(SoundEvent::PowerUp);
+            }
+        }
+
+        self.check_and_transition();
+    }
+
+    /// Called when bomb/arrow freeze ends — create gravity fall animations for new tiles.
+    fn finish_bomb(&mut self) {
+        let half_tile = TILE_SIZE * 0.5;
+
+        // bomb_table already shifted tiles and filled new ones at the top.
+        // Create fall animations for the new top tiles in each affected column.
+        let columns = core::mem::take(&mut self.pending_bomb_columns);
+        for (x, num_new) in columns {
+            for i in 0..num_new {
+                let start_y = GRID_OFFSET_Y - (num_new - i) as f32 * TILE_SIZE + half_tile;
+                let target_y = GRID_OFFSET_Y + i as f32 * TILE_SIZE + half_tile;
+                self.anims.fall_anims.push(FallAnim::new(x, i, start_y, target_y));
+            }
+        }
+
+        if self.anims.has_fall_anims() {
+            self.phase = GamePhase::FallingTiles;
+        } else {
+            self.board.check_connections();
+            self.effects.build_arcs_from_board(&self.board, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
+            self.check_and_transition();
+        }
     }
 
     /// Rebuild the flat render buffer from current board state.
@@ -492,7 +726,10 @@ impl GameState {
                     let sprite_id = sprites::tile_atlas_col(tile.connections);
 
                     // During FreezeDuringZap, hide connected tiles (arcs replace them visually)
+                    // During FreezeDuringBomb, hide new tiles at top of bombed columns
                     let alpha = if marking == Marking::Ok && self.phase == GamePhase::FreezeDuringZap {
+                        0.0
+                    } else if self.phase == GamePhase::FreezeDuringBomb && self.is_pending_bomb_tile(x, y) {
                         0.0
                     } else {
                         match marking {
@@ -504,7 +741,7 @@ impl GameState {
                         }
                     };
 
-                    let flags = if marking == Marking::Animating { 2.0 } else { 1.0 };
+                    let flags = 1.0; // UV cell count (1×1 for regular tiles)
 
                     self.render_buffer.push(RenderInstance {
                         x: px,
@@ -544,12 +781,35 @@ impl GameState {
                 x: px,
                 y: bonus.current_y,
                 rotation: bonus.rotation,
-                scale: bonus.scale * bonus.base_scale(),
+                scale: bonus.scale * bonus.base_scale() * bonus.pulse_scale(),
                 sprite_id: col,
                 alpha: bonus.alpha(),
                 flags: 1.0,
                 atlas_row: row,
             });
+        }
+
+        // Rotation arrow overlays (arrows atlas, 2×2 UV cells)
+        // Rendered during RotatingTile phase: indigo arrows for player, orange for bot.
+        if self.phase == GamePhase::RotatingTile {
+            for anim in &self.anims.rotate_anims {
+                let px = GRID_OFFSET_X + (anim.x as f32) * TILE_SIZE + TILE_SIZE * 0.5;
+                let py = GRID_OFFSET_Y + (anim.y as f32) * TILE_SIZE + TILE_SIZE * 0.5;
+                let rotation = self.anims.get_rotation(anim.x, anim.y).unwrap_or(0.0);
+                // Indigo arrows: cols 2-3, rows 0-1 in 8×8 arrows atlas
+                // Orange arrows: cols 4-5, rows 0-1 in 8×8 arrows atlas
+                let sprite_id = if anim.is_bot { 4.0 } else { 2.0 };
+                self.render_buffer.push(RenderInstance {
+                    x: px,
+                    y: py,
+                    rotation,
+                    scale: 2.5,
+                    sprite_id,
+                    alpha: 1.0,
+                    flags: 2.0, // 2×2 UV cell block
+                    atlas_row: 0.0,
+                });
+            }
         }
     }
 
@@ -582,6 +842,16 @@ impl GameState {
     pub fn sound_events_len(&self) -> usize {
         self.sound_events.len()
     }
+
+    /// Pointer to the score popups buffer (4 f32s per popup).
+    pub fn score_popups_ptr(&self) -> *const ScorePopup {
+        self.score_popups.as_ptr()
+    }
+
+    /// Number of score popups this tick.
+    pub fn score_popups_len(&self) -> usize {
+        self.score_popups.len()
+    }
 }
 
 #[cfg(test)]
@@ -591,9 +861,13 @@ mod tests {
     #[test]
     fn game_state_initializes() {
         let state = GameState::new(42);
-        assert_eq!(state.phase, GamePhase::WaitingForInput);
-        assert_eq!(state.left_score, 0);
-        assert_eq!(state.right_score, 0);
+        // Phase is WaitingForInput unless the board auto-zapped on init
+        assert!(
+            state.phase == GamePhase::WaitingForInput
+                || state.phase == GamePhase::FreezeDuringZap,
+            "unexpected initial phase: {:?}",
+            state.phase
+        );
     }
 
     #[test]

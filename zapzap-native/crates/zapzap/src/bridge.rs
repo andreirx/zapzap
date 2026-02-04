@@ -127,6 +127,18 @@ pub fn get_effects_vertex_count() -> u32 {
     with_game(|g| g.effects_vertex_count() as u32)
 }
 
+/// Returns a pointer to the score popups buffer (4 f32s per popup: x, y, value, side).
+#[wasm_bindgen]
+pub fn get_score_popups_ptr() -> *const f32 {
+    with_game(|g| g.score_popups_ptr() as *const f32)
+}
+
+/// Returns the number of score popups emitted this tick.
+#[wasm_bindgen]
+pub fn get_score_popups_len() -> u32 {
+    with_game(|g| g.score_popups_len() as u32)
+}
+
 /// Reset the game with a new seed.
 #[wasm_bindgen]
 pub fn reset_game(seed: f64) {
