@@ -3,7 +3,9 @@
 // Two-pass rendering: Pass 1 (tiles, alpha blend) + Pass 2 (arcs/particles, additive).
 
 import shaderSource from './shaders.wgsl?raw';
-import { loadAllTextures } from './assets';
+import { createGPUTextures, type AssetBlobs } from './asset-loader';
+import { buildProjectionMatrix } from './camera';
+import { packColorsForGPU } from './constants';
 import type { Renderer } from './types';
 
 // Bytes per RenderInstance: 8 × f32 = 32 bytes
@@ -15,7 +17,10 @@ const EFFECTS_VERTEX_FLOATS = 5;
 const EFFECTS_VERTEX_BYTES = EFFECTS_VERTEX_FLOATS * 4;
 const MAX_EFFECTS_VERTICES = 16384;
 
-export async function initWebGPURenderer(canvas: HTMLCanvasElement): Promise<Renderer> {
+export async function initWebGPURenderer(
+  canvas: HTMLCanvasElement,
+  blobs: AssetBlobs,
+): Promise<Renderer> {
   // ---- GPU Init ----
   if (!navigator.gpu) {
     throw new Error('WebGPU not supported');
@@ -41,8 +46,8 @@ export async function initWebGPURenderer(canvas: HTMLCanvasElement): Promise<Ren
     alphaMode: 'premultiplied',
   });
 
-  // ---- Load textures ----
-  const textures = await loadAllTextures(device);
+  // ---- Load textures from pre-fetched blobs ----
+  const textures = await createGPUTextures(device, blobs);
 
   // ---- Shader Module ----
   const shaderModule = device.createShaderModule({
@@ -68,6 +73,30 @@ export async function initWebGPURenderer(canvas: HTMLCanvasElement): Promise<Ren
   const cameraBindGroup = device.createBindGroup({
     layout: cameraBindGroupLayout,
     entries: [{ binding: 0, resource: { buffer: cameraBuffer } }],
+  });
+
+  // ---- Segment Colors UBO (for effects pipeline) ----
+  // 13 × vec4<f32> = 208 bytes — uploaded once, colors are static.
+  const colorsData = packColorsForGPU();
+  const colorsBuffer = device.createBuffer({
+    size: colorsData.byteLength,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
+  device.queue.writeBuffer(colorsBuffer, 0, colorsData);
+
+  const colorsBindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.FRAGMENT,
+        buffer: { type: 'uniform' },
+      },
+    ],
+  });
+
+  const colorsBindGroup = device.createBindGroup({
+    layout: colorsBindGroupLayout,
+    entries: [{ binding: 0, resource: { buffer: colorsBuffer } }],
   });
 
   // ---- Texture Bind Group (base_tiles) ----
@@ -100,7 +129,7 @@ export async function initWebGPURenderer(canvas: HTMLCanvasElement): Promise<Ren
     ],
   });
 
-  // ---- Arrows texture bind group (for effects/arcs) ----
+  // ---- Arrows texture bind group (for effects/arcs + bonus sprites) ----
   const arrowsBindGroup = device.createBindGroup({
     layout: textureBindGroupLayout,
     entries: [
@@ -145,11 +174,14 @@ export async function initWebGPURenderer(canvas: HTMLCanvasElement): Promise<Ren
     ],
   });
 
-  // ---- Pipeline Layout (effects — no instance storage, uses vertex buffer) ----
+  // ---- Pipeline Layout (effects — vertex buffer + colors UBO at group 3) ----
+  // Group 2 is null (unused by effects; occupied by instances in tile pipeline).
   const effectsPipelineLayout = device.createPipelineLayout({
     bindGroupLayouts: [
       cameraBindGroupLayout,    // group 0
       textureBindGroupLayout,   // group 1
+      null,                     // group 2 (not used by effects)
+      colorsBindGroupLayout,    // group 3
     ],
   });
 
@@ -253,30 +285,7 @@ export async function initWebGPURenderer(canvas: HTMLCanvasElement): Promise<Ren
 
   // ---- Camera Projection ----
   function updateCamera(width: number, height: number) {
-    // Orthographic projection matching legacy: ~1050×550 game units
-    const gameWidth = 1050;
-    const gameHeight = 550;
-    const aspect = width / height;
-    const gameAspect = gameWidth / gameHeight;
-
-    let projWidth = gameWidth;
-    let projHeight = gameHeight;
-    if (aspect > gameAspect) {
-      projWidth = gameHeight * aspect;
-    } else {
-      projHeight = gameWidth / aspect;
-    }
-
-    // Column-major orthographic projection matrix
-    // Maps (0..projWidth, 0..projHeight) to clip space (-1..1)
-    const l = 0, r = projWidth, b = projHeight, t = 0;
-    const proj = new Float32Array([
-      2 / (r - l), 0, 0, 0,
-      0, 2 / (t - b), 0, 0,
-      0, 0, 1, 0,
-      -(r + l) / (r - l), -(t + b) / (t - b), 0, 1,
-    ]);
-    device.queue.writeBuffer(cameraBuffer, 0, proj);
+    device.queue.writeBuffer(cameraBuffer, 0, buildProjectionMatrix(width, height));
   }
 
   updateCamera(canvas.width, canvas.height);
@@ -332,6 +341,7 @@ export async function initWebGPURenderer(canvas: HTMLCanvasElement): Promise<Ren
       pass.setPipeline(additivePipeline);
       pass.setBindGroup(0, cameraBindGroup);
       pass.setBindGroup(1, arrowsBindGroup);
+      pass.setBindGroup(3, colorsBindGroup);
       pass.setVertexBuffer(0, effectsBuffer);
       pass.draw(effectsVertexCount!);
     }
