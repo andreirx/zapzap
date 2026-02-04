@@ -218,3 +218,34 @@
   background: rgba(255, 68, 68, 0.2);
   box-shadow: 0 0 12px rgba(255, 68, 68, 0.4);
 }
+
+/* Score popups */
+.score-popup {
+  position: absolute;
+  font-weight: 900;
+  font-size: 28px;
+  pointer-events: none;
+  z-index: 15;
+  animation: popup-float 2.5s ease-out forwards;
+}
+
+.score-popup.left {
+  color: #ff66ff;
+  text-shadow: 0 0 12px #ff00ff, 0 0 24px #ff00ff, 0 0 4px #fff;
+}
+
+.score-popup.right {
+  color: #ffaa33;
+  text-shadow: 0 0 12px #ff6600, 0 0 24px #ff6600, 0 0 4px #fff;
+}
+
+@keyframes popup-float {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2) translateY(-60px);
+  }
+}

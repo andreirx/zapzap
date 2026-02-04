@@ -91,9 +91,9 @@ impl BonusType {
 
     pub fn alpha(self) -> f32 {
         match self {
-            BonusType::Coin1 => 1.5,
-            BonusType::Coin2 => 2.0,
-            BonusType::Coin5 => 3.5,
+            BonusType::Coin1 => 1.0,
+            BonusType::Coin2 => 1.1,
+            BonusType::Coin5 => 1.3,
         }
     }
 
@@ -137,7 +137,7 @@ impl PowerUpType {
     }
 
     pub fn alpha(self) -> f32 {
-        3.0
+        1.3
     }
 
     pub fn scale(self) -> f32 {

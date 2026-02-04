@@ -11,6 +11,7 @@ pub struct FallingBonus {
     pub speed: f32,
     pub scale: f32,
     pub rotation: f32,
+    pub time: f32, // accumulated time for idle animation (rotation + pulse)
     pub kind: FallingBonusKind,
 }
 
@@ -35,6 +36,8 @@ impl FallingBonus {
         let board_h = 500.0; // approx 10 * 50
         let tile_size = 50.0;
         let initial_scale = 1.0 + 0.3 * (board_h / tile_size);
+        // Deterministic phase offset so each bonus animates at its own phase
+        let time_offset = (tile_x * 7 + tile_y * 13) as f32 * 0.37;
         FallingBonus {
             tile_x,
             tile_y,
@@ -42,7 +45,8 @@ impl FallingBonus {
             target_y,
             speed: 0.0,
             scale: initial_scale,
-            rotation: 0.0,
+            rotation: time_offset,
+            time: time_offset,
             kind,
         }
     }
@@ -61,10 +65,9 @@ impl FallingBonus {
             self.scale = 1.0;
         }
 
-        // Rotation for power-ups
-        if let FallingBonusKind::PowerUp(ptype) = self.kind {
-            self.rotation += ptype.rotation_speed() * Self::DT;
-        }
+        // Rotation for all bonus types
+        self.rotation += self.rotation_speed() * Self::DT;
+        self.time += Self::DT;
 
         if self.current_y >= self.target_y {
             self.current_y = self.target_y;
@@ -72,6 +75,31 @@ impl FallingBonus {
             return false;
         }
         true
+    }
+
+    /// Per-bonus rotation speed (rad/s).
+    fn rotation_speed(&self) -> f32 {
+        match self.kind {
+            FallingBonusKind::Coin(_) => 0.5,
+            FallingBonusKind::PowerUp(ptype) => ptype.rotation_speed(),
+        }
+    }
+
+    /// Tick idle animation for landed bonuses (rotation + pulse).
+    pub fn tick_idle(&mut self, dt: f32) {
+        self.time += dt;
+        self.rotation += self.rotation_speed() * dt;
+    }
+
+    /// Sinusoidal scale pulse based on accumulated time.
+    pub fn pulse_scale(&self) -> f32 {
+        let freq = match self.kind {
+            FallingBonusKind::Coin(BonusType::Coin1) => 2.0,
+            FallingBonusKind::Coin(BonusType::Coin2) => 1.7,
+            FallingBonusKind::Coin(BonusType::Coin5) => 1.3,
+            FallingBonusKind::PowerUp(_) => 1.0,
+        };
+        1.0 + 0.08 * (self.time * freq * core::f32::consts::TAU).sin()
     }
 
     pub fn alpha(&self) -> f32 {
@@ -248,6 +276,13 @@ impl BonusState {
 
         self.landed = remaining;
         (left_pts, right_pts, left_powers, right_powers)
+    }
+
+    /// Tick idle animations for landed bonuses (rotation + pulse).
+    pub fn tick_idle(&mut self, dt: f32) {
+        for bonus in &mut self.landed {
+            bonus.tick_idle(dt);
+        }
     }
 
     /// All bonuses (falling + landed) for rendering.

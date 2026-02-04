@@ -18,6 +18,8 @@ import init, {
   get_effects_vertex_count,
   get_sound_events_ptr,
   get_sound_events_len,
+  get_score_popups_ptr,
+  get_score_popups_len,
   get_game_phase,
   get_game_mode,
   get_left_score,
@@ -155,6 +157,23 @@ function gameLoop() {
         const soundData = new Uint8Array(wasmMemory!.buffer, soundPtr, soundLen);
         const events = Array.from(soundData);
         self.postMessage({ type: 'sound', events });
+      }
+
+      // Forward score popups to main thread
+      const popupLen = get_score_popups_len();
+      if (popupLen > 0) {
+        const popupPtr = get_score_popups_ptr() as unknown as number;
+        const popupData = new Float32Array(wasmMemory!.buffer, popupPtr, popupLen * 4);
+        const popups = [];
+        for (let i = 0; i < popupLen; i++) {
+          popups.push({
+            x: popupData[i * 4],
+            y: popupData[i * 4 + 1],
+            value: popupData[i * 4 + 2],
+            side: popupData[i * 4 + 3],
+          });
+        }
+        self.postMessage({ type: 'popup', popups });
       }
 
       // Notify main thread that new frame data is ready
