@@ -37,14 +37,40 @@ export async function initWebGPURenderer(
     throw new Error('Failed to get WebGPU context');
   }
 
-  const format: GPUTextureFormat = 'rgba16float';
-  context.configure({
-    device,
-    format,
-    colorSpace: 'display-p3',
-    toneMapping: { mode: 'extended' },
-    alphaMode: 'premultiplied',
-  });
+  // Progressive configure — try full HDR, then basic rgba16float, then preferred format.
+  // This prevents a TypeError from locking the canvas and blocking Canvas 2D fallback.
+  let format: GPUTextureFormat = 'rgba16float';
+  let useHDR = false;
+
+  try {
+    context.configure({
+      device,
+      format: 'rgba16float',
+      colorSpace: 'display-p3',
+      toneMapping: { mode: 'extended' },
+      alphaMode: 'premultiplied',
+    });
+    useHDR = true;
+  } catch {
+    try {
+      context.configure({
+        device,
+        format: 'rgba16float',
+        alphaMode: 'premultiplied',
+      });
+    } catch {
+      format = navigator.gpu.getPreferredCanvasFormat();
+      context.configure({
+        device,
+        format,
+        alphaMode: 'premultiplied',
+      });
+    }
+  }
+
+  if (!useHDR) {
+    console.warn('[renderer] HDR/EDR not available, using sRGB WebGPU');
+  }
 
   // ---- Load textures from pre-fetched blobs ----
   const textures = await createGPUTextures(device, blobs);
@@ -353,13 +379,21 @@ export async function initWebGPURenderer(
   function resize(width: number, height: number) {
     canvas.width = width;
     canvas.height = height;
-    context!.configure({
-      device,
-      format,
-      colorSpace: 'display-p3',
-      toneMapping: { mode: 'extended' },
-      alphaMode: 'premultiplied',
-    });
+    if (useHDR) {
+      context!.configure({
+        device,
+        format,
+        colorSpace: 'display-p3',
+        toneMapping: { mode: 'extended' },
+        alphaMode: 'premultiplied',
+      });
+    } else {
+      context!.configure({
+        device,
+        format,
+        alphaMode: 'premultiplied',
+      });
+    }
     updateCamera(width, height);
   }
 

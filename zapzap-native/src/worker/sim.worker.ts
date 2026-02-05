@@ -1,8 +1,12 @@
 // Simulation Web Worker — runs WASM game engine off the main thread.
-// Communicates with host via SharedArrayBuffer + postMessage commands.
+// Communicates with host via SharedArrayBuffer (preferred) or postMessage fallback.
+//
+// SharedArrayBuffer requires Cross-Origin-Opener-Policy and Cross-Origin-Embedder-Policy
+// headers. When these headers are absent (common on static hosts), the worker falls back
+// to sending frame data copies via postMessage with Transferable buffers.
 //
 // Protocol (per DECISIONS.md):
-//   SharedArrayBuffer layout: [header (8 floats), instance data, effects data]
+//   Buffer layout: [header (10 floats), instance data, effects data]
 //   Instance stride: 8 floats (32 bytes) per RenderInstance.
 //   Effects stride: 5 floats (20 bytes) per vertex (x, y, z, u, v).
 
@@ -48,6 +52,9 @@ const INSTANCE_DATA_FLOATS = MAX_INSTANCES * INSTANCE_FLOATS;
 const EFFECTS_DATA_FLOATS = MAX_EFFECTS_VERTICES * EFFECTS_VERTEX_FLOATS;
 const BUFFER_FLOATS = HEADER_FLOATS + INSTANCE_DATA_FLOATS + EFFECTS_DATA_FLOATS;
 
+// Detect SharedArrayBuffer availability (requires COOP/COEP headers in production)
+const HAS_SAB = typeof SharedArrayBuffer !== 'undefined';
+
 let sharedBuffer: SharedArrayBuffer | null = null;
 let sharedF32: Float32Array | null = null;
 let sharedI32: Int32Array | null = null;
@@ -71,13 +78,20 @@ async function initialize(mode: number = 0) {
   console.log(`[worker] init mode=${mode} seed=${seed}`);
   init_game_with_mode(seed, mode);
 
-  // Allocate SharedArrayBuffer
-  sharedBuffer = new SharedArrayBuffer(BUFFER_FLOATS * 4);
-  sharedF32 = new Float32Array(sharedBuffer);
-  sharedI32 = new Int32Array(sharedBuffer);
-
-  // Send the SharedArrayBuffer to the main thread
-  self.postMessage({ type: 'ready', sharedBuffer });
+  if (HAS_SAB) {
+    // Preferred: shared memory for zero-copy reads from main thread
+    sharedBuffer = new SharedArrayBuffer(BUFFER_FLOATS * 4);
+    sharedF32 = new Float32Array(sharedBuffer);
+    sharedI32 = new Int32Array(sharedBuffer);
+    self.postMessage({ type: 'ready', sharedBuffer });
+  } else {
+    // Fallback: regular ArrayBuffer as staging, copies sent via postMessage
+    console.warn('[worker] SharedArrayBuffer unavailable, using postMessage fallback');
+    const buf = new ArrayBuffer(BUFFER_FLOATS * 4);
+    sharedF32 = new Float32Array(buf);
+    sharedI32 = new Int32Array(buf);
+    self.postMessage({ type: 'ready' });
+  }
 }
 
 function gameLoop() {
@@ -176,9 +190,16 @@ function gameLoop() {
         self.postMessage({ type: 'popup', popups });
       }
 
-      // Notify main thread that new frame data is ready
-      Atomics.store(sharedI32, 0, 1); // set lock to 1 = new frame
-      Atomics.notify(sharedI32, 0);
+      if (HAS_SAB) {
+        // Notify main thread via shared memory
+        Atomics.store(sharedI32!, 0, 1);
+        Atomics.notify(sharedI32!, 0);
+      } else {
+        // Send frame data copy — only copy the portion actually used
+        const usedBytes = (HEADER_FLOATS + INSTANCE_DATA_FLOATS
+          + effectsVertCount * EFFECTS_VERTEX_FLOATS) * 4;
+        self.postMessage({ type: 'frame', buffer: sharedF32!.buffer.slice(0, usedBytes) });
+      }
     }
   } catch (err) {
     console.error('[worker] gameLoop error:', err);

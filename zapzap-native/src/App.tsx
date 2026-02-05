@@ -170,7 +170,11 @@ function App() {
 
     worker.onmessage = (e) => {
       if (e.data.type === 'ready' && e.data.sharedBuffer) {
+        // SharedArrayBuffer path: set once, main thread reads directly
         sharedF32Ref.current = new Float32Array(e.data.sharedBuffer);
+      } else if (e.data.type === 'frame') {
+        // postMessage fallback: update ref with each received frame copy
+        sharedF32Ref.current = new Float32Array(e.data.buffer);
       } else if (e.data.type === 'sound' && soundRef.current) {
         for (const eventId of e.data.events) {
           soundRef.current.play(eventId);
