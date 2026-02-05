@@ -150,8 +150,8 @@ pub struct GameState {
     // Pending bonus drop counts (stored during freeze, spawned after freeze ends)
     pending_bonus: (usize, usize, usize),
 
-    // Per-column new tile counts from bomb/arrow (for fall animations after freeze)
-    pending_bomb_columns: Vec<(usize, usize)>,
+    // Deferred bomb/arrow params (tx, ty, dx, dy) — applied after freeze ends
+    pending_bomb_params: Option<(usize, usize, usize, usize)>,
 
     // The render buffer — written each tick, read by the host renderer.
     pub render_buffer: Vec<RenderInstance>,
@@ -189,7 +189,7 @@ impl GameState {
             power_left: PowerUpInventory::default(),
             power_right: PowerUpInventory::default(),
             pending_bonus: (0, 0, 0),
-            pending_bomb_columns: Vec::new(),
+            pending_bomb_params: None,
             render_buffer: Vec::with_capacity(capacity),
             sound_events: Vec::with_capacity(8),
             score_popups: Vec::with_capacity(16),
@@ -292,8 +292,9 @@ impl GameState {
             PowerUpType::Bomb => {
                 let positions = self.bomb_affected_positions(tx, ty, 2, 2);
                 self.effects.spawn_explosion_particles(&positions, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
-                self.pending_bomb_columns = Self::column_counts(&positions);
-                self.board.bomb_table(tx, ty, 2, 2);
+                // Defer bomb_table to after freeze — grid stays intact during freeze
+                // so affected tiles render at their original positions (hidden by alpha=0).
+                self.pending_bomb_params = Some((tx, ty, 2, 2));
                 self.bonuses.clear();
                 self.sound_events.push(SoundEvent::Bomb);
                 self.anims.freeze_timer = FREEZE_BOMB_DURATION;
@@ -308,8 +309,8 @@ impl GameState {
                 let height = self.board.height;
                 let positions = self.bomb_affected_positions(tx, ty, 0, height);
                 self.effects.spawn_explosion_particles(&positions, TILE_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y);
-                self.pending_bomb_columns = Self::column_counts(&positions);
-                self.board.bomb_table(tx, ty, 0, height);
+                // Defer bomb_table to after freeze
+                self.pending_bomb_params = Some((tx, ty, 0, height));
                 self.bonuses.clear();
                 self.sound_events.push(SoundEvent::Bomb);
                 self.anims.freeze_timer = FREEZE_BOMB_DURATION;
@@ -335,29 +336,18 @@ impl GameState {
         positions
     }
 
-    /// Check if a tile is a new (not-yet-fallen) tile from a bomb/arrow.
-    /// During FreezeDuringBomb, these tiles should be hidden since bomb_table
-    /// already placed them but they haven't animated in yet.
+    /// Check if a tile is in the pending bomb/arrow affected area.
+    /// During FreezeDuringBomb, these tiles are hidden (bomb_table hasn't run yet).
     fn is_pending_bomb_tile(&self, x: usize, y: usize) -> bool {
-        for &(col, num_new) in &self.pending_bomb_columns {
-            if col == x && y < num_new {
-                return true;
-            }
+        if let Some((tx, ty, dx, dy)) = self.pending_bomb_params {
+            let start_x = tx.saturating_sub(dx);
+            let end_x = (tx + dx + 1).min(self.board.width);
+            let start_y = ty.saturating_sub(dy);
+            let end_y = (ty + dy + 1).min(self.board.height);
+            x >= start_x && x < end_x && y >= start_y && y < end_y
+        } else {
+            false
         }
-        false
-    }
-
-    /// Count how many tiles were affected per column.
-    fn column_counts(positions: &[(usize, usize)]) -> Vec<(usize, usize)> {
-        let mut counts: Vec<(usize, usize)> = Vec::new();
-        for &(x, _) in positions {
-            if let Some(entry) = counts.iter_mut().find(|(cx, _)| *cx == x) {
-                entry.1 += 1;
-            } else {
-                counts.push((x, 1));
-            }
-        }
-        counts
     }
 
     fn try_bot_move(&mut self, dt: f32) {
@@ -660,18 +650,31 @@ impl GameState {
         self.check_and_transition();
     }
 
-    /// Called when bomb/arrow freeze ends — create gravity fall animations for new tiles.
+    /// Called when bomb/arrow freeze ends — apply bomb_table and create fall animations.
     fn finish_bomb(&mut self) {
-        let half_tile = TILE_SIZE * 0.5;
+        if let Some((tx, ty, dx, dy)) = self.pending_bomb_params.take() {
+            // Compute per-column counts before modifying the grid
+            let positions = self.bomb_affected_positions(tx, ty, dx, dy);
+            let mut col_counts: Vec<(usize, usize)> = Vec::new();
+            for &(x, _) in &positions {
+                if let Some(entry) = col_counts.iter_mut().find(|(cx, _)| *cx == x) {
+                    entry.1 += 1;
+                } else {
+                    col_counts.push((x, 1));
+                }
+            }
 
-        // bomb_table already shifted tiles and filled new ones at the top.
-        // Create fall animations for the new top tiles in each affected column.
-        let columns = core::mem::take(&mut self.pending_bomb_columns);
-        for (x, num_new) in columns {
-            for i in 0..num_new {
-                let start_y = GRID_OFFSET_Y - (num_new - i) as f32 * TILE_SIZE + half_tile;
-                let target_y = GRID_OFFSET_Y + i as f32 * TILE_SIZE + half_tile;
-                self.anims.fall_anims.push(FallAnim::new(x, i, start_y, target_y));
+            // Now apply the grid shift
+            self.board.bomb_table(tx, ty, dx, dy);
+
+            // Create fall animations for new tiles at the top of each affected column
+            let half_tile = TILE_SIZE * 0.5;
+            for (x, num_new) in col_counts {
+                for i in 0..num_new {
+                    let start_y = GRID_OFFSET_Y - (num_new - i) as f32 * TILE_SIZE + half_tile;
+                    let target_y = GRID_OFFSET_Y + i as f32 * TILE_SIZE + half_tile;
+                    self.anims.fall_anims.push(FallAnim::new(x, i, start_y, target_y));
+                }
             }
         }
 
