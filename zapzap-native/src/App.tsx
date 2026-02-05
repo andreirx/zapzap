@@ -14,7 +14,6 @@ const MAX_INSTANCES = 256;
 const INSTANCE_DATA_FLOATS = MAX_INSTANCES * INSTANCE_FLOATS;
 
 // Game phases matching Rust GamePhase enum
-const PHASE_WAITING = 0;
 const PHASE_GAME_OVER = 5;
 
 // Game modes matching Rust GameMode enum
@@ -41,6 +40,8 @@ function App() {
   const [popups, setPopups] = useState<Array<{ id: number; x: number; y: number; value: number; side: number }>>([]);
   const popupIdRef = useRef(0);
   const [rendererBackend, setRendererBackend] = useState<'webgpu' | 'canvas2d' | null>(null);
+  const [rendererKey, setRendererKey] = useState(0);
+  const [force2D, setForce2D] = useState(false);
 
   // Render loop: read SharedArrayBuffer and draw
   const renderLoop = useCallback(() => {
@@ -118,13 +119,24 @@ function App() {
     let cleanup = false;
 
     async function setup() {
-      const renderer = await initRenderer(canvas!);
-      if (cleanup) return;
-      rendererRef.current = renderer;
-      setRendererBackend(renderer.backend);
+      try {
+        const renderer = await initRenderer(canvas!, force2D);
+        if (cleanup) return;
+        rendererRef.current = renderer;
+        setRendererBackend(renderer.backend);
 
-      // Start render loop
-      rafRef.current = requestAnimationFrame(renderLoop);
+        // Start render loop
+        rafRef.current = requestAnimationFrame(renderLoop);
+      } catch {
+        if (cleanup) return;
+        // WebGPU failed after locking the canvas — force React to recreate
+        // the <canvas> element, then retry with Canvas 2D.
+        if (!force2D) {
+          console.warn('[App] WebGPU locked canvas, remounting for Canvas 2D fallback');
+          setForce2D(true);
+          setRendererKey(k => k + 1);
+        }
+      }
     }
 
     setup();
@@ -144,7 +156,7 @@ function App() {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', onResize);
     };
-  }, [renderLoop]);
+  }, [renderLoop, force2D, rendererKey]);
 
   // Start game with specific mode
   const startGame = useCallback(async (mode: number) => {
@@ -322,6 +334,7 @@ function App() {
   return (
     <div className="game-container">
       <canvas
+        key={rendererKey}
         ref={canvasRef}
         className="game-canvas"
         onPointerDown={handlePointerDown}

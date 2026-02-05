@@ -18,13 +18,36 @@ export interface AssetBlobs {
 /** Fetch all game asset PNGs as raw Blobs (renderer-agnostic). */
 export async function loadAssetBlobs(): Promise<AssetBlobs> {
   const keys = Object.keys(ASSET_URLS) as AssetKey[];
-  const entries = await Promise.all(
-    keys.map(async (key) => {
-      const resp = await fetch(ASSET_URLS[key]);
-      return [key, await resp.blob()] as const;
-    }),
-  );
-  return Object.fromEntries(entries) as AssetBlobs;
+
+  const fetchWithLog = async (key: AssetKey) => {
+    const url = ASSET_URLS[key];
+    console.log(`[AssetLoader] Fetching: ${key} -> ${url}`);
+
+    try {
+      const resp = await fetch(url);
+      console.log(`[AssetLoader] ${key} status: ${resp.status} (${resp.statusText})`);
+
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status} fetching ${url}`);
+      }
+
+      const type = resp.headers.get('Content-Type');
+      console.log(`[AssetLoader] ${key} content-type: ${type}`);
+      if (type && !type.startsWith('image/')) {
+        throw new Error(`Expected image, got ${type} for ${url}`);
+      }
+
+      const blob = await resp.blob();
+      console.log(`[AssetLoader] ${key} size: ${blob.size} bytes`);
+      return [key, blob] as const;
+    } catch (e) {
+      console.error(`[AssetLoader] FAILED to load ${key}:`, e);
+      throw e;
+    }
+  };
+
+  const entries = await Promise.all(keys.map(fetchWithLog));
+  return Object.fromEntries(entries) as unknown as AssetBlobs;
 }
 
 // ---- WebGPU: Blob → ImageBitmap → GPUTexture ----

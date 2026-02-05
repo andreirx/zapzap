@@ -1,5 +1,6 @@
 // Renderer factory — loads assets once, tries WebGPU, falls back to Canvas 2D.
-// Re-exports the common Renderer interface for consumers.
+// If WebGPU fails after acquiring a context (locking the canvas), it throws
+// so the caller can remount the canvas DOM element before retrying with 2D.
 
 export type { Renderer } from './types';
 
@@ -25,7 +26,6 @@ async function probeWebGPU(): Promise<boolean> {
       device.destroy();
       return false;
     }
-    // Test basic configure (preferred format, no HDR — most compatible)
     const format = navigator.gpu.getPreferredCanvasFormat();
     ctx.configure({ device, format, alphaMode: 'premultiplied' });
     ctx.unconfigure();
@@ -37,26 +37,29 @@ async function probeWebGPU(): Promise<boolean> {
 }
 
 /**
- * Initialize the best available renderer for the given canvas.
- * Fetches asset blobs once, then attempts WebGPU (HDR/EDR).
- * Falls back to Canvas 2D (SDR) if WebGPU is unavailable.
+ * Initialize the renderer.
+ * If force2D is true, skips WebGPU entirely.
+ * If WebGPU fails after touching the canvas, throws so the caller can
+ * remount the canvas element before retrying with force2D=true.
  */
-export async function initRenderer(canvas: HTMLCanvasElement): Promise<Renderer> {
+export async function initRenderer(
+  canvas: HTMLCanvasElement,
+  force2D = false,
+): Promise<Renderer> {
   const blobs = await loadAssetBlobs();
 
-  // Probe WebGPU on a throwaway canvas before touching the real one.
-  // This prevents canvas context locking if WebGPU fails entirely.
-  const webgpuAvailable = await probeWebGPU();
-
-  if (webgpuAvailable) {
-    try {
-      return await initWebGPURenderer(canvas, blobs);
-    } catch (e) {
-      console.warn('[renderer] WebGPU init failed, falling back to Canvas 2D:', e);
+  if (!force2D) {
+    const webgpuAvailable = await probeWebGPU();
+    if (webgpuAvailable) {
+      try {
+        return await initWebGPURenderer(canvas, blobs);
+      } catch (e) {
+        console.warn('[renderer] WebGPU init failed:', e);
+        throw new Error('WebGPUInitFailed');
+      }
     }
   }
 
-  // Fallback to Canvas 2D
   console.warn('[renderer] Using Canvas 2D fallback (no HDR/EDR)');
   return initCanvas2DRenderer(canvas, blobs);
 }

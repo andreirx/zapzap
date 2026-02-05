@@ -24,7 +24,7 @@ export const SEGMENT_COLORS: readonly [number, number, number][] = [
 
 // Pack colors into a Float32Array for WebGPU uniform buffer upload.
 // Layout: 13 × vec4<f32> (xyz = rgb, w = 1.0 padding for std140 alignment).
-export function packColorsForGPU(): Float32Array {
+export function packColorsForGPU(): Float32Array<ArrayBuffer> {
   const data = new Float32Array(SEGMENT_COLORS.length * 4);
   for (let i = 0; i < SEGMENT_COLORS.length; i++) {
     const [r, g, b] = SEGMENT_COLORS[i];
