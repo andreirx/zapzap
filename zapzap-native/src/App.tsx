@@ -343,7 +343,7 @@ function App() {
       {/* Fallback renderer warning */}
       {rendererBackend === 'canvas2d' && (
         <div className="fallback-banner">
-          Running in compatibility mode (no HDR). For the best experience, use Chrome or Safari with WebGPU enabled.
+          Running in compatibility mode (no HDR). For the best experience, enable WebGPU in Chrome or Safari (via Develop - Feature Flags).
         </div>
       )}
 

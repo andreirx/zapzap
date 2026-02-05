@@ -84,46 +84,38 @@ render loop code doesn't change — only the transport mechanism differs.
 
 ## Enabling WebGPU and HDR in Your Browser
 
-### Chrome (recommended)
+While WebGPU is shipping in modern browsers, it often requires manual activation depending on your OS version or specific hardware blocklists.
 
-WebGPU is **enabled by default** since Chrome 113 (April 2023) on macOS, Windows, and
-ChromeOS. HDR extended tone mapping shipped in Chrome 128.
+### Safari (macOS / iOS)
 
-If you're on an older version or want to verify:
-1. Navigate to `chrome://flags`
-2. Search for **"WebGPU"** and set to **Enabled**
-3. Search for **"WebGPU extended color"** and set to **Enabled** (for HDR)
-4. Relaunch Chrome
+WebGPU is technically enabled by default in **Safari 18 (macOS Sequoia)**, but often requires manual intervention on **Safari 17 (macOS Sonoma)** or to unlock full HDR capabilities.
 
-HDR requires a display that supports extended dynamic range (most modern Mac displays,
-HDR-capable monitors on Windows).
+1. Open **Settings** > **Advanced**.
+2. Check the box **"Show features for web developers"** (or "Show Develop menu in menu bar").
+3. In the menu bar, click **Develop** > **Feature Flags**.
+4. Search for **"WebGPU"**.
+5. Check **"WebGPU"** (and "WebGPU standard" if present).
+6. Restart Safari.
 
-### Safari
+### Chrome (Recommended)
 
-WebGPU is **enabled by default** since Safari 18.0 (macOS Sonoma 14 / iOS 18, September
-2024). Safari has native support for Display P3 color space.
+WebGPU is enabled by default on most modern systems (Chrome 113+). To force it on or enable HDR:
 
-No flags needed. Just make sure you're on macOS 14+ or iOS 18+.
+1. Navigate to `chrome://flags`.
+2. Search for **"WebGPU"** and set it to **Enabled**.
+3. Search for **"WebGPU extended color"** and set it to **Enabled** (required for the electric glow HDR effect).
+4. Relaunch Chrome.
 
 ### Firefox
 
-WebGPU support is more recent and platform-dependent:
-- **Windows:** Enabled by default since Firefox 141
-- **macOS (Apple Silicon):** Enabled by default since Firefox 145
-- **Linux / Intel Mac:** Still in progress
+Firefox has WebGPU support but it is often disabled by default or blocklisted on specific drivers.
 
-To enable manually:
-1. Navigate to `about:config`
-2. Search for `dom.webgpu.enabled` and set to **true**
-3. Restart Firefox
+1. Navigate to `about:config` and accept the risk warning.
+2. Search for `dom.webgpu.enabled` and set it to **true**.
+3. (If still not working) Search for `gfx.webgpu.force-enabled` and set it to **true**.
+4. Restart Firefox.
 
-Note: Firefox does not yet support HDR extended tone mapping for WebGPU canvases. The game
-will run in sRGB mode on Firefox.
-
-### Other Browsers
-
-Any Chromium-based browser (Edge, Brave, Arc, Opera) inherits Chrome's WebGPU support.
-Enable via the same `chrome://flags` mechanism if needed.
+*Note: Firefox does not yet support the `tone-mapping` capability required for the HDR glow effect, so the game will run in standard sRGB mode even with WebGPU enabled.*
 
 ## Building Locally
 

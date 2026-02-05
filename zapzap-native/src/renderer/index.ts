@@ -14,15 +14,23 @@ import type { Renderer } from './types';
  * If this fails, we skip straight to Canvas 2D without touching the real canvas.
  */
 async function probeWebGPU(): Promise<boolean> {
-  if (!navigator.gpu) return false;
+  if (!navigator.gpu) {
+    console.warn('[probeWebGPU] navigator.gpu is undefined');
+    return false;
+  }
   try {
     const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) return false;
+    if (!adapter) {
+      console.warn('[probeWebGPU] requestAdapter returned null (GPU may be blocklisted)');
+      return false;
+    }
+    console.log('[probeWebGPU] adapter:', 'info' in adapter ? (adapter as unknown as { info: unknown }).info : '(no info)');
     const device = await adapter.requestDevice();
     const probe = document.createElement('canvas');
     probe.width = probe.height = 1;
     const ctx = probe.getContext('webgpu');
     if (!ctx) {
+      console.warn('[probeWebGPU] getContext("webgpu") returned null on probe canvas');
       device.destroy();
       return false;
     }
@@ -31,7 +39,8 @@ async function probeWebGPU(): Promise<boolean> {
     ctx.unconfigure();
     device.destroy();
     return true;
-  } catch {
+  } catch (e) {
+    console.warn('[probeWebGPU] Failed:', e);
     return false;
   }
 }

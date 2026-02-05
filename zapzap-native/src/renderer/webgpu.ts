@@ -201,12 +201,19 @@ export async function initWebGPURenderer(
   });
 
   // ---- Pipeline Layout (effects — vertex buffer + colors UBO at group 3) ----
-  // Group 2 is null (unused by effects; occupied by instances in tile pipeline).
+  // Group 2 is unused by effects but the spec requires a valid layout for every
+  // index up to the highest used group. Safari enforces this strictly.
+  const emptyBindGroupLayout = device.createBindGroupLayout({ entries: [] });
+  const emptyBindGroup = device.createBindGroup({
+    layout: emptyBindGroupLayout,
+    entries: [],
+  });
+
   const effectsPipelineLayout = device.createPipelineLayout({
     bindGroupLayouts: [
       cameraBindGroupLayout,    // group 0
       textureBindGroupLayout,   // group 1
-      null,                     // group 2 (not used by effects)
+      emptyBindGroupLayout,     // group 2 (placeholder — not used by effects)
       colorsBindGroupLayout,    // group 3
     ],
   });
@@ -367,6 +374,7 @@ export async function initWebGPURenderer(
       pass.setPipeline(additivePipeline);
       pass.setBindGroup(0, cameraBindGroup);
       pass.setBindGroup(1, arrowsBindGroup);
+      pass.setBindGroup(2, emptyBindGroup);
       pass.setBindGroup(3, colorsBindGroup);
       pass.setVertexBuffer(0, effectsBuffer);
       pass.draw(effectsVertexCount!);
