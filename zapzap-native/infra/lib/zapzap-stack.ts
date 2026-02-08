@@ -3,7 +3,10 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
+
+const CERT_ARN = 'arn:aws:acm:us-east-1:324037297014:certificate/865aa844-6083-4218-9966-beffea13ffb7';
 
 export class ZapZapStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -42,7 +45,10 @@ export class ZapZapStack extends cdk.Stack {
     });
 
     // 3. The CDN (Global Distribution)
+    const certificate = acm.Certificate.fromCertificateArn(this, 'SiteCert', CERT_ARN);
     const distribution = new cloudfront.Distribution(this, 'ZapZapDist', {
+      domainNames: ['zapzap.bijup.com'],
+      certificate,
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(siteBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -60,9 +66,12 @@ export class ZapZapStack extends cdk.Stack {
       distributionPaths: ['/*'],
     });
 
-    // 5. Output the URL
+    // 5. Output the URLs
     new cdk.CfnOutput(this, 'SiteURL', {
       value: `https://${distribution.distributionDomainName}`,
+    });
+    new cdk.CfnOutput(this, 'CustomDomainURL', {
+      value: 'https://zapzap.bijup.com',
     });
   }
 }

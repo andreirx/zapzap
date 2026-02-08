@@ -18,6 +18,8 @@ ALWAYS_IGNORE_DIRS = {
     'target',       # Rust/Cargo build output
     'pkg',          # wasm-pack output
     'public',       # static assets (images, audio) — not code
+    '.vite',        # Vite dependency cache
+    'cdk.out',      # CDK synthesized CloudFormation output
 }
 
 # File extensions to skip entirely (binary/generated, not code)
@@ -67,7 +69,14 @@ def should_skip(item, root_path, gitignore_patterns):
     """Return True if this file/dir should be excluded entirely."""
     name = item.name
     if item.is_dir():
-        return name in ALWAYS_IGNORE_DIRS
+        if name in ALWAYS_IGNORE_DIRS:
+            return True
+        # Also check gitignore for directories
+        if gitignore_patterns:
+            rel = str(item.relative_to(root_path))
+            if matches_gitignore(rel, gitignore_patterns):
+                return True
+        return False
     # Skip by extension
     suffix = item.suffix.lower()
     if suffix in SKIP_EXTENSIONS:
@@ -122,7 +131,8 @@ def collect_files(root_path, gitignore_patterns):
         dp = Path(dirpath)
         # Prune ignored directories in-place
         dirnames[:] = sorted([
-            d for d in dirnames if d not in ALWAYS_IGNORE_DIRS
+            d for d in dirnames
+            if not should_skip(dp / d, root_path, gitignore_patterns)
         ])
 
         for filename in sorted(filenames):
